@@ -1,41 +1,38 @@
-import { ARTIFACT } from "@/lib/mode";
-
 /**
- * Identity, links and navigation. Everything a visitor reads lives in /src/content: edit here,
- * not in components. This portfolio is tailored to quality and manufacturing software roles and
- * stands on its own, the way a tailored résumé does.
+ * Identity, links and navigation. Everything a visitor reads lives in /src/content: edit the words
+ * there, not in components. Facts here come from the résumé (public/Luvneet_Bamrah_Resume.pdf).
  */
 export const site = {
   name: "Luvneet Bamrah",
   role: "Software engineer",
-  headline: "Software that checks out.",
+  headline: "Software engineer building reliable web apps and data tools.",
   intro:
-    "I build tools that validate data, automate reporting and show what’s happening in real time, with SQL, Python, TypeScript and React.",
+    "I build front ends in React and TypeScript, and write SQL and Python to automate reports and check data against its source. Most recently I worked on an AI-powered education platform at AiKnod.",
   description:
-    "Luvneet Bamrah is a software engineer in Fredericton, New Brunswick, building data validation, automated reporting and real-time monitoring tools.",
+    "Luvneet Bamrah is a software engineer in Fredericton, New Brunswick, building web apps in React and TypeScript and data tools in SQL and Python.",
 
   location: { city: "Fredericton", region: "New Brunswick", regionShort: "NB", country: "Canada" },
 
   email: "luvneetbamrah@gmail.com",
   github: { handle: "NotLuvii", url: "https://github.com/NotLuvii" },
-  linkedin: { handle: "Luvneet Bamrah", url: "https://www.linkedin.com/in/luvneet-bamrah" },
-  /**
-   * Set to null (and delete the file in /public) if you'd rather not publish your résumé. The hosted
-   * claude.ai version can't serve downloads, so it leaves the résumé out.
-   */
-  resume: (ARTIFACT ? null : "/Luvneet_Bamrah_Resume.pdf") as string | null,
+  linkedin: { handle: "luvneet-bamrah", url: "https://www.linkedin.com/in/luvneet-bamrah" },
+  /** Served from /public. Set to null (and delete the file) to stop publishing the résumé. */
+  resume: "/Luvneet_Bamrah_Resume.pdf" as string | null,
 
-  /** This site's address, on GitHub Pages. Used for canonical URLs, the sitemap and link previews. */
+  /** This site's address on GitHub Pages: canonical URLs, the sitemap and link previews. */
   url: "https://notluvii.github.io",
 
-  /** Shown in the contact section. Set to null to hide. */
-  availability: "Open to quality, manufacturing and data software roles.",
+  /** One line in the contact section. Set to null to hide it. */
+  availability: "Open to software roles in quality, manufacturing and data." as string | null,
 } as const;
 
-export const nav: { href: `#${string}`; label: string }[] = [
-  { href: "#highlights", label: "Highlights" },
-  { href: "#projects", label: "Projects" },
-  { href: "#experience", label: "Experience" },
-  { href: "#skills", label: "Skills" },
-  { href: "#contact", label: "Contact" },
-];
+/**
+ * Section links, in page order. Root-relative so they work from the case-study pages too; on the
+ * home page the browser treats them as in-page jumps.
+ */
+export const nav = [
+  { href: "/#projects", id: "projects", label: "Projects" },
+  { href: "/#experience", id: "experience", label: "Experience" },
+  { href: "/#skills", id: "skills", label: "Skills" },
+  { href: "/#contact", id: "contact", label: "Contact" },
+] as const;

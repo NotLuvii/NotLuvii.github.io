@@ -1,40 +1,42 @@
+import Link from "next/link";
 import { site } from "@/content/site";
-import { ChevronLink, pill } from "@/components/ui/links";
-import { Reveal } from "@/components/ui/Reveal";
-import { Stage } from "@/components/visuals/Stage";
+import { featured, heroShot, projectHref } from "@/content/projects";
+import { ButtonLink } from "@/components/ui/links";
+import { Screenshot } from "@/components/ui/Screenshot";
+
+const lead = featured[0];
 
 export function Hero() {
   return (
-    <section id="top" aria-labelledby="hero-title" className="overflow-hidden bg-white pt-14 md:pt-20">
-      <div className="mx-auto max-w-[1180px] px-gutter text-center">
-        <h1 id="hero-title" className="type-eyebrow text-ink">
-          {site.name}
-        </h1>
-        <p className="type-hero mx-auto mt-3 max-w-[14ch] text-ink">{site.headline}</p>
-        <p className="type-intro mx-auto mt-6 max-w-[38ch] text-ash">{site.intro}</p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
-          <a href="#projects" className={pill("solid")}>
-            See the work
-          </a>
-          {site.resume ? (
-            <ChevronLink href={site.resume} download className="text-[17px]">
-              Download résumé
-            </ChevronLink>
-          ) : (
-            <ChevronLink href="#contact" className="text-[17px]">
-              Get in touch
-            </ChevronLink>
-          )}
+    <section aria-labelledby="hero-title" className="bg-white">
+      <div className="mx-auto grid max-w-[1080px] items-center gap-10 px-gutter pb-14 pt-10 md:grid-cols-[minmax(0,1fr)_minmax(0,400px)] md:gap-12 md:pb-20 md:pt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] lg:gap-16">
+        <div>
+          <h1 id="hero-title" className="type-display text-ink">
+            {site.name}
+          </h1>
+          <p className="type-lede mt-4 max-w-[24ch] text-ink">{site.headline}</p>
+          <p className="mt-5 max-w-[50ch] text-[17px] text-ash">{site.intro}</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <ButtonLink href="#projects">View projects</ButtonLink>
+            {site.resume && (
+              <ButtonLink href={site.resume} download variant="secondary">
+                Download résumé <span className="text-ash">(PDF)</span>
+              </ButtonLink>
+            )}
+          </div>
+          <p className="type-small mt-6 text-ash">
+            {site.location.city}, {site.location.region}
+          </p>
+        </div>
+
+        <div className="mx-auto w-full max-w-[400px] md:max-w-none">
+          <Screenshot shot={heroShot} priority sizes="(min-width: 1024px) 440px, (min-width: 768px) 400px, 100vw" />
+          <Link href={projectHref(lead.slug)} className="type-caption mt-1 inline-flex min-h-11 items-center gap-1.5 text-link underline-offset-[3px] hover:underline">
+            {lead.title} case study
+            <span aria-hidden>→</span>
+          </Link>
         </div>
       </div>
-
-      <Reveal className="mx-auto mt-14 max-w-[1180px] px-gutter md:mt-20" delay={0.1}>
-        <Stage
-          visual="hero"
-          className="mx-auto max-w-[1100px] overflow-hidden rounded-[22px] shadow-[0_40px_80px_-30px_rgb(0_0_0/0.45),0_18px_36px_-18px_rgb(0_0_0/0.3)]"
-        />
-      </Reveal>
-      <div className="h-16 md:h-24" />
     </section>
   );
 }

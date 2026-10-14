@@ -1,41 +1,38 @@
-import { education, roles } from "@/content/experience";
+import { roles } from "@/content/experience";
 import { Reveal } from "@/components/ui/Reveal";
 
 export function Experience() {
   return (
-    <section id="experience" aria-labelledby="experience-title" className="bg-mist py-24 md:py-32">
-      <Reveal className="mx-auto max-w-[1180px] px-gutter">
-        <h2 id="experience-title" className="type-headline text-ink">
-          Experience.
+    <section id="experience" aria-labelledby="experience-title" className="bg-white py-16 md:py-24">
+      <div className="mx-auto max-w-[1080px] px-gutter">
+        <h2 id="experience-title" className="type-section text-ink">
+          Experience
         </h2>
-      </Reveal>
-      <ol className="mx-auto mt-12 grid max-w-[1180px] gap-5 px-gutter md:grid-cols-2">
-        {roles.map((r, i) => (
-          <Reveal as="li" key={r.organization} delay={(i % 2) * 0.08} className="flex flex-col rounded-[28px] bg-white p-8 md:p-10">
-            <p className="type-small font-semibold text-ash">
-              {r.period}, {r.place}
-            </p>
-            <h3 className="type-card mt-3 text-ink">{r.organization}</h3>
-            <p className="mt-1 text-[17px] text-ink">{r.title}</p>
-            <ul className="mt-6 space-y-3 text-[17px] leading-[1.47] text-ash">
-              {r.points.map((p) => (
-                <li key={p} className="flex gap-3">
-                  <span aria-hidden className="mt-[0.62em] size-1.5 shrink-0 rounded-full bg-ash/60" />
-                  <span>{p}</span>
-                </li>
-              ))}
-            </ul>
-          </Reveal>
-        ))}
-        <Reveal as="li" delay={0.08} className="flex flex-col rounded-[28px] bg-white p-8 md:p-10">
-          <p className="type-small font-semibold text-ash">{education.date}</p>
-          <h3 className="type-card mt-3 text-ink">{education.school}</h3>
-          <p className="mt-1 text-[17px] text-ink">{education.degree}</p>
-          <p className="mt-6 text-[17px] leading-[1.47] text-ash">
-            Coursework in {education.coursework.join(", ").toLowerCase()}.
-          </p>
-        </Reveal>
-      </ol>
+        <ol className="mt-8 divide-y divide-hairline border-y border-hairline">
+          {roles.map((r) => (
+            <Reveal as="li" key={r.organization} className="grid gap-x-10 gap-y-3 py-8 md:grid-cols-[220px_minmax(0,1fr)]">
+              <div className="type-small text-ash">
+                <p>{r.period}</p>
+                <p>{r.place}</p>
+              </div>
+              <div>
+                <h3 className="text-[19px] font-semibold tracking-[-0.02em] text-ink">
+                  {r.title}, {r.organization}
+                </h3>
+                {r.about && <p className="type-small mt-0.5 text-ash">{r.about}</p>}
+                <ul className="mt-4 max-w-[68ch] space-y-2.5 text-[16px] leading-[1.55] text-ink/85">
+                  {r.points.map((point) => (
+                    <li key={point} className="flex gap-3">
+                      <span aria-hidden className="mt-[0.7em] size-1 shrink-0 rounded-full bg-ash" />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Reveal>
+          ))}
+        </ol>
+      </div>
     </section>
   );
 }

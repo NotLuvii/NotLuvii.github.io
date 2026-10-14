@@ -1,51 +1,53 @@
 /**
- * Roles, newest first, taken from the résumé. Bullets are the ones most relevant to quality and
- * manufacturing software. Measured results live in content/numbers.ts.
+ * Work history, education, skills and the short background, from the résumé
+ * (public/Luvneet_Bamrah_Resume.pdf). The résumé's percentages are left out here until their
+ * baseline and method can be stated.
  */
 export type Role = {
   organization: string;
+  /** One line on what the organization or product is, where the résumé says. */
+  about?: string;
   title: string;
   period: string;
   place: string;
   points: string[];
-  figure?: { value: string; label: string };
 };
 
 export const roles: Role[] = [
   {
     organization: "AiKnod",
+    about: "AI-powered education platform",
     title: "Developer",
-    period: "Feb – Aug 2026",
+    period: "Feb 2026 – Aug 2026",
     place: "Remote",
     points: [
-      "Built core features of an AI-powered education platform in React and TypeScript: tutoring, assessments and personalized learning.",
-      "Built and tested the logic for multi-step assessment workflows, including answer validation, follow-up questions and correctness tracking.",
-      "Integrated asynchronous REST APIs across several services, and diagnosed defects across UI components, integrations and business logic, adding the error handling and polling that improved stability.",
+      "Built tutoring, assessment and personalized-learning features in React and TypeScript, on asynchronous REST APIs for misconception detection, concept recommendations and AI feedback.",
+      "Implemented multi-step assessment logic: answer validation, follow-up questions and correctness tracking.",
+      "Diagnosed defects across the UI, API integrations and business logic, adding error handling and polling that improved stability.",
     ],
   },
   {
     organization: "SafeTrack",
+    about: "University rideshare management, built by a team",
     title: "Front end developer",
     period: "Sep 2024 – Apr 2025",
     place: "Fredericton, NB",
     points: [
-      "Built real-time tracking and monitoring workflows on AWS API Gateway WebSockets for a university rideshare service.",
-      "Translated safety and stakeholder requirements into functional specifications and maintainable components.",
-      "Documented workflows, implementation details and handoff notes so issues could be reproduced, escalated and resolved consistently.",
+      "Built real-time tracking and monitoring workflows on AWS API Gateway WebSockets, streaming live driver and location updates.",
+      "Improved the accuracy of route data by validating it and aligning the system logic that used it.",
+      "Turned safety and stakeholder requirements into functional specifications and components.",
     ],
-    figure: { value: "75%", label: "increase in route data accuracy through systematic data validation" },
   },
   {
     organization: "Immensa Tech",
     title: "Developer",
-    period: "Jan – May 2024",
+    period: "Jan 2024 – May 2024",
     place: "Remote",
     points: [
-      "Automated a manual email reporting process with scheduled SQL notifications and Databricks outputs built into generated reports.",
-      "Wrote SQL to validate data and trace discrepancies between source systems and reports to their root cause.",
-      "Authored maintenance steps, usage instructions and escalation procedures that reduced follow-up clarification requests.",
+      "Replaced a manual email report with scheduled SQL notifications and Databricks outputs built into generated reports.",
+      "Wrote SQL to check report figures against source systems and trace discrepancies to their root cause.",
+      "Optimized front-end workflows and presented data more clearly, which reduced delivery delays.",
     ],
-    figure: { value: "50%", label: "reduction in delivery delays, from optimizing front-end workflows and presenting data more clearly" },
   },
 ];
 
@@ -53,13 +55,41 @@ export const education = {
   school: "University of New Brunswick",
   degree: "BSc, Software Engineering",
   date: "May 2025",
-  coursework: ["System analysis and project management", "Statistics", "Operating systems", "Cybersecurity", "Discrete mathematics"],
+  place: "Fredericton, NB",
+  coursework: ["System analysis and project management", "statistics", "operating systems", "cybersecurity", "discrete mathematics"],
 };
 
-/** Toolkit: the résumé's skills section, plus Next.js (this site is built in it). */
-export const toolkit: { group: string; items: string[] }[] = [
-  { group: "Languages", items: ["Python", "TypeScript", "JavaScript", "SQL", "C#", "Java", "C++", "C"] },
-  { group: "Web and services", items: ["React", "Next.js", "Node.js", "REST APIs", "AWS API Gateway", "WebSockets"] },
-  { group: "Data and reporting", items: ["MySQL", "Databricks", "Power BI", "Pandas", "NumPy", "Data validation", "Automated reporting"] },
-  { group: "Practice", items: ["Git", "Testing and debugging", "Root-cause analysis", "Requirements gathering", "Technical documentation"] },
+/** A short, factual introduction for the background column. */
+export const background = [
+  "I’m a software engineer in Fredericton, New Brunswick. Since 2024 I’ve built front ends, API integrations and data checks for an education platform, a university rideshare service and Immensa Tech, and I build my own tools on the side.",
 ];
+
+/**
+ * Skills in four groups, each tied to where it was used. Only what the résumé lists or a linked
+ * repository shows.
+ */
+export const skills: { group: string; items: string[]; usedIn: string }[] = [
+  {
+    group: "Frontend",
+    items: ["React", "TypeScript", "JavaScript", "HTML", "CSS"],
+    usedIn: "AiKnod, SafeTrack, scam detection tool",
+  },
+  {
+    group: "Data and automation",
+    items: ["SQL", "MySQL", "Python", "Databricks", "Power BI", "Pandas", "NumPy"],
+    usedIn: "Immensa Tech reports and data checks, Resume Analyzer",
+  },
+  {
+    group: "APIs and cloud",
+    items: ["REST APIs", "Node.js", "Express", "Flask", "AWS API Gateway", "WebSockets"],
+    usedIn: "AiKnod integrations, SafeTrack live tracking, scam tool server",
+  },
+  {
+    group: "Engineering practices",
+    items: ["Git", "testing and debugging", "root-cause analysis", "requirements gathering"],
+    usedIn: "AiKnod assessment logic, Immensa Tech discrepancy tracing, SafeTrack specifications",
+  },
+];
+
+/** Languages and libraries outside the four groups, from the résumé and the linked repositories. */
+export const alsoUsed = ["Java", "Kotlin (Android)", "C#", "C++", "C", "TensorFlow/Keras", "OpenCV"];

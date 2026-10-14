@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { inter } from "./fonts";
 import { site } from "@/content/site";
+import { SiteHeader } from "@/components/layout/SiteHeader";
+import { Footer } from "@/components/layout/Footer";
 import "./globals.css";
 
 const title = `${site.name}, ${site.role.toLowerCase()}`;
@@ -11,9 +13,8 @@ export const metadata: Metadata = {
   title: { default: title, template: `%s | ${site.name}` },
   description: site.description,
   applicationName: site.name,
-  authors: [{ name: site.name }],
+  authors: [{ name: site.name, url: site.url }],
   creator: site.name,
-  keywords: ["Luvneet Bamrah", "software engineer", "data validation", "automated reporting", "quality", "manufacturing", "Python", "SQL", "React"],
   alternates: { canonical: "/" },
   openGraph: { type: "website", url: "/", siteName: site.name, title, description: site.description, locale: "en_CA" },
   twitter: { card: "summary_large_image", title, description: site.description },
@@ -27,16 +28,14 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-/** Marks that JavaScript is running, before first paint, so scroll reveals never hide content without it. */
-const boot = `document.documentElement.classList.add('js')`;
-
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en-CA" className={inter.variable} suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: boot }} />
-      </head>
-      <body>{children}</body>
+    <html lang="en-CA" className={inter.variable}>
+      <body>
+        <SiteHeader />
+        {children}
+        <Footer />
+      </body>
     </html>
   );
 }

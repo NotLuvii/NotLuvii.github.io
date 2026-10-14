@@ -1,44 +1,52 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { pill } from "./links";
+import { button } from "./links";
 
 /**
- * Shows the address as text anyone can select, with a button that copies it. Email links don't
- * open a mail app for every visitor (embedded pages and some browsers ignore them), so the address
- * itself is always on screen.
+ * The address as selectable text, with a button that copies it. If the browser refuses clipboard
+ * access, the address is selected instead and the message says how to finish copying.
  */
 export function CopyEmail({ email }: { email: string }) {
   const text = useRef<HTMLSpanElement>(null);
   const [state, setState] = useState<"idle" | "copied" | "selected">("idle");
 
+  const selectAddress = () => {
+    const el = text.current;
+    const sel = window.getSelection();
+    if (!el || !sel) return;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  };
+
   const copy = async () => {
     try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
       await navigator.clipboard.writeText(email);
       setState("copied");
     } catch {
-      // Clipboard refused: select the address so Ctrl+C or Cmd+C finishes the job.
-      const range = document.createRange();
-      if (text.current) {
-        range.selectNodeContents(text.current);
-        const sel = window.getSelection();
-        sel?.removeAllRanges();
-        sel?.addRange(range);
-      }
+      selectAddress();
       setState("selected");
     }
   };
 
   return (
-    <div className="flex flex-col items-center gap-5">
-      <span ref={text} className="select-all break-all text-[clamp(1.375rem,3vw,2rem)] font-semibold tracking-[-0.02em] text-ink">
-        {email}
-      </span>
-      <button type="button" onClick={copy} className={pill("solid")}>
-        {state === "copied" ? "Copied" : "Copy email address"}
-      </button>
-      <p className="type-small min-h-[1.43em] text-ash" aria-live="polite">
-        {state === "copied" ? "The address is on your clipboard." : state === "selected" ? "Address selected. Press Ctrl+C or ⌘C to copy it." : ""}
+    <div>
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
+        <span
+          ref={text}
+          className="select-all text-[clamp(1.25rem,4.6vw,1.75rem)] font-semibold tracking-[-0.022em] text-ink [overflow-wrap:anywhere]"
+        >
+          {email}
+        </span>
+        <button type="button" onClick={copy} className={button("secondary")}>
+          {state === "copied" ? "Copied" : "Copy email address"}
+        </button>
+      </div>
+      <p className="type-small mt-2 min-h-[1.5em] text-ash" role="status" aria-live="polite">
+        {state === "copied" ? "Email address copied to your clipboard." : state === "selected" ? "Couldn’t copy automatically. The address is selected: press Ctrl+C, or ⌘C on a Mac." : ""}
       </p>
     </div>
   );

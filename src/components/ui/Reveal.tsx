@@ -1,57 +1,50 @@
 "use client";
 
-import { useEffect, useRef, useState, type ElementType, type ReactNode } from "react";
-import { cn, cssVars } from "@/lib/cn";
-import { ARTIFACT } from "@/lib/mode";
+import { useEffect, useRef, type ElementType, type ReactNode } from "react";
 
 /**
- * Fades and lifts its content into place the first time it scrolls into view. The hiding is
- * done in CSS under html.js and prefers-reduced-motion: no-preference, so without JavaScript, or
- * with reduced motion, content is simply there.
+ * A gentle fade-and-rise the first time content scrolls into view.
+ *
+ * Nothing is hidden by the server-rendered HTML. After the page loads, an element is marked
+ * "pending" (and hidden by CSS) only if it starts below the fold, the browser supports
+ * IntersectionObserver, and the visitor hasn't asked for reduced motion. So without JavaScript,
+ * with reduced motion, or if anything here fails, the content is simply there.
  */
 export function Reveal({
   children,
   as: Tag = "div",
-  delay = 0,
   className,
-  id,
 }: {
   children: ReactNode;
   as?: ElementType;
-  delay?: number;
   className?: string;
-  id?: string;
 }) {
   const ref = useRef<HTMLElement>(null);
-  const [shown, setShown] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || shown) return;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (el.getBoundingClientRect().top < window.innerHeight) return;
+
+    el.dataset.reveal = "pending";
     const io = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setShown(true);
-          io.disconnect();
-        }
+        if (!entry.isIntersecting) return;
+        el.dataset.reveal = "shown";
+        io.disconnect();
       },
-      { rootMargin: "0px 0px -12% 0px" },
+      { rootMargin: "0px 0px -8% 0px" },
     );
     io.observe(el);
-    return () => io.disconnect();
-  }, [shown]);
-
-  // The hosted artifact must be complete at rest, so nothing there waits on scroll to appear.
-  if (ARTIFACT) {
-    return (
-      <Tag id={id} className={cn(className)}>
-        {children}
-      </Tag>
-    );
-  }
+    return () => {
+      io.disconnect();
+      delete el.dataset.reveal;
+    };
+  }, []);
 
   return (
-    <Tag ref={ref} id={id} data-reveal data-shown={shown} className={cn(className)} style={delay ? cssVars({ "--reveal-delay": `${delay}s` }) : undefined}>
+    <Tag ref={ref} className={className}>
       {children}
     </Tag>
   );

@@ -2,11 +2,11 @@
   "name": "luvneet-quality",
   "version": "1.0.0",
   "private": true,
-  "description": "Luvneet Bamrah's portfolio, tailored to quality and manufacturing software roles.",
+  "description": "Luvneet Bamrah's portfolio: web apps and data tools, with case studies.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node scripts/serve-out.mjs 3000",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",

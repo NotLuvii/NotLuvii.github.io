@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { featured, more, projectHref, type FeaturedProject, type MoreProject } from "@/content/projects";
 import { site } from "@/content/site";
+import { Figures } from "@/components/ui/Figures";
 import { ButtonLink, TextLink } from "@/components/ui/links";
 import { Reveal } from "@/components/ui/Reveal";
 import { Screenshot } from "@/components/ui/Screenshot";
@@ -108,7 +109,9 @@ function MoreRow({ p }: { p: MoreProject }) {
         <h4 className="text-[17px] font-semibold tracking-[-0.018em] text-ink">{p.title}</h4>
         {meta && <p className="type-caption text-ash">{meta}</p>}
       </div>
-      <p className="type-small mt-1 text-ash">{p.summary}</p>
+      <p className="type-small mt-1 text-ash">
+        <Figures text={p.summary} />
+      </p>
       <div className="mt-1 flex flex-wrap items-center gap-x-5">
         {p.links.map((l) => (
           <TextLink key={l.href} href={l.href} external className="type-small">

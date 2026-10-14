@@ -179,7 +179,7 @@ const scam: FeaturedProject = {
 const immensa: FeaturedProject = {
   slug: "immensa-inquiry-app",
   title: "Immensa inquiry app",
-  kind: "Android app",
+  kind: "Professional app",
   year: "2024",
   team: "Solo",
   summary:
@@ -274,11 +274,11 @@ const resume: FeaturedProject = {
   year: "2024",
   team: "Solo",
   summary:
-    "Compares a résumé (PDF or Word) with a job description and lists the shared skills, the missing ones, and interview questions for the role.",
-  built: "A Flask web app with PDF and Word parsing, rebuilt from an earlier Tkinter desktop version.",
+    "Compares a résumé (PDF or Word) with a job description and gives a relevance score, the shared and missing skills, and interview questions for the role.",
+  built: "A Flask web app and a Tkinter desktop app with charts, sharing one Python backend that parses PDF and Word files.",
   decision: "Skills are matched against curated lists of 279 technical and 49 soft skills, so ordinary words never count as skills.",
-  result: "On my résumé and a sample posting, it found five shared technical skills and flagged Docker and Kubernetes as missing.",
-  stack: ["Python", "Flask", "PyMuPDF", "python-docx", "JavaScript"],
+  result: "On my résumé and a sample posting, it scored 55.6%: five of the posting’s nine skills found, Docker and Kubernetes flagged as missing.",
+  stack: ["Python", "Flask", "PyMuPDF", "python-docx", "Tkinter", "Matplotlib", "pytest", "JavaScript"],
   repo: { label: "Code on GitHub", href: `${GH}/Resume-Analyze` },
   availability: "No live demo; it runs locally with Flask.",
   caseStudy: {
@@ -288,10 +288,12 @@ const resume: FeaturedProject = {
     ],
     role: "Solo: the desktop version and the web version.",
     built: [
-      "Desktop version (November 2024): a Tkinter app with drag-and-drop résumés, a results table and Matplotlib charts. It’s still in the repository as main.py.",
-      "Web version (December 2024): a Flask endpoint, POST /upload, that takes the posting and a résumé, reads PDFs with PyMuPDF and Word files with python-docx, and returns the analysis as JSON to a small JavaScript front end.",
+      "Relevance score: each skill in the job description is weighted by how often the description names it, counting whole words, and the score is the weighted share of those skills the résumé also mentions, from 0 to 100%.",
+      "Desktop version (November 2024): a Tkinter app with drag-and-drop résumés, a results table with each résumé’s score, and Matplotlib charts of matched skills and the spread of scores.",
+      "Web version (December 2024): a Flask endpoint, POST /upload, that takes the posting and a résumé, reads PDFs with PyMuPDF and Word files with python-docx, and returns the analysis as JSON to a small JavaScript front end that shows the score as a bar.",
       "Skill extraction: the text is lower-cased, punctuation and stop words are removed, and the words that remain are kept only if they appear in the technical or soft-skill list.",
       "Interview questions from templates for each skill found in the posting, followed by general, behavioural and technical questions.",
+      "October 2026 update: the score restored in both versions, the desktop version brought back in line with the current backend, and tests added (pytest) for the scoring, the web endpoint and the desktop window.",
     ],
     decision: {
       title: "Curated skill lists instead of word overlap",
@@ -300,8 +302,8 @@ const resume: FeaturedProject = {
         "The cost is coverage: a skill that isn’t on a list is never found, and synonyms aren’t recognised. The README lists this as a known issue.",
       ],
       code: {
-        file: "backend/analyzer.py, lines 136–146",
-        href: `${GH}/Resume-Analyze/blob/main/backend/analyzer.py#L136-L146`,
+        file: "backend/analyzer.py, lines 143–154",
+        href: `${GH}/Resume-Analyze/blob/main/backend/analyzer.py#L143-L154`,
         language: "python",
         code: `def extract_keywords_pipeline(text):
     text = re.sub(r"[^\\w\\s]", "", text.lower())
@@ -312,33 +314,35 @@ const resume: FeaturedProject = {
 
     return {
         "technical_skills": sorted(set(technical_skills)),
-        "soft_skills": sorted(set(soft_skills))
+        "soft_skills": sorted(set(soft_skills)),
+        "weights": calculate_keyword_weights(text)
     }`,
-        caption: "Skill extraction: words are kept only if they’re on one of the two lists.",
+        caption: "Skill extraction: words are kept only if they’re on one of the two lists, and each skill’s weight for the score comes from how often the posting names it.",
       },
     },
     outcome: [
-      "The screenshot compares my own résumé with a short sample posting. The tool found SQL, React, TypeScript, AWS and Python in both; it listed Docker and Kubernetes as missing technical skills, and communication and teamwork as missing soft skills, since my résumé doesn’t use those words.",
+      "The screenshot compares my own résumé with a short sample posting that names nine listed skills once each. The tool scored it 55.6%: it found SQL, React, TypeScript, AWS and Python in both, listed Docker and Kubernetes as missing technical skills, and communication and teamwork as missing soft skills, since my résumé doesn’t use those words.",
+      "Twelve automated tests cover the weighting (including that short skill names like R are counted as whole words), the score from 0 to 100%, the web endpoint and the desktop window.",
     ],
     limitations: [
       "Text is split into single words before matching, so list entries with spaces or punctuation can’t match: 58 of the 279 technical entries, including Power BI, C++ and scikit-learn, and 25 of the 49 soft skills, including problem-solving. In the screenshot, “problem-solving” is in the posting but isn’t reported.",
-      "The desktop version calls the parser with an older signature, so as the code stands only the web version runs.",
-      "There are no automated tests.",
+      "Only listed skills count towards the score, so a posting whose requirements aren’t on the lists scores 0.",
     ],
     figuresNote: "Screenshot of the web version running locally, October 2026.",
     figures: [
       {
         src: "/images/resume-analyzer/results",
         width: 872,
-        height: 1012,
-        alt: "The Resume Analyzer web page. A sample job description is in the text box and Luvneet_Bamrah_Resume.pdf is selected. Gap analysis lists communication and teamwork as missing soft skills and Kubernetes and Docker as missing technical skills; matched technical skills are SQL, React, TypeScript, AWS and Python.",
+        height: 1191,
+        alt: "The Resume Analyzer web page. A sample job description is in the text box and Luvneet_Bamrah_Resume.pdf is selected. The relevance score is 55.6 percent, shown with a bar. Gap analysis lists teamwork and communication as missing soft skills and Docker and Kubernetes as missing technical skills; matched technical skills are AWS, TypeScript, React, SQL and Python.",
         caption:
-          "My résumé against a sample posting: “Software developer. You will build web applications in React and TypeScript, write SQL and Python to validate data, and deploy services on AWS. Experience with Docker and Kubernetes is an asset. We value communication, teamwork and problem-solving.”",
+          "My résumé scored 55.6% against a sample posting: “Software developer. You will build web applications in React and TypeScript, write SQL and Python to validate data, and deploy services on AWS. Experience with Docker and Kubernetes is an asset. We value communication, teamwork and problem-solving.”",
       },
     ],
     files: [
       { label: "Skill lists and matching: backend/analyzer.py", href: `${GH}/Resume-Analyze/blob/main/backend/analyzer.py` },
       { label: "Web endpoint: app.py", href: `${GH}/Resume-Analyze/blob/main/app.py` },
+      { label: "Tests: tests/test_scoring.py", href: `${GH}/Resume-Analyze/blob/main/tests/test_scoring.py` },
     ],
   },
 };
@@ -358,12 +362,15 @@ export const featured: FeaturedProject[] = [scam, immensa, resume];
 export const more: MoreProject[] = [
   {
     title: "Monitoring and reporting dashboards",
-    summary: "Dashboards with clearer monitoring views, and root-cause fixes for data display issues.",
+    kind: "Professional project",
+    summary:
+      "Reduced troubleshooting effort by 40% by improving monitoring views, interface clarity and system transparency, with root-cause fixes for data display issues.",
     links: [],
     note: "Code not public",
   },
   {
     title: "Sensor management system",
+    kind: "Professional project",
     summary: "Sensor health in one place, automated fault detection, role-based access and real-time status views.",
     links: [],
     note: "Code not public",

@@ -1,7 +1,6 @@
 /**
  * Work history, education, skills and the short background, from the résumé
- * (public/Luvneet_Bamrah_Resume.pdf). The résumé's percentages are left out here until their
- * baseline and method can be stated.
+ * (public/Luvneet_Bamrah_Resume.pdf). Figures are quoted in the résumé's own words.
  */
 export type Role = {
   organization: string;
@@ -34,7 +33,7 @@ export const roles: Role[] = [
     place: "Fredericton, NB",
     points: [
       "Built real-time tracking and monitoring workflows on AWS API Gateway WebSockets, streaming live driver and location updates.",
-      "Improved the accuracy of route data by validating it and aligning the system logic that used it.",
+      "Increased route data accuracy by 75% through systematic data validation and alignment of system logic.",
       "Turned safety and stakeholder requirements into functional specifications and components.",
     ],
   },
@@ -46,7 +45,7 @@ export const roles: Role[] = [
     points: [
       "Replaced a manual email report with scheduled SQL notifications and Databricks outputs built into generated reports.",
       "Wrote SQL to check report figures against source systems and trace discrepancies to their root cause.",
-      "Optimized front-end workflows and presented data more clearly, which reduced delivery delays.",
+      "Reduced delivery delays by 50% by optimizing front-end workflows and presenting data more clearly.",
     ],
   },
 ];

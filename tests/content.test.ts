@@ -103,6 +103,30 @@ describe("screenshots", () => {
   });
 });
 
+describe("professional work", () => {
+  it("labels the Immensa app, the dashboards and the sensor system as professional", () => {
+    expect(featured.find((p) => p.slug === "immensa-inquiry-app")?.kind).toBe("Professional app");
+    for (const title of ["Monitoring and reporting dashboards", "Sensor management system"]) {
+      expect(more.find((p) => p.title === title)?.kind, title).toBe("Professional project");
+    }
+  });
+});
+
+describe("Resume Analyzer", () => {
+  const p = featured.find((f) => f.slug === "resume-analyzer")!;
+
+  it("describes the restored relevance score and the result in the screenshot", () => {
+    expect(p.summary).toMatch(/relevance score/);
+    expect(p.result).toContain("55.6%");
+    expect(p.caseStudy.figures[0].caption).toContain("55.6%");
+  });
+
+  it("no longer lists limitations that the October 2026 update fixed", () => {
+    const limits = p.caseStudy.limitations.join(" ");
+    expect(limits).not.toMatch(/no automated tests|only the web version runs/);
+  });
+});
+
 describe("more projects", () => {
   it("only link where there is a verified destination, and say why when there isn't", () => {
     for (const p of more) {
@@ -175,8 +199,16 @@ describe("claims", () => {
     .map((f) => readFileSync(f, "utf8"))
     .join("\n");
 
-  it("states no percentage improvement whose basis can't be shown yet", () => {
-    for (const claim of ["75%", "50%", "40%"]) expect(text).not.toContain(claim);
+  it("states each résumé figure once, in the résumé's own words", () => {
+    const figures = {
+      "75%": "Increased route data accuracy by 75% through systematic data validation and alignment of system logic.",
+      "50%": "Reduced delivery delays by 50% by optimizing front-end workflows and presenting data more clearly.",
+      "40%": "Reduced troubleshooting effort by 40% by improving monitoring views, interface clarity and system transparency",
+    };
+    for (const [figure, sentence] of Object.entries(figures)) {
+      expect(text).toContain(sentence);
+      expect(text.split(figure).length - 1, figure).toBe(1);
+    }
   });
 
   it("presents no illustrated interfaces or sample data as evidence", () => {

@@ -1,4 +1,5 @@
 import { roles } from "@/content/experience";
+import { Figures } from "@/components/ui/Figures";
 import { Reveal } from "@/components/ui/Reveal";
 
 export function Experience() {
@@ -24,7 +25,9 @@ export function Experience() {
                   {r.points.map((point) => (
                     <li key={point} className="flex gap-3">
                       <span aria-hidden className="mt-[0.7em] size-1 shrink-0 rounded-full bg-ash" />
-                      <span>{point}</span>
+                      <span>
+                        <Figures text={point} />
+                      </span>
                     </li>
                   ))}
                 </ul>

@@ -24,7 +24,7 @@ Rules the content follows, enforced by `tests/content.test.ts`:
 
 - Every project link goes to a specific repository or page that was checked by hand. Private
   repositories and projects without public code get a note instead of a link.
-- No percentage improvement is stated until its baseline and method can be explained.
+- Each figure from the résumé (75%, 50%, 40%) appears once, in the résumé's own words.
 - Every screenshot is a real capture, exists at 1x and 2x with the size declared in
   `projects.ts`, and has alt text and a caption saying what it shows.
 

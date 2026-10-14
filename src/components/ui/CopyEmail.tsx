@@ -37,7 +37,7 @@ export function CopyEmail({ email }: { email: string }) {
       <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
         <span
           ref={text}
-          className="select-all text-[clamp(1.375rem,4.6vw,2.5rem)] font-semibold text-text [font-stretch:92%] [overflow-wrap:anywhere]"
+          className="select-all text-[clamp(1.375rem,2.4vw,2.25rem)] font-semibold text-text [font-stretch:92%] [overflow-wrap:anywhere]"
         >
           {email}
         </span>

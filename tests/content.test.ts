@@ -23,7 +23,7 @@ function webpSize(file: string) {
   throw new Error(`Unknown WebP chunk ${chunk} in ${file}`);
 }
 
-const allShots: Screenshot[] = [heroShot, ...featured.flatMap((p) => p.caseStudy.figures)];
+const allShots: Screenshot[] = [heroShot, ...featured.flatMap((p) => [...p.caseStudy.figures, ...(p.homeShot ? [p.homeShot] : [])])];
 
 /** Every repository and page a project links to, checked by hand in October 2026. */
 const VERIFIED_LINKS = new Set([
@@ -50,9 +50,19 @@ describe("featured projects", () => {
     }
   });
 
-  it("each answers the brief: problem, what was built, a decision, a result, stack and availability", () => {
+  it("each answers the brief: problem, figures from the result, stack and availability", () => {
     for (const p of featured) {
-      for (const field of [p.summary, p.built, p.decision, p.result]) expect(field.length).toBeGreaterThan(30);
+      expect(p.summary.length).toBeGreaterThan(30);
+      // The summary's key phrase is shown in white; emphasize() throws if it isn't in the summary.
+      expect(emphasize(p.summary, [p.summaryKeyPhrase]).filter((part) => part.strong)).toHaveLength(1);
+      // Two or three figures, each with a label that says what it measures.
+      expect(p.stats.length).toBeGreaterThanOrEqual(2);
+      expect(p.stats.length).toBeLessThanOrEqual(3);
+      for (const s of p.stats) {
+        expect(s.value.length).toBeGreaterThan(0);
+        expect(s.value.length).toBeLessThanOrEqual(6);
+        expect(s.label.length).toBeGreaterThan(15);
+      }
       expect(p.availability.length).toBeGreaterThan(10);
       expect(p.stack.length).toBeGreaterThan(0);
       const c = p.caseStudy;
@@ -118,7 +128,8 @@ describe("Resume Analyzer", () => {
 
   it("describes the restored relevance score and the result in the screenshot", () => {
     expect(p.summary).toMatch(/relevance score/);
-    expect(p.result).toContain("55.6%");
+    expect(p.stats[0].value).toBe("55.6%");
+    expect(p.caseStudy.outcome.join(" ")).toContain("55.6%");
     expect(p.caseStudy.figures[0].caption).toContain("55.6%");
   });
 
@@ -208,10 +219,23 @@ describe("opening screenshot", () => {
     expect(heroShot.width / heroShot.height).toBeGreaterThan(1.5);
   });
 
-  it("isn't repeated by the lead project's chapter, which shows a different check", () => {
+  it("isn't repeated by the lead project's showcase, which shows a different check", () => {
     const lead = featured[0];
-    const shown = lead.caseStudy.figures[lead.homeFigure ?? 0];
+    const shown = lead.homeShot ?? lead.caseStudy.figures[0];
     expect(shown.caption).not.toMatch(/email/i);
+  });
+
+  it("has a phone version, from the tool's own phone layout, at 1x, 2x and 3x", () => {
+    const phone = heroShot.phone!;
+    expect(phone).toBeTruthy();
+    expect(phone.width).toBeLessThanOrEqual(400);
+    for (const [suffix, scale] of [["", 1], ["@2x", 2], ["@3x", 3]] as const) {
+      const file = join(PUBLIC, `${phone.src}${suffix}.webp`);
+      const size = webpSize(file);
+      expect(size.width, file).toBe(phone.width * scale);
+      expect(Math.abs(size.height - phone.height * scale), file).toBeLessThanOrEqual(1);
+      expect(statSync(file).size).toBeLessThan(100_000);
+    }
   });
 
   it("also exists at 3x for large screens, still under 100 KB", () => {

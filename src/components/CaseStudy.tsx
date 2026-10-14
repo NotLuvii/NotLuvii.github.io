@@ -5,11 +5,14 @@ import { ButtonLink, Chevron, TextLink } from "@/components/ui/links";
 import { CodeBlock } from "@/components/ui/CodeBlock";
 import { Screenshot } from "@/components/ui/Screenshot";
 
-/** A case-study section: its heading stays in the left column while the section scrolls (desktop). */
+/**
+ * A case-study section: its heading stays in the left column while the section scrolls (desktop).
+ * Sections are separated by space, not lines.
+ */
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
-    <section aria-labelledby={id} className="border-t border-line py-14 md:grid md:grid-cols-[220px_minmax(0,1fr)] md:gap-12 md:py-20">
-      <h2 id={id} className="text-[20px] font-semibold text-text md:sticky md:top-24 md:self-start">
+    <section aria-labelledby={id} className="py-12 md:grid md:grid-cols-[240px_minmax(0,1fr)] md:gap-12 md:py-16">
+      <h2 id={id} className="type-title text-text md:sticky md:top-24 md:self-start">
         {title}
       </h2>
       {/* Text keeps a readable measure; screenshots may use the column's full width. */}
@@ -23,7 +26,7 @@ function Bullets({ items }: { items: string[] }) {
     <ul className="space-y-4">
       {items.map((item) => (
         <li key={item} className="grid grid-cols-[20px_minmax(0,1fr)]">
-          <span aria-hidden className="mt-[0.8em] h-px w-3 bg-amber" />
+          <span aria-hidden className="mt-[0.7em] size-1.5 rounded-full bg-text-3" />
           <span>{item}</span>
         </li>
       ))}
@@ -41,27 +44,30 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
       <article>
         <header>
           <div className="mx-auto max-w-[1200px] px-gutter pb-16 pt-8 md:pb-24">
-            <Link href="/#projects" className="type-label inline-flex min-h-11 items-center gap-2 text-text-2 underline-offset-4 hover:text-amber hover:underline">
+            <Link href="/#projects" className="type-small inline-flex min-h-11 items-center gap-2 text-text-2 underline-offset-4 hover:underline">
               <Chevron left className="translate-y-px" />
               All projects
             </Link>
-            <p className="type-label mt-10 text-text-3">
-              {p.kind} · {p.year} · {p.team}
-            </p>
-            <h1 className="type-display mt-3 max-w-[18ch] text-text">{p.title}</h1>
+            <h1 className="type-hero mt-10 max-w-[16ch] text-text">{p.title}</h1>
             <p className="type-lede mt-6 max-w-[52ch] text-text-2">{p.summary}</p>
-            <dl className="mt-12 grid max-w-[900px] gap-x-10 gap-y-6 border-t border-line pt-8 sm:grid-cols-3">
+            <dl className="mt-12 grid max-w-[1000px] gap-x-10 gap-y-6 rounded-xl bg-panel p-6 sm:grid-cols-2 md:p-8 lg:grid-cols-4">
               <div>
-                <dt className="type-label text-text-3">Role</dt>
-                <dd className="type-small mt-2 text-text-2">{c.role}</dd>
+                <dt className="type-small text-text-3">Project</dt>
+                <dd className="mt-1 text-[17px] text-text">
+                  {p.kind}, {p.year}
+                </dd>
               </div>
               <div>
-                <dt className="type-label text-text-3">Stack</dt>
-                <dd className="type-small mt-2 text-text-2">{p.stack.join(", ")}</dd>
+                <dt className="type-small text-text-3">Role</dt>
+                <dd className="mt-1 text-[17px] text-text">{c.role}</dd>
               </div>
               <div>
-                <dt className="type-label text-text-3">Availability</dt>
-                <dd className="type-small mt-2 text-text-2">{p.availability}</dd>
+                <dt className="type-small text-text-3">Stack</dt>
+                <dd className="mt-1 text-[17px] text-text">{p.stack.join(", ")}</dd>
+              </div>
+              <div>
+                <dt className="type-small text-text-3">Availability</dt>
+                <dd className="mt-1 text-[17px] text-text">{p.availability}</dd>
               </div>
             </dl>
             <div className="mt-10">
@@ -84,7 +90,7 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
           </Section>
 
           <Section id="decision" title="Key decision">
-            <h3 className="text-[19px] font-semibold text-text">{c.decision.title}</h3>
+            <h3 className="type-lede text-text">{c.decision.title}</h3>
             {c.decision.body.map((t) => (
               <p key={t}>{t}</p>
             ))}
@@ -101,7 +107,7 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
             ))}
             {c.figures.length > 0 && (
               <div className="figures space-y-5 pt-4">
-                {c.figuresNote && <p className="type-label text-text-3">{c.figuresNote}</p>}
+                {c.figuresNote && <p className="type-small text-text-3">{c.figuresNote}</p>}
                 <div className={c.figures.length > 1 ? "grid items-start gap-10 sm:grid-cols-2" : "max-w-[560px]"}>
                   {c.figures.map((f) => (
                     <div key={f.src} data-scene="pass" className="frame">
@@ -130,10 +136,13 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
           </Section>
         </div>
 
-        <nav aria-label="Next project" className="border-t border-line">
-          <div className="mx-auto max-w-[1200px] px-gutter py-14">
-            <p className="type-label text-text-3">Next project</p>
-            <Link href={projectHref(next.slug)} className="group mt-2 inline-flex min-h-11 items-center gap-3 text-[clamp(1.75rem,3vw,2.5rem)] font-semibold text-text [font-stretch:90%] hover:text-amber">
+        <nav aria-label="Next project" className="bg-panel">
+          <div className="mx-auto max-w-[1200px] px-gutter py-16 md:py-20">
+            <p className="type-small text-text-3">Next project</p>
+            <Link
+              href={projectHref(next.slug)}
+              className="type-section group mt-2 inline-flex min-h-11 items-center gap-3 text-text decoration-2 underline-offset-[8px] hover:underline"
+            >
               {next.title}
               <Chevron className="translate-y-px transition-transform duration-200 group-hover:translate-x-1" />
             </Link>

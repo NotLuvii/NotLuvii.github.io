@@ -87,8 +87,33 @@ describe("colour", () => {
     expect(offenders(/background-clip:\s*text|bg-clip-text/)).toEqual([]);
   });
 
-  it("has no frosted glass", () => {
-    expect(offenders(/backdrop-filter|backdrop-blur|backdrop-saturate/)).toEqual([]);
+  it("has one see-through surface, the site bar, with solid fallbacks", () => {
+    // Only the .site-bar rules in globals.css may blur what's behind them.
+    const blur = offenders(/backdrop-filter|backdrop-blur|backdrop-saturate/);
+    expect(blur.length).toBeGreaterThan(0);
+    for (const line of blur) expect(line.startsWith("src/app/globals.css")).toBe(true);
+    const rules = [...css.matchAll(/([^{}]+)\{[^{}]*backdrop-filter[^{}]*\}/g)].map((m) => m[1].trim());
+    for (const selector of rules) expect(selector).toMatch(/\.site-bar/);
+    expect(css).toMatch(/prefers-reduced-transparency:\s*reduce[\s\S]*?\.site-bar/);
+    expect(css).toMatch(/@supports not \(backdrop-filter/);
+    expect(readFileSync(join(SRC, "components/layout/SiteHeader.tsx"), "utf8")).toContain("site-bar");
+  });
+
+  it("keeps gradients to the scan line's amber glow: never blue or purple", () => {
+    const gradients = sources.flatMap(({ path, text }) =>
+      [...text.matchAll(/(?:linear|radial|conic)-gradient\(([^;]*?)\)\s*;|bg-gradient-to-\w+|bg-linear-\w+|bg-radial/g)].map((m) => ({ path, body: m[0] })),
+    );
+    expect(gradients.length).toBeLessThanOrEqual(1);
+    for (const { path, body } of gradients) {
+      const colours = [...body.matchAll(/rgba?\((\d+)\s*,?\s*(\d+)\s*,?\s*(\d+)/g)].map(
+        (m) => "#" + [m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, "0")).join(""),
+      );
+      colours.push(...[...body.matchAll(/#[0-9a-fA-F]{6}\b/g)].map((m) => m[0]));
+      for (const c of colours) {
+        const { h, s } = hexToHsl(c);
+        expect(h >= 180 && h <= 300 && s > 0.2, `${path}: ${c} is blue or purple`).toBe(false);
+      }
+    }
   });
 
   it("uses one accent, signal amber", () => {
@@ -102,7 +127,28 @@ describe("colour", () => {
       expect(contrast(token("text-3"), bg)).toBeGreaterThanOrEqual(4.5);
       expect(contrast(token("amber"), bg)).toBeGreaterThanOrEqual(4.5);
     }
+    // Screenshot bezels and code panels sit on a slightly lighter surface.
+    expect(contrast(token("text"), token("raised"))).toBeGreaterThanOrEqual(7);
+    expect(contrast(token("text-3"), token("raised"))).toBeGreaterThanOrEqual(4.5);
+    // Sections alternate between the page and panel tones, so the step must be visible.
+    expect(luminance(token("panel")) - luminance(token("page"))).toBeGreaterThan(0.003);
     expect(contrast(token("on-amber"), token("amber"))).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("type, continued", () => {
+  it("sets monospace only for code", () => {
+    const mono = offenders(/font-mono|--font-mono|type-label/, (path) => /(ui\/CodeBlock\.tsx|app\/fonts\.ts|app\/layout\.tsx)$/.test(path));
+    // globals.css may define the token and apply it to code and pre, nothing else.
+    expect(mono.every((line) => line.startsWith("src/app/globals.css"))).toBe(true);
+    expect(mono).toHaveLength(2);
+  });
+});
+
+describe("touch", () => {
+  it("turns off the browser's grey tap flash and the double-tap delay", () => {
+    expect(css).toMatch(/-webkit-tap-highlight-color:\s*transparent/);
+    expect(css).toMatch(/touch-action:\s*manipulation/);
   });
 });
 

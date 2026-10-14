@@ -34,40 +34,53 @@ export function Screenshot({
   priority = false,
   className,
   sizes,
+  scan = false,
 }: {
   shot: Shot;
   priority?: boolean;
   className?: string;
   /** Rendered width, for picking 1x or 2x. Defaults to the image's own width. */
   sizes?: string;
+  /** Carries the scan overlay, run by a surrounding ScanOnView. */
+  scan?: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const [open, setOpen] = useState(false);
+  // The full-size image loads the first time the viewer opens, then stays, so it can fade out.
+  const [loaded, setLoaded] = useState(false);
   const one = `${shot.src}.webp`;
   const two = `${shot.src}@2x.webp`;
+  const srcSet = [`${one} ${shot.width}w`, `${two} ${shot.width * 2}w`, ...(shot.large ? [`${shot.src}@3x.webp ${shot.width * 3}w`] : [])].join(", ");
 
   const show = () => {
-    setOpen(true);
+    setLoaded(true);
     dialog.current?.showModal();
   };
   const close = () => dialog.current?.close();
 
   return (
     <figure className={cn("min-w-0", className)}>
-      <div className="group relative overflow-hidden rounded-xl border border-line bg-panel">
-        {/* eslint-disable-next-line @next/next/no-img-element -- static export: pre-sized WebP files, no image optimizer */}
-        <img
-          src={one}
-          srcSet={`${one} ${shot.width}w, ${two} ${shot.width * 2}w`}
-          sizes={sizes ?? `(min-width: 768px) ${shot.width}px, 100vw`}
-          width={shot.width}
-          height={shot.height}
-          alt={shot.alt}
-          loading={priority ? "eager" : "lazy"}
-          fetchPriority={priority ? "high" : undefined}
-          decoding="async"
-          className="block h-auto w-full"
-        />
+      <div className="group relative rounded-xl bg-raised p-1.5">
+        <div className="relative overflow-hidden rounded-md">
+          {/* eslint-disable-next-line @next/next/no-img-element -- static export: pre-sized WebP files, no image optimizer */}
+          <img
+            src={one}
+            srcSet={srcSet}
+            sizes={sizes ?? `(min-width: 768px) ${shot.width}px, 100vw`}
+            width={shot.width}
+            height={shot.height}
+            alt={shot.alt}
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : undefined}
+            decoding="async"
+            className="block h-auto w-full"
+          />
+          {scan && (
+            <>
+              <div aria-hidden className="scan-cover" />
+              <div aria-hidden className="scan-beam" />
+            </>
+          )}
+        </div>
         <button
           type="button"
           onClick={show}
@@ -77,18 +90,17 @@ export function Screenshot({
         >
           <span
             data-magnifier
-            className="flex size-12 scale-90 items-center justify-center rounded-full bg-page text-amber opacity-0 ring-1 ring-white/25 transition duration-200 group-hover:scale-100 group-hover:opacity-100 group-has-[:focus-visible]:scale-100 group-has-[:focus-visible]:opacity-100 [@media(hover:none)]:scale-100 [@media(hover:none)]:opacity-100"
+            className="flex size-12 scale-90 items-center justify-center rounded-full bg-black/75 text-white opacity-0 transition duration-200 group-hover:scale-100 group-hover:opacity-100 group-has-[:focus-visible]:scale-100 group-has-[:focus-visible]:opacity-100 [@media(hover:none)]:scale-100 [@media(hover:none)]:opacity-100"
           >
             <Magnifier />
           </span>
         </button>
       </div>
-      <figcaption className="type-caption mt-3 text-text-3">{shot.caption}</figcaption>
+      <figcaption className="type-small mt-3 text-text-3">{shot.caption}</figcaption>
 
       <dialog
         ref={dialog}
         aria-label={shot.caption}
-        onClose={() => setOpen(false)}
         // A click on the dark area around the image (the dialog itself) closes it.
         onClick={(e) => {
           if (e.target === e.currentTarget) close();
@@ -101,7 +113,7 @@ export function Screenshot({
             if (e.target === e.currentTarget) close();
           }}
         >
-          {open && (
+          {loaded && (
             // eslint-disable-next-line @next/next/no-img-element -- see above
             <img
               src={two}
@@ -112,7 +124,7 @@ export function Screenshot({
               className="block h-auto max-h-[calc(100dvh-9rem)] w-auto max-w-full rounded-lg bg-white object-contain shadow-2xl"
             />
           )}
-          <p className="type-caption max-w-[70ch] text-center text-white/80">{shot.caption}</p>
+          <p className="type-small max-w-[70ch] text-center text-white/80">{shot.caption}</p>
         </div>
         <button
           type="button"

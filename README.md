@@ -5,8 +5,8 @@
 A static Next.js site: one home page and a case study for each featured project.
 
 - **Home (`/`)**: opening screen (with a real screenshot of the scam detection tool), a short
-  introduction, three selected projects (each with a real screenshot or code excerpt), more
-  projects, experience, skills and background, contact.
+  introduction, three project showcases (each with a large real screenshot or code excerpt and a
+  row of figures from its result), more projects, experience, skills and background, contact.
 - **Case studies (`/projects/<slug>/`)**: context, what I built, the key decision (with a verbatim
   code excerpt linked to the file on GitHub), outcome with screenshots, limitations, and links into
   the repository.
@@ -58,40 +58,51 @@ npm run dev            # http://localhost:3000
 | --- | --- |
 | `npm run typecheck` | Generates Next.js route types, then TypeScript in strict mode |
 | `npm run lint` | ESLint with the Next.js rules |
-| `npm test` | Vitest: content rules, link allow-list, screenshot files and sizes, the design rules, the scroll-progress maths |
+| `npm test` | Vitest: content rules, link allow-list, screenshot files and sizes, the design rules (fonts, colours and contrast, one see-through surface, gradient hues, monospace, touch), the scroll-progress maths |
 | `npm run build` | Static export to `out/` |
 | `npm start` | Serves `out/` on http://localhost:3000, the way GitHub Pages does |
-| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: every link, the case-study routes and their images, opening a screenshot full screen and closing it (Escape, close button, click outside) without leaving the page, the resume, the phone menu, the skip link, focus outlines, anchors below the sticky header, copying the email (including when the clipboard is refused), no sideways scrolling at 375, 390, 768, 1024 and 1440px, 44px tap targets, heading order, the opening screenshot (centred, scanned once, turning flat as you scroll, not repeated by the first project), the introduction's highlights, nothing held in place, reduced motion and no-JavaScript |
+| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: every link, the case-study routes and their images, opening a screenshot full screen and closing it (Escape, close button, click outside) without leaving the page, the resume, the phone menu, the skip link, focus outlines, anchors below the sticky header, copying the email (including when the clipboard is refused), no sideways scrolling and no text past the edge of a phone screen, 44px tap targets, heading order, the opening screenshot (centred, scanned once, turning flat as you scroll, the phone crop on phones), the project showcases and their figures, the type scale, monospace only in code, no dividing lines, amber kept for the main action, the see-through bar, press feedback, the menu and viewer transitions, reduced motion and no-JavaScript |
 
 `.github/workflows/ci.yml` runs all of it on every push.
 
 ## Design
 
-- **Colour**: a near-black page (`#0a0a0b`), `#141416` panels, `#f5f5f7` text with two quieter
-  greys, `#2c2c2e` lines and one accent, signal amber (`#ffb000`). Contrast ratios are listed at
-  the top of `src/app/globals.css`; all text meets WCAG AA and the tests recheck them.
-- **Type**: IBM Plex Sans (variable weight and width) and IBM Plex Mono, self-hosted (licence in
-  `src/fonts/IBM-Plex-LICENSE.txt`). Headings use a slightly condensed width; labels, dates and
-  file names are set in Plex Mono.
+Modelled on Apple's product pages (studied on the iPad Pro page), without their gradient text.
+
+- **Colour**: a near-black page (`#0a0a0b`) and a dark-grey panel tone (`#161617`) that sections
+  alternate between, so they're separated by tone rather than lines; a slightly lighter `#1d1d1f`
+  for screenshot bezels and code; `#f5f5f7` text with two quieter greys; and one accent, signal
+  amber (`#ffb000`), kept for the main action, the scan line and keyboard focus. Contrast ratios
+  are listed at the top of `src/app/globals.css`; all text meets WCAG AA and the tests recheck them.
+- **Type**: IBM Plex Sans (variable weight and width), self-hosted (licence in
+  `src/fonts/IBM-Plex-LICENSE.txt`), on seven sizes at desktop width: 64, 56, 36, 28, 21, 17 and
+  14px. Most reading happens at 17–21px; body copy is grey with key phrases in white. IBM Plex
+  Mono is used for code only.
+- **Site bar**: the one see-through surface: it blurs the sections scrolling under it instead of
+  drawing a line. Solid where blur isn't supported or the visitor asks for less transparency.
 - **Opening screen**: name, headline and the two main actions, centred, then the scam detection
   tool's result panel (`heroShot` in `projects.ts`, also exported at 3x) framed and large on the
-  first screen. On load the frame rises into place and an amber scan line passes down the
-  screenshot once, lighting it as it goes. As you scroll, the frame turns from tilted back to
-  facing you and the words lift away, on CSS scroll timelines, so nothing waits for JavaScript and
-  nothing is held in place. Browsers without scroll timelines show the frame flat.
-- **Introduction**: one grey paragraph with its key phrases in white (`introKeyPhrases` in
-  `site.ts`), so it can be read at a glance. Static.
+  first screen; phones get the same result from the tool's own phone layout. On load the frame
+  rises into place and an amber scan line passes down the screenshot once. As you scroll, the
+  frame turns from tilted back to facing you and the words lift away, on CSS scroll timelines.
+- **Project showcases**: each project gets a centred title, a grey summary with its key phrase in
+  white, a large picture, two or three figures from its result (`stats` in `projects.ts`) and its
+  links. The same scan line passes over each picture once as it arrives
+  (`components/motion/ScanOnView.tsx`).
 - **Scroll scenes**: `src/components/motion/ScrollScenes.tsx` writes a progress value (`--p`,
   0 to 1) on each `[data-scene]` element while it is on screen; the CSS in `globals.css` reads it.
-  Project screenshots and code tilt flat as they arrive, and the experience timeline fills with
-  amber. Every rule falls back to the finished state, so with JavaScript off or reduced motion on,
-  nothing animates and everything is readable. The progress maths is in `progress.ts` and unit
-  tested.
-- **Entrance**: below-the-fold blocks fade up the first time they scroll into view. Nothing is
-  hidden in the HTML: elements are only marked for the effect after the page loads.
-- **House rules** (checked by `tests/design.test.ts`): no gradient text, no frosted glass or
-  blur, no purple, corners at most 12px, shadows only on the screenshot viewer, no emoji, no
-  all-caps labels, and none of the default fonts that make sites look generated.
+  Project pictures tilt flat as they arrive, and the experience timeline's track fills. Text
+  never animates. Every rule falls back to the finished state, so with JavaScript off or reduced
+  motion on, nothing moves and everything is readable. The progress maths is in `progress.ts` and
+  unit tested.
+- **Feel**: buttons shrink slightly the moment they're pressed; taps don't flash the browser's
+  grey highlight or wait for a double-tap; the phone menu eases down; a full-screen screenshot
+  fades in and out.
+- **House rules** (checked by `tests/design.test.ts` and the end-to-end tests): one see-through
+  surface (the site bar); one gradient, the scan line's amber glow, and never a blue or purple
+  one; no gradient text; no dividing lines (code panels aside); monospace for code only;
+  corners at most 12px; shadows only on the screenshot viewer; no emoji; no all-caps labels; and
+  none of the default fonts that make sites look generated.
 
 ## Deploy
 

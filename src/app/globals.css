@@ -1,18 +1,22 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────────
-   Tokens. A near-black page, one accent (signal amber) and
-   high-contrast text. Contrast, WCAG 2.2 normal text:
-     text    #f5f5f7 on page 18.2:1, on panel 16.9:1
-     text-2  #c7c7cc on page 11.8:1, on panel 10.9:1
-     text-3  #98989d on page  6.9:1, on panel  6.4:1
-     amber   #ffb000 on page 10.8:1, on panel 10.0:1
+   Tokens. A near-black page and a dark-grey panel tone that
+   sections alternate between (instead of dividing lines), a
+   slightly lighter "raised" tone for screenshot bezels and code,
+   high-contrast text and one accent, signal amber, kept for the
+   main action. Contrast, WCAG 2.2 normal text:
+     text    #f5f5f7 on page 18.2:1, panel 16.4:1, raised 15.4:1
+     text-2  #c7c7cc on page 11.8:1, panel 10.6:1, raised  9.9:1
+     text-3  #98989d on page  6.9:1, panel  6.2:1, raised  5.8:1
+     amber   #ffb000 on page 10.8:1, panel  9.7:1
      on-amber #0a0a0b on amber 10.8:1 (hover #ffc53d 12.5:1)
    Checked in tests/design.test.ts.
    ────────────────────────────────────────────────────────────── */
 @theme {
   --color-page: #0a0a0b;
-  --color-panel: #141416;
+  --color-panel: #161617;
+  --color-raised: #1d1d1f;
   --color-text: #f5f5f7;
   --color-text-2: #c7c7cc;
   --color-text-3: #98989d;
@@ -36,6 +40,8 @@
     color: var(--color-text);
     color-scheme: dark;
     -webkit-text-size-adjust: 100%;
+    /* No grey flash on tap: controls give their own press feedback. */
+    -webkit-tap-highlight-color: transparent;
     overflow-x: clip;
     scroll-behavior: smooth;
     /* Sticky header (56px) plus breathing room, so anchors land below it. */
@@ -71,6 +77,14 @@
 
   button {
     cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Taps fire at once: no wait to see whether a double-tap zoom is coming. */
+  a,
+  button {
+    touch-action: manipulation;
   }
 
   code,
@@ -79,66 +93,61 @@
   }
 }
 
-/* ── Type ─────────────────────────────────────────────────── */
-@utility type-display {
-  font-size: clamp(2.5rem, 4.8vw, 3.75rem);
-  line-height: 1.04;
-  font-weight: 600;
-  font-stretch: 88%;
-  letter-spacing: -0.005em;
-}
-
-/* The opening headline: sized by width and, on short screens, by height, so the screenshot
-   below it always starts on the first screen. */
+/* ── Type ─────────────────────────────────────────────────────
+   Seven sizes at desktop width, in one family: 64 (opening
+   headline), 56 (section and project titles), 36 (statements and
+   figures), 28 (titles), 21 (lede), 17 (body), 14 (small print).
+   Most reading happens at 17–21px; IBM Plex Mono is for code only. */
 @utility type-hero {
-  font-size: clamp(2.5rem, min(5vw, 8.5svh), 4.75rem);
-  line-height: 1.04;
+  font-size: clamp(2.25rem, min(4.4vw, 8svh), 4rem);
+  line-height: 1.05;
   font-weight: 600;
   font-stretch: 88%;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.012em;
   text-wrap: balance;
 }
 
 @utility type-section {
-  font-size: clamp(2.25rem, 4.6vw, 3.5rem);
-  line-height: 1.04;
+  font-size: clamp(2.25rem, 4.4vw, 3.5rem);
+  line-height: 1.07;
   font-weight: 600;
   font-stretch: 90%;
-}
-
-@utility type-title {
-  font-size: clamp(1.75rem, 2.8vw, 2.5rem);
-  line-height: 1.1;
-  font-weight: 600;
-  font-stretch: 90%;
+  letter-spacing: -0.008em;
+  text-wrap: balance;
 }
 
 @utility type-statement {
-  font-size: clamp(1.5rem, 2.7vw, 2.5rem);
-  line-height: 1.28;
+  font-size: clamp(1.5rem, 2.4vw, 2.25rem);
+  line-height: 1.25;
   font-weight: 600;
   font-stretch: 95%;
+  letter-spacing: -0.005em;
   text-wrap: pretty;
 }
 
-@utility type-lede {
-  font-size: clamp(1.1875rem, 1.7vw, 1.375rem);
-  line-height: 1.45;
+@utility type-stat {
+  font-size: clamp(2rem, 2.4vw, 2.25rem);
+  line-height: 1.1;
+  font-weight: 600;
+  font-stretch: 90%;
+  font-variant-numeric: tabular-nums;
 }
 
-@utility type-label {
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  line-height: 1.5;
-  font-weight: 500;
+@utility type-title {
+  font-size: clamp(1.5rem, 2vw, 1.75rem);
+  line-height: 1.2;
+  font-weight: 600;
+  font-stretch: 95%;
+}
+
+@utility type-lede {
+  font-size: clamp(1.1875rem, 1.5vw, 1.3125rem);
+  line-height: 1.45;
+  font-weight: 600;
+  text-wrap: pretty;
 }
 
 @utility type-small {
-  font-size: 0.9375rem;
-  line-height: 1.55;
-}
-
-@utility type-caption {
   font-size: 0.875rem;
   line-height: 1.5;
 }
@@ -147,9 +156,9 @@
    The screenshot's resting state is flat and uncovered; everything
    below only adds motion when the visitor allows it. */
 .hero-stage {
-  /* As wide as the column allows, up to 860px, and narrower on short screens so that most of
+  /* As wide as the column allows, up to 1000px, and narrower on short screens so that most of
      the screenshot (and so the scan) is on the first screen. */
-  width: min(100% - 2 * var(--spacing-gutter), 860px, max(520px, (100svh - 400px) * 2.4));
+  width: min(100% - 2 * var(--spacing-gutter), 1000px, max(520px, (100svh - 400px) * 2.4));
   perspective: 1400px;
 }
 .hero-frame {
@@ -192,11 +201,22 @@
   .hero-arrive {
     animation: hero-arrive 1s var(--ease-out-soft) both;
   }
-  .scan-cover {
+  .hero .scan-cover {
     animation: scan-cover 2.6s var(--ease-scan) 0.6s both;
   }
-  .scan-beam {
+  .hero .scan-beam {
     animation: scan-beam 2.6s var(--ease-scan) 0.6s both;
+  }
+  /* Each project's picture: dimmed while it waits below the fold, then scanned once as it
+     arrives (components/motion/ScanOnView.tsx sets data-scan). */
+  [data-scan="wait"] .scan-cover {
+    transform: scaleY(1);
+  }
+  [data-scan="run"] .scan-cover {
+    animation: scan-cover 1.6s var(--ease-scan) 0.15s both;
+  }
+  [data-scan="run"] .scan-beam {
+    animation: scan-beam 1.6s var(--ease-scan) 0.15s both;
   }
   /* As you scroll: the frame turns to face you and the words lift away. */
   @supports (animation-timeline: scroll()) {
@@ -255,6 +275,49 @@
   }
 }
 
+/* ── Site bar (components/layout/SiteHeader.tsx) ────────────────
+   The one see-through surface. Sections alternate in tone, so a
+   solid bar would clash with whichever is underneath; this lets
+   them show through, blurred, with no dividing line. Solid where
+   blur isn't supported or the visitor asks for less transparency. */
+.site-bar {
+  background: rgb(10 10 11 / 0.78);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .site-bar {
+    background: var(--color-page);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .site-bar {
+    background: var(--color-page);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* The phone menu eases down into place when it opens. */
+@media (prefers-reduced-motion: no-preference) {
+  .menu-panel {
+    transition:
+      opacity 0.2s var(--ease-out-soft),
+      transform 0.2s var(--ease-out-soft);
+  }
+  @starting-style {
+    .menu-panel {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+}
+
+/* Project showcases alternate in tone, starting on the panel. */
+.showcase:nth-of-type(odd) {
+  background: var(--color-panel);
+}
+
 /* ── Scroll scenes ─────────────────────────────────────────────
    components/motion/ScrollScenes.tsx writes --p (0 to 1) on each
    [data-scene] element while it is on screen. Every rule reads --p
@@ -275,54 +338,40 @@
   transform-origin: top;
 }
 
-/* ── Entrance (components/ui/Reveal.tsx) ──────────────────────
-   Marked "pending" only after load, only below the fold, never
-   under reduced motion. */
-@media (prefers-reduced-motion: no-preference) {
-  [data-reveal="pending"] {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  [data-reveal="shown"] {
-    opacity: 1;
-    transform: none;
-    transition:
-      opacity 0.6s var(--ease-out-soft),
-      transform 0.6s var(--ease-out-soft);
-  }
-}
-
-@media print {
-  [data-reveal] {
-    opacity: 1 !important;
-    transform: none !important;
-  }
-}
-
 /* ── Screenshot viewer ─────────────────────────────────────────
-   The page behind stays put while a screenshot is open full screen. */
+   The page behind stays put while a screenshot is open full screen.
+   It fades in slightly larger than it fades out, and closing is the
+   quicker of the two. */
 html:has(dialog.lightbox[open]) {
   overflow: hidden;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  dialog.lightbox[open] {
-    animation: lightbox-in 0.2s var(--ease-out-soft);
-  }
-  dialog.lightbox[open]::backdrop {
-    animation: lightbox-fade 0.2s ease-out;
-  }
-}
-
-@keyframes lightbox-in {
-  from {
+  dialog.lightbox,
+  dialog.lightbox::backdrop {
     opacity: 0;
+    transition:
+      opacity 0.15s ease-out,
+      transform 0.15s ease-out,
+      overlay 0.15s allow-discrete,
+      display 0.15s allow-discrete;
+  }
+  dialog.lightbox {
     transform: scale(0.98);
   }
-}
-
-@keyframes lightbox-fade {
-  from {
-    opacity: 0;
+  dialog.lightbox[open],
+  dialog.lightbox[open]::backdrop {
+    opacity: 1;
+    transform: none;
+    transition-duration: 0.2s;
+  }
+  @starting-style {
+    dialog.lightbox[open],
+    dialog.lightbox[open]::backdrop {
+      opacity: 0;
+    }
+    dialog.lightbox[open] {
+      transform: scale(0.98);
+    }
   }
 }

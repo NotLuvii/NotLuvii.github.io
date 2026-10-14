@@ -18,7 +18,12 @@ export type Screenshot = {
   height: number;
   alt: string;
   caption: string;
+  /** Also exported at 3x (`${src}@3x.webp`), for pictures shown larger than their 1x width. */
+  large?: boolean;
 };
+
+/** A figure from a project's result, shown large on the home page with a line saying what it measures. */
+export type Stat = { value: string; label: string };
 
 export type CodeExcerpt = {
   /** File path inside the repository, shown above the code. */
@@ -37,12 +42,12 @@ export type FeaturedProject = {
   team: string;
   /** Who it's for and the problem, in one or two sentences. */
   summary: string;
-  /** Which case-study figure the home page shows beside the project. Defaults to the first. */
-  homeFigure?: number;
-  /** One sentence each for the home page card. */
-  built: string;
-  decision: string;
-  result: string;
+  /** The part of the summary shown in white on the home page, so it can be read at a glance. */
+  summaryKeyPhrase: string;
+  /** Two or three figures from the result, for the home page. Each must be true of the project. */
+  stats: Stat[];
+  /** The screenshot the home page shows, if not the first case-study figure (or the code, if none). */
+  homeShot?: Screenshot;
   stack: string[];
   repo: Link;
   /** Whether there's a live demo, said plainly. */
@@ -80,14 +85,15 @@ const scam: FeaturedProject = {
   kind: "Personal project",
   year: "2026",
   team: "Solo",
-  // The email check is on the opening screen; beside the project, show the listing check instead.
-  homeFigure: 1,
   summary:
     "A browser tool that checks a suspicious email, text message, listing or link, scores it from 0 to 100 and lists the red flags behind the score.",
-  built: "Four rule-based checkers in JavaScript, and an optional Express server that fetches listing pages.",
-  decision:
-    "A link counts as official only if its hostname equals a known domain or is a subdomain of one, so amazon.com.example.net fails.",
-  result: "The sample scams in its README all score High; www.amazon.com scores 0.",
+  summaryKeyPhrase: "scores it from 0 to 100 and lists the red flags behind the score",
+  // From the outcome below: the README's sample inputs, scored by the tool.
+  stats: [
+    { value: "100", label: "The README’s sample phishing email, flagged High" },
+    { value: "70", label: "The lookalike link paypal-secure.com/verify-now, flagged High" },
+    { value: "0", label: "www.amazon.com, reported as a recognised domain" },
+  ],
   stack: ["JavaScript", "HTML and CSS", "Node.js", "Express", "Cheerio"],
   repo: { label: "Code on GitHub", href: `${GH}/Fraud-Detection-Tool` },
   availability: "No live demo; it runs locally.",
@@ -153,6 +159,7 @@ const scam: FeaturedProject = {
         src: "/images/scam-detection/url-lookalike",
         width: 592,
         height: 544,
+        large: true,
         alt: "The Link / URL tab with paypal-secure.com/verify-now entered. Risk score 70 percent, High risk, with two issues: a brand name with a hyphen and an extra word, and a path that suggests login or verification.",
         caption: "Lookalike link: paypal-secure.com/verify-now scores 70, High.",
       },
@@ -172,6 +179,9 @@ const scam: FeaturedProject = {
   },
 };
 
+// The email check is on the opening screen; the scam showcase shows the link check instead.
+scam.homeShot = scam.caseStudy.figures.find((f) => f.src.endsWith("url-lookalike"));
+
 const immensa: FeaturedProject = {
   slug: "immensa-inquiry-app",
   title: "Immensa inquiry app",
@@ -180,9 +190,13 @@ const immensa: FeaturedProject = {
   team: "Solo",
   summary:
     "An Android app for sales inquiries about 3D-printed industrial parts: one form for the part, material, files, criticality and testing, sent as one structured email.",
-  built: "A Kotlin inquiry form with camera capture, plus currency, part-weight and unit converters.",
-  decision: "Client, part and material are required, and empty optional fields are sent as “Not Entered” rather than left blank.",
-  result: "Every inquiry arrives in the same format, with its photos attached.",
+  summaryKeyPhrase: "sent as one structured email",
+  // From the case study: the required fields, and the tools screen's currencies and alloys.
+  stats: [
+    { value: "3", label: "Fields required before an inquiry can be sent: client, part and material" },
+    { value: "6", label: "Currencies in the converter, from the UAE dirham to the Canadian dollar" },
+    { value: "9", label: "Alloys in the part-weight calculator, including Inconel 718 and Ti-6Al-4V" },
+  ],
   stack: ["Kotlin", "Android SDK"],
   repo: { label: "Code on GitHub", href: `${GH}/Mobile-app` },
   availability: "Android app; the source and a release build are on GitHub.",
@@ -271,9 +285,20 @@ const resume: FeaturedProject = {
   team: "Solo",
   summary:
     "Compares a resume (PDF or Word) with a job description and gives a relevance score, the shared and missing skills, and interview questions for the role.",
-  built: "A Flask web app and a Tkinter desktop app with charts, sharing one Python backend that parses PDF and Word files.",
-  decision: "Skills are matched against curated lists of 279 technical and 49 soft skills, so ordinary words never count as skills.",
-  result: "On my resume and a sample posting, it scored 55.6%: five of the posting’s nine skills found, Docker and Kubernetes flagged as missing.",
+  summaryKeyPhrase: "gives a relevance score",
+  // From the outcome: my resume against the sample posting shown in the screenshot.
+  stats: [
+    { value: "55.6%", label: "Relevance score for my resume against a sample posting" },
+    { value: "5 of 9", label: "Skills from the posting found in the resume" },
+    { value: "2", label: "Technical skills flagged as missing: Docker and Kubernetes" },
+  ],
+  homeShot: {
+    src: "/images/resume-analyzer/score",
+    width: 872,
+    height: 625,
+    alt: "The Resume Analyzer web page with a sample job description entered and Luvneet_Bamrah_Resume.pdf chosen. Under Analysis Results, the relevance score is 55.6 percent, shown with a bar and a note that it is the weighted share of the posting’s skills the resume mentions.",
+    caption: "The top of the result for my resume against a sample posting: relevance score 55.6%.",
+  },
   stack: ["Python", "Flask", "PyMuPDF", "python-docx", "Tkinter", "Matplotlib", "pytest", "JavaScript"],
   repo: { label: "Code on GitHub", href: `${GH}/Resume-Analyze` },
   availability: "No live demo; it runs locally with Flask.",
@@ -348,10 +373,13 @@ const resume: FeaturedProject = {
  * it fits on the first screen and the scan over it can be seen; also exported at 3x
  * (email-result@3x.webp) because the opening frame is wider than the case-study figures.
  */
-export const heroShot: Screenshot = {
+export const heroShot: Screenshot & { phone: { src: string; width: number; height: number } } = {
   src: "/images/scam-detection/email-result",
   width: 592,
   height: 329,
+  large: true,
+  /** The same result from the tool's own phone layout, for phone screens (1x, 2x and 3x). */
+  phone: { src: "/images/scam-detection/email-result-phone", width: 390, height: 407 },
   alt: "Result panel of the scam detection tool: risk score 100 percent, High risk, treat as suspicious. Five issues are listed: urgency language “immediately”, urgency language “click here to restore”, a generic greeting, suspicious domain-like text “paypal-secure”, and a request for sensitive information or to click or verify.",
   caption: "The scam detection tool, running locally, after checking the sample phishing email from its README.",
 };

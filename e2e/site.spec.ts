@@ -94,8 +94,8 @@ test.describe("opening", () => {
 
   test("the scan passes down the screenshot once and leaves it fully revealed", async ({ page }) => {
     await page.goto("/");
-    const cover = page.locator(".scan-cover");
-    const beam = page.locator(".scan-beam");
+    const cover = page.locator(".hero .scan-cover");
+    const beam = page.locator(".hero .scan-beam");
     expect(await cover.evaluate((el) => el.getAnimations().length)).toBeGreaterThan(0);
     await expect
       .poll(() => cover.evaluate((el) => el.getAnimations().every((a) => a.playState === "finished")), { timeout: 8000 })
@@ -139,6 +139,200 @@ test.describe("opening", () => {
       const y0 = Math.max(0, Math.round(start));
       expect(Math.round((await at(y0)) - (await at(y0 + 200)))).toBe(200);
     }
+  });
+});
+
+/** Visible text in main, as { size, family, words, inCode } per text node. */
+const textNodes = (page: Page) =>
+  page.evaluate(() => {
+    const out: { size: number; family: string; words: number; inCode: boolean }[] = [];
+    const walker = document.createTreeWalker(document.querySelector("main")!, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const t = walker.currentNode.textContent!.trim();
+      const el = walker.currentNode.parentElement!;
+      if (!t || !el.getBoundingClientRect().width || el.closest(".sr-only, dialog")) continue;
+      const cs = getComputedStyle(el);
+      out.push({ size: Math.round(parseFloat(cs.fontSize)), family: cs.fontFamily, words: t.split(/\s+/).length, inCode: !!el.closest("[data-code]") });
+    }
+    return out;
+  });
+
+test.describe("after the Apple audit", () => {
+  test("no text runs past the edge of a phone screen", async ({ page }) => {
+    for (const width of [375, 390]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const path of PAGES) {
+        await page.goto(path);
+        const past = await page.evaluate(() => {
+          const vw = document.documentElement.clientWidth;
+          return [...document.querySelectorAll("main p, main h1, main h2, main h3, main li, main a, main dt, main dd, footer p, footer a")]
+            .filter((el) => !el.closest("pre, [data-code]") && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > vw + 1)
+            .map((el) => el.textContent!.trim().slice(0, 40));
+        });
+        expect(past, `${path} at ${width}px`).toEqual([]);
+      }
+    }
+  });
+
+  test("type keeps to a short scale, with most words at reading size", async ({ page }) => {
+    test.skip(isPhone(page), "measured on the desktop layout");
+    await page.goto("/");
+    // Code excerpts keep their own size and aren't counted.
+    const nodes = (await textNodes(page)).filter((n) => !n.inCode);
+    const sizes = new Set(nodes.map((n) => n.size));
+    expect([...sizes].sort((a, b) => a - b).length, [...sizes].join(", ")).toBeLessThanOrEqual(8);
+    const words = nodes.reduce((sum, n) => sum + n.words, 0);
+    const small = nodes.filter((n) => n.size < 16).reduce((sum, n) => sum + n.words, 0);
+    expect(small / words).toBeLessThan(0.2);
+  });
+
+  test("monospace is only used for code", async ({ page }) => {
+    for (const path of PAGES) {
+      await page.goto(path);
+      const mono = (await textNodes(page)).filter((n) => /mono/i.test(n.family) && !n.inCode);
+      expect(mono, path).toEqual([]);
+    }
+  });
+
+  test("sections are separated by tone, not by lines", async ({ page }) => {
+    for (const path of PAGES) {
+      await page.goto(path);
+      const lines = await page.evaluate(() =>
+        [...document.querySelectorAll("body *")]
+          .filter((el) => {
+            if (el.closest("[data-code], dialog") || !el.getBoundingClientRect().width) return false;
+            const cs = getComputedStyle(el);
+            return ["Top", "Right", "Bottom", "Left"].some((side) => {
+              const w = parseFloat(cs.getPropertyValue(`border-${side.toLowerCase()}-width`));
+              return w > 0 && cs.getPropertyValue(`border-${side.toLowerCase()}-style`) !== "none";
+            });
+          })
+          .map((el) => `${el.tagName}.${(el.className as string).toString().slice(0, 40)}`),
+      );
+      expect(lines, path).toEqual([]);
+    }
+    await page.goto("/");
+    const panels = await page.evaluate(() => [...document.querySelectorAll("main > *, main section, main article")].filter((el) => getComputedStyle(el).backgroundColor === "rgb(22, 22, 23)").length);
+    expect(panels).toBeGreaterThanOrEqual(3);
+  });
+
+  test("amber is kept for the main action", async ({ page }) => {
+    await page.goto("/");
+    const amber = await page.evaluate(() =>
+      [...document.querySelectorAll("main *")].filter((el) => {
+        const cs = getComputedStyle(el);
+        return el.getBoundingClientRect().width > 0 && (cs.color === "rgb(255, 176, 0)" || cs.backgroundColor === "rgb(255, 176, 0)");
+      }).length,
+    );
+    expect(amber).toBeLessThanOrEqual(2);
+  });
+
+  test("the headline fits on two lines on a desktop screen", async ({ page }) => {
+    test.skip(isPhone(page), "desktop only");
+    await page.goto("/");
+    const lines = await page.getByText(site.headline).evaluate((el) => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)));
+    expect(lines).toBeLessThanOrEqual(2);
+  });
+
+  test("on a phone the opening shows the tool's own phone layout", async ({ page }) => {
+    test.skip(!isPhone(page), "phone only");
+    await page.goto("/");
+    const shot = page.getByRole("img", { name: heroShot.alt });
+    await expect.poll(() => shot.evaluate((img: HTMLImageElement) => img.currentSrc)).toContain(heroShot.phone!.src);
+  });
+
+  test("each project is a showcase: a large picture and a row of figures in white", async ({ page }) => {
+    test.skip(isPhone(page), "desktop only");
+    await page.goto("/");
+    for (const [i, p] of featured.entries()) {
+      const article = page.locator("#projects article").nth(i);
+      expect(await article.locator("[data-frame]").evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThanOrEqual(600);
+      const values = article.locator("[data-stat-value]");
+      await expect(values).toHaveText(p.stats.map((s) => s.value));
+      for (const style of await values.evaluateAll((els) => els.map((e) => ({ color: getComputedStyle(e).color, size: parseFloat(getComputedStyle(e).fontSize) })))) {
+        expect(style.color).toBe("rgb(245, 245, 247)");
+        expect(style.size).toBeGreaterThanOrEqual(32);
+      }
+    }
+  });
+
+  test("resume figures are white, not amber", async ({ page }) => {
+    await page.goto("/");
+    const colours = await page.locator("#experience strong, #experience [data-figure]").evaluateAll((els) => els.map((e) => getComputedStyle(e).color));
+    expect(colours.length).toBeGreaterThan(0);
+    for (const c of colours) expect(c).toBe("rgb(245, 245, 247)");
+  });
+
+  test("the top bar is see-through, so the sections show through it", async ({ page }) => {
+    await page.goto("/");
+    const bar = await page.locator("header").first().evaluate((el) => ({ filter: getComputedStyle(el).backdropFilter, bg: getComputedStyle(el).backgroundColor }));
+    expect(bar.filter).toContain("blur");
+    expect(bar.bg).toMatch(/rgba\(.*0\.\d+\)$/);
+  });
+
+  test("buttons respond the moment they're pressed", async ({ page }) => {
+    await page.goto("/");
+    const button = page.getByRole("link", { name: "View projects" });
+    const box = (await button.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    // Tailwind sets the press through the CSS `scale` property; read it, or the transform if that's used.
+    const scale = () =>
+      button.evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return cs.scale && cs.scale !== "none" ? parseFloat(cs.scale) : new DOMMatrixReadOnly(cs.transform === "none" ? undefined : cs.transform).a;
+      });
+    await expect.poll(scale).toBeLessThan(0.99);
+    await page.mouse.up();
+  });
+
+  test("the phone menu eases in", async ({ page }) => {
+    test.skip(!isPhone(page), "phone layout only");
+    await page.goto("/");
+    await page.getByRole("button", { name: "Menu" }).click();
+    expect(await page.locator("header nav.menu-panel").evaluate((el) => el.getAnimations().length)).toBeGreaterThan(0);
+  });
+
+  test("a full-screen screenshot fades out when closed, rather than vanishing", async ({ page }) => {
+    await page.goto(projectHref(featured[0].slug));
+    await page.getByRole("button", { name: /^View screenshot full screen/ }).first().click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await page.waitForTimeout(400);
+    await page.keyboard.press("Escape");
+    expect(await page.locator("dialog.lightbox").first().evaluate((el) => el.getAnimations().length)).toBeGreaterThan(0);
+    await expect(dialog).toBeHidden();
+  });
+
+  test("each project's picture is scanned once as it arrives, and ends fully revealed", async ({ page }) => {
+    await page.goto("/");
+    for (const i of [0, 1, 2]) {
+      const frame = page.locator("#projects article").nth(i).locator("[data-scan]");
+      // Waiting, dimmed, before it's on screen; then scanned once it arrives.
+      await expect(frame).toHaveAttribute("data-scan", "wait");
+      await frame.scrollIntoViewIfNeeded();
+      await expect(frame).toHaveAttribute("data-scan", "run");
+      const cover = frame.locator(".scan-cover");
+      await expect.poll(() => cover.evaluate((el) => el.getAnimations().every((a) => a.playState === "finished")), { timeout: 6000 }).toBe(true);
+      expect(await cover.evaluate((el) => el.getBoundingClientRect().height)).toBe(0);
+    }
+  });
+
+  test("with reduced motion or no JavaScript, project pictures are never covered", async ({ browser }) => {
+    for (const options of [{ reducedMotion: "reduce" as const }, { javaScriptEnabled: false }]) {
+      const context = await browser.newContext(options);
+      const page = await context.newPage();
+      await page.goto("/");
+      const heights = await page.locator("#projects .scan-cover").evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
+      expect(heights.length).toBe(3);
+      for (const h of heights) expect(h).toBe(0);
+      await context.close();
+    }
+  });
+
+  test("the timeline's scroll progress is written on the line, not the whole section", async ({ page }) => {
+    await page.goto("/");
+    expect(await page.locator('#experience [data-scene="span"]').evaluate((el) => el.querySelectorAll("*").length)).toBeLessThanOrEqual(1);
   });
 });
 
@@ -368,8 +562,8 @@ test.describe("screenshots", () => {
     await page.goto("/");
     await page.getByRole("button", { name: /^View screenshot full screen/ }).first().click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    // The scam detection chapter shows its listing check (the email check is on the opening screen).
-    await expect(page.getByRole("dialog").locator("img")).toHaveAttribute("src", /listing@2x\.webp$/);
+    // The scam detection showcase shows its link check (the email check is on the opening screen).
+    await expect(page.getByRole("dialog").locator("img")).toHaveAttribute("src", /url-lookalike@2x\.webp$/);
   });
 });
 
@@ -444,7 +638,7 @@ test.describe("motion", () => {
     // The opening screenshot is flat, uncovered and still: no scan, no tilt.
     await page.evaluate(() => window.scrollTo(0, 0));
     expect(await tilt(page, ".hero-frame")).toBe(0);
-    expect(await page.locator(".scan-cover").evaluate((el) => el.getBoundingClientRect().height)).toBe(0);
+    expect(await page.locator(".hero .scan-cover").evaluate((el) => el.getBoundingClientRect().height)).toBe(0);
     expect(await page.locator(".hero").evaluate((el) => el.getAnimations({ subtree: true }).length)).toBe(0);
     await context.close();
   });
@@ -461,13 +655,9 @@ test.describe("motion", () => {
     await context.close();
   });
 
-  test("with motion allowed, everything has appeared by the time it's scrolled past", async ({ page }) => {
+  test("text never waits for an entrance: nothing is marked to fade in", async ({ page }) => {
     await page.goto("/");
     await scrollThrough(page);
-    expect(await page.locator('[data-reveal="pending"]').count()).toBe(0);
-    // Transitions take 0.6s; allow for slow machines, but every element must end fully visible.
-    await expect
-      .poll(() => page.locator("[data-reveal]").evaluateAll((els) => els.filter((e) => parseFloat(getComputedStyle(e).opacity) < 0.99).length), { timeout: 5000 })
-      .toBe(0);
+    expect(await page.locator("[data-reveal]").count()).toBe(0);
   });
 });

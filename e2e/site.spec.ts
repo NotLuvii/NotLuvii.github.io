@@ -291,7 +291,9 @@ test.describe("motion", () => {
     await page.goto("/");
     await scrollThrough(page);
     expect(await page.locator('[data-reveal="pending"]').count()).toBe(0);
-    const hidden = await page.locator("[data-reveal]").evaluateAll((els) => els.filter((e) => parseFloat(getComputedStyle(e).opacity) < 0.99).length);
-    expect(hidden).toBe(0);
+    // Transitions take 0.6s; allow for slow machines, but every element must end fully visible.
+    await expect
+      .poll(() => page.locator("[data-reveal]").evaluateAll((els) => els.filter((e) => parseFloat(getComputedStyle(e).opacity) < 0.99).length), { timeout: 5000 })
+      .toBe(0);
   });
 });

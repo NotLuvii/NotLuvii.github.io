@@ -188,7 +188,9 @@
   height: 2px;
   background: var(--color-amber);
 }
-.scan-beam::after {
+/* The line's short glow, shared by the opening's scan and the scroll story's line. */
+.scan-beam::after,
+.story-beam::after {
   content: "";
   position: absolute;
   inset: auto 0 100% 0;
@@ -310,6 +312,85 @@
       opacity: 0;
       transform: translateY(-8px);
     }
+  }
+}
+
+/* ── Scroll story (components/sections/ScanStory.tsx) ───────────
+   Finished by default: every rule shown, the final score. Only
+   when motion is allowed does the script mark it live, which holds
+   the stage under the site bar while the story plays. */
+.story-score {
+  font-size: clamp(5rem, 10vw, 9.5rem);
+  line-height: 0.9;
+  font-weight: 600;
+  font-stretch: 85%;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+.story-bar {
+  height: 6px;
+  margin-top: 20px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--color-line);
+}
+.story-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--color-amber);
+  transform-origin: left;
+}
+.story-mark {
+  background: none;
+  color: inherit;
+}
+.story-mark[data-on] {
+  color: var(--color-text);
+  text-decoration: underline 3px var(--color-amber);
+  text-underline-offset: 6px;
+}
+.story-rule {
+  color: var(--color-text-3);
+  opacity: 0.3;
+}
+.story-rule[data-on] {
+  color: var(--color-text-2);
+  opacity: 1;
+}
+.story-beam {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  opacity: 0;
+  pointer-events: none;
+}
+.story-beam::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-amber);
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-live] .story-pin {
+    height: 220svh;
+  }
+  [data-live] .story-stage {
+    position: sticky;
+    top: 56px;
+    display: flex;
+    align-items: center;
+    height: calc(100svh - 56px);
+  }
+  .story-rule,
+  .story-mark {
+    transition:
+      opacity 0.25s var(--ease-out-soft),
+      color 0.25s var(--ease-out-soft);
+  }
+  .story-beam {
+    transition: opacity 0.3s ease-out;
   }
 }
 

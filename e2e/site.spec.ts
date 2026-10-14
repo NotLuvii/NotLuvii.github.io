@@ -111,10 +111,11 @@ test.describe("opening", () => {
     await expect.poll(() => tilt(page, ".hero-frame")).toBe(0);
   });
 
-  test("the first project doesn't repeat the opening screenshot", async ({ page }) => {
+  test("the first project doesn't repeat the opening screenshot: it tells its story instead", async ({ page }) => {
     await page.goto("/");
-    const chapterImage = await page.locator("#projects article").first().locator("[data-frame] img").getAttribute("src");
-    expect(chapterImage).not.toContain(heroShot.src);
+    const first = page.locator("#projects article").first();
+    await expect(first.locator("[data-story]")).toHaveCount(1);
+    await expect(first.locator(`img[src*="${heroShot.src}"]`)).toHaveCount(0);
   });
 
   test("the intro is one paragraph with its key phrases in white and the rest in grey", async ({ page }) => {
@@ -306,7 +307,8 @@ test.describe("after the Apple audit", () => {
 
   test("each project's picture is scanned once as it arrives, and ends fully revealed", async ({ page }) => {
     await page.goto("/");
-    for (const i of [0, 1, 2]) {
+    // The scam detection showcase tells its story instead; the other two have a picture to scan.
+    for (const i of [1, 2]) {
       const frame = page.locator("#projects article").nth(i).locator("[data-scan]");
       // Waiting, dimmed, before it's on screen; then scanned once it arrives.
       await expect(frame).toHaveAttribute("data-scan", "wait");
@@ -324,7 +326,7 @@ test.describe("after the Apple audit", () => {
       const page = await context.newPage();
       await page.goto("/");
       const heights = await page.locator("#projects .scan-cover").evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
-      expect(heights.length).toBe(3);
+      expect(heights.length).toBe(2);
       for (const h of heights) expect(h).toBe(0);
       await context.close();
     }
@@ -333,6 +335,70 @@ test.describe("after the Apple audit", () => {
   test("the timeline's scroll progress is written on the line, not the whole section", async ({ page }) => {
     await page.goto("/");
     expect(await page.locator('#experience [data-scene="span"]').evaluate((el) => el.querySelectorAll("*").length)).toBeLessThanOrEqual(1);
+  });
+});
+
+test.describe("scam detection story", () => {
+  const story = featured[0].story!;
+
+  /** Scroll so the held stretch is a given fraction of the way through (0 = it has just reached the header). */
+  const through = (page: Page, f: number) =>
+    page.locator("[data-story-pin]").evaluate((el: HTMLElement, f) => {
+      const top = el.getBoundingClientRect().top + scrollY - 56;
+      const distance = el.offsetHeight - (innerHeight - 56);
+      window.scrollTo({ top: top + Math.max(0, distance) * f, behavior: "instant" });
+    }, f);
+
+  test("holds on screen while the score climbs to 94 through the detector's real steps", async ({ page }) => {
+    await page.goto("/");
+    const score = page.locator("[data-story-score]");
+    const level = page.locator("[data-story-level]");
+    await through(page, 0);
+    await expect(score).toHaveText("0");
+    await expect(level).toHaveText("Low");
+    await through(page, 0.45);
+    await expect(level).toHaveText("Medium");
+    // The number counts quickly to each new score; once settled it's one of the real totals.
+    await expect.poll(() => score.textContent()).toMatch(/^(36|54)$/);
+    // Held: the stage stays just under the bar while the page scrolls on.
+    expect(await page.locator("[data-story-stage]").evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(56);
+    await through(page, 1);
+    await expect(score).toHaveText(String(story.steps.reduce((sum, st) => sum + st.add, 0)));
+    await expect(level).toHaveText("High");
+    await expect(page.locator("[data-story-rule][data-on]")).toHaveCount(story.steps.length);
+    await expect(page.locator("mark[data-on]")).toHaveCount(story.steps.length);
+  });
+
+  test("with reduced motion or no JavaScript, shows the result at once and holds nothing", async ({ browser }) => {
+    for (const options of [{ reducedMotion: "reduce" as const }, { javaScriptEnabled: false }]) {
+      const context = await browser.newContext(options);
+      const page = await context.newPage();
+      await page.goto("/");
+      await expect(page.locator("[data-story-score]")).toHaveText("94");
+      await expect(page.locator("[data-story-level]")).toHaveText("High");
+      await expect(page.locator("[data-story-rule][data-on]")).toHaveCount(story.steps.length);
+      const held = await page.locator("[data-story-pin]").evaluate((el: HTMLElement) => el.offsetHeight - (el.querySelector("[data-story-stage]") as HTMLElement).offsetHeight);
+      expect(held).toBeLessThanOrEqual(2);
+      expect(await page.locator("[data-story-stage]").evaluate((el) => getComputedStyle(el).position)).not.toBe("sticky");
+      await context.close();
+    }
+  });
+
+  test("screen readers get the message, every rule and the final score as text", async ({ page }) => {
+    await page.goto("/");
+    const root = page.locator("[data-story]");
+    await expect(root).toContainText("Reply YES to secure your account.");
+    for (const st of story.steps) await expect(root).toContainText(st.rule);
+    await expect(root.locator(".sr-only", { hasText: "94, High" })).toHaveCount(1);
+    await expect(root.getByRole("link", { name: /rules on GitHub/ })).toHaveAttribute("href", story.source.href);
+  });
+
+  test("on a phone the held stage fits on one screen", async ({ page }) => {
+    test.skip(!isPhone(page), "phone only");
+    await page.goto("/");
+    await through(page, 0.5);
+    const fits = await page.locator("[data-story-stage]").evaluate((el) => el.scrollHeight <= innerHeight - 56 + 1);
+    expect(fits).toBe(true);
   });
 });
 
@@ -562,8 +628,8 @@ test.describe("screenshots", () => {
     await page.goto("/");
     await page.getByRole("button", { name: /^View screenshot full screen/ }).first().click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    // The scam detection showcase shows its link check (the email check is on the opening screen).
-    await expect(page.getByRole("dialog").locator("img")).toHaveAttribute("src", /url-lookalike@2x\.webp$/);
+    // The first screenshot on the page that opens full screen is the Resume Analyzer's score.
+    await expect(page.getByRole("dialog").locator("img")).toHaveAttribute("src", /score@2x\.webp$/);
   });
 });
 

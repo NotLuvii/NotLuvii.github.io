@@ -3,6 +3,7 @@ import { featured, more, projectHref, type FeaturedProject, type MoreProject } f
 import { site } from "@/content/site";
 import { emphasize } from "@/lib/emphasize";
 import { ScanOnView } from "@/components/motion/ScanOnView";
+import { ScanStory } from "@/components/sections/ScanStory";
 import { CodeBlock } from "@/components/ui/CodeBlock";
 import { Figures } from "@/components/ui/Figures";
 import { TextLink } from "@/components/ui/links";
@@ -30,7 +31,8 @@ function ProjectFrame({ p }: { p: FeaturedProject }) {
  * One featured project as a showcase, in the manner of a product page: the title and a grey
  * summary with its key phrase in white, centred; the picture, large; a row of figures from the
  * result, set big in white with a line saying what each measures; then the links. All three use
- * this same layout; they alternate in tone (CSS: .showcase).
+ * this same layout; they alternate in tone (CSS: .showcase). A project with a story (the scam
+ * detection tool) tells it as you scroll, full width, in place of the picture.
  */
 function Showcase({ p }: { p: FeaturedProject }) {
   return (
@@ -54,9 +56,17 @@ function Showcase({ p }: { p: FeaturedProject }) {
             )}
           </p>
         </div>
+      </div>
 
-        <ProjectFrame p={p} />
+      {p.story ? (
+        <ScanStory story={p.story} />
+      ) : (
+        <div className="mx-auto max-w-[1200px] px-gutter">
+          <ProjectFrame p={p} />
+        </div>
+      )}
 
+      <div className="mx-auto max-w-[1200px] px-gutter">
         <ul className="mx-auto mt-14 grid max-w-[920px] gap-x-10 gap-y-8 text-center sm:grid-cols-3 md:mt-16">
           {p.stats.map((s) => (
             <li key={s.value}>

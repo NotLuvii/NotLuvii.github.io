@@ -58,10 +58,10 @@ npm run dev            # http://localhost:3000
 | --- | --- |
 | `npm run typecheck` | Generates Next.js route types, then TypeScript in strict mode |
 | `npm run lint` | ESLint with the Next.js rules |
-| `npm test` | Vitest: content rules, link allow-list, screenshot files and sizes, the design rules (fonts, colours and contrast, one see-through surface, gradient hues, monospace, touch), the scroll-progress maths |
+| `npm test` | Vitest: content rules, link allow-list, screenshot files and sizes, the design rules (fonts, colours and contrast, one see-through surface, gradient hues, monospace, touch), the scroll-progress and story maths, the story's steps against the case study |
 | `npm run build` | Static export to `out/` |
 | `npm start` | Serves `out/` on http://localhost:3000, the way GitHub Pages does |
-| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: every link, the case-study routes and their images, opening a screenshot full screen and closing it (Escape, close button, click outside) without leaving the page, the resume, the phone menu, the skip link, focus outlines, anchors below the sticky header, copying the email (including when the clipboard is refused), no sideways scrolling and no text past the edge of a phone screen, 44px tap targets, heading order, the opening screenshot (centred, scanned once, turning flat as you scroll, the phone crop on phones), the project showcases and their figures, the type scale, monospace only in code, no dividing lines, amber kept for the main action, the see-through bar, press feedback, the menu and viewer transitions, reduced motion and no-JavaScript |
+| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: every link, the case-study routes and their images, opening a screenshot full screen and closing it (Escape, close button, click outside) without leaving the page, the resume, the phone menu, the skip link, focus outlines, anchors below the sticky header, copying the email (including when the clipboard is refused), no sideways scrolling and no text past the edge of a phone screen, 44px tap targets, heading order, the opening screenshot (centred, scanned once, turning flat as you scroll, the phone crop on phones), the project showcases and their figures, the scroll story (held while the score climbs through the real steps; finished at once with reduced motion or no JavaScript; fits a phone screen), the type scale, monospace only in code, no dividing lines, amber kept for the main action, the see-through bar, press feedback, the menu and viewer transitions, reduced motion and no-JavaScript |
 
 `.github/workflows/ci.yml` runs all of it on every push.
 
@@ -89,6 +89,14 @@ Modelled on Apple's product pages (studied on the iPad Pro page), without their 
   white, a large picture, two or three figures from its result (`stats` in `projects.ts`) and its
   links. The same scan line passes over each picture once as it arrives
   (`components/motion/ScanOnView.tsx`).
+- **Scroll story** (`components/sections/ScanStory.tsx`): in place of a picture, the scam detection
+  showcase holds on screen for about two screens of scrolling while the scan line moves down the
+  README's sample text message. Each time it reaches a phrase a rule fired on, the phrase lights,
+  the rule appears with its weight and the score counts up through the tool's own levels, to 94,
+  High. The steps (`story` in `projects.ts`) were traced by running the project's
+  `js/detectors.js` on that sample, and the tests check they add up to the 94 in the case study.
+  The page is rendered finished; with reduced motion or without JavaScript nothing is held and the
+  result shows at once. The maths is in `components/motion/story.ts` and unit tested.
 - **Scroll scenes**: `src/components/motion/ScrollScenes.tsx` writes a progress value (`--p`,
   0 to 1) on each `[data-scene]` element while it is on screen; the CSS in `globals.css` reads it.
   Project pictures tilt flat as they arrive, and the experience timeline's track fills. Text

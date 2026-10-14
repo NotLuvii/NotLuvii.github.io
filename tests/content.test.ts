@@ -82,6 +82,30 @@ describe("featured projects", () => {
     }
   });
 
+  it("tells the scam detection story with the detector's real rules, adding up to the 94 its case study reports", () => {
+    const lead = featured[0];
+    const story = lead.story!;
+    expect(story).toBeTruthy();
+    // The README's sample text message, verbatim.
+    expect(story.text).toBe("URGENT: Your bank detected unusual activity. Confirm now: https://bit.ly/xy7z\nReply YES to secure your account.");
+    // Each step's phrase appears in the message, in reading order.
+    let at = 0;
+    for (const step of story.steps) {
+      const i = story.text.indexOf(step.phrase, at);
+      expect(i, step.phrase).toBeGreaterThanOrEqual(0);
+      at = i + step.phrase.length;
+    }
+    // The weights the rules add (js/detectors.js, sms), and the total the case study reports.
+    expect(story.steps.map((s) => s.add)).toEqual([18, 18, 18, 25, 15]);
+    const total = story.steps.reduce((sum, s) => sum + s.add, 0);
+    expect(total).toBe(94);
+    expect(lead.caseStudy.outcome.join(" ")).toContain("the scam text 94");
+    // The tool's own thresholds for a text message: Medium from 35, High from 60.
+    expect(story.thresholds).toEqual({ medium: 35, high: 60 });
+    // Its source is a specific file in the project's repository.
+    expect(story.source.href.startsWith(`${lead.repo.href}/blob/`)).toBe(true);
+  });
+
   it("builds case-study paths with a trailing slash, for the static export", () => {
     expect(projectHref("scam-detection")).toBe("/projects/scam-detection/");
   });
@@ -219,10 +243,10 @@ describe("opening screenshot", () => {
     expect(heroShot.width / heroShot.height).toBeGreaterThan(1.5);
   });
 
-  it("isn't repeated by the lead project's showcase, which shows a different check", () => {
+  it("isn't repeated by the lead project's showcase, which tells the text-message story instead", () => {
     const lead = featured[0];
-    const shown = lead.homeShot ?? lead.caseStudy.figures[0];
-    expect(shown.caption).not.toMatch(/email/i);
+    expect(lead.story?.text).not.toMatch(/Dear Customer/);
+    expect(lead.homeShot).toBeUndefined();
   });
 
   it("has a phone version, from the tool's own phone layout, at 1x, 2x and 3x", () => {

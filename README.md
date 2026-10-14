@@ -40,7 +40,8 @@ Rules the content follows, enforced by `tests/content.test.ts`:
   [Resume-Analyze](https://github.com/NotLuvii/Resume-Analyze), comparing the published resume with
   a short sample job description (quoted in the caption).
 
-To replace one, keep the file name, export a 2x WebP and a 1x WebP at half the width, and update
+Clicking a screenshot opens the 2x file full screen over the page (a `<dialog>`, so nothing
+navigates). To replace one, keep the file name, export a 2x WebP and a 1x WebP at half the width, and update
 `width` and `height` in `projects.ts`. The unit tests check that the sizes match.
 
 ## Run it
@@ -59,7 +60,7 @@ npm run dev            # http://localhost:3000
 | `npm test` | Vitest: content rules, link allow-list, screenshot files and sizes |
 | `npm run build` | Static export to `out/` |
 | `npm start` | Serves `out/` on http://localhost:3000, the way GitHub Pages does |
-| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: every link, the case-study routes and their images, the resume, the phone menu, the skip link, focus outlines, anchors below the sticky header, copying the email (including when the clipboard is refused), no sideways scrolling at 375, 390, 768, 1024 and 1440px, 44px tap targets, heading order, reduced motion and no-JavaScript |
+| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: every link, the case-study routes and their images, opening a screenshot full screen and closing it (Escape, close button, click outside) without leaving the page, the resume, the phone menu, the skip link, focus outlines, anchors below the sticky header, copying the email (including when the clipboard is refused), no sideways scrolling at 375, 390, 768, 1024 and 1440px, 44px tap targets, heading order, reduced motion and no-JavaScript |
 
 `.github/workflows/ci.yml` runs all of it on every push.
 

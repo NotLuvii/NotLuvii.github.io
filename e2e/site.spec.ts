@@ -221,6 +221,82 @@ test.describe("contact", () => {
   });
 });
 
+test.describe("screenshots", () => {
+  const PAGE = projectHref("scam-detection");
+
+  test("have no Full size links", async ({ page }) => {
+    for (const path of PAGES) {
+      await page.goto(path);
+      await expect(page.getByRole("link", { name: "Full size" })).toHaveCount(0);
+      await expect(page.locator('a[href$=".webp"]')).toHaveCount(0);
+    }
+  });
+
+  test("show a magnifying glass on hover", async ({ page }) => {
+    test.skip(isPhone(page), "hover is a pointer interaction");
+    await page.goto(PAGE);
+    const trigger = page.getByRole("button", { name: /^View screenshot full screen/ }).first();
+    const glass = trigger.locator("[data-magnifier]");
+    await expect(glass).toHaveCSS("opacity", "0");
+    await trigger.hover();
+    await expect(glass).toHaveCSS("opacity", "1");
+    await expect(trigger).toHaveCSS("cursor", "zoom-in");
+  });
+
+  test("open full screen on the same page, then close with Escape, the close button or a click outside", async ({ page, context }) => {
+    await page.goto(PAGE);
+    const url = page.url();
+    const triggers = page.getByRole("button", { name: /^View screenshot full screen/ });
+    await expect(triggers).toHaveCount(featured[0].caseStudy.figures.length);
+    const trigger = triggers.first();
+
+    await trigger.click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    // Same page, same tab: nothing navigated or opened.
+    expect(page.url()).toBe(url);
+    expect(context.pages()).toHaveLength(1);
+    // The large image fills most of the screen and is the 2x file.
+    const big = dialog.locator("img");
+    await expect(big).toHaveAttribute("src", /@2x\.webp$/);
+    await expect.poll(() => big.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0)).toBe(true);
+    const box = (await big.boundingBox())!;
+    const vp = page.viewportSize()!;
+    expect(Math.max(box.width / vp.width, box.height / vp.height)).toBeGreaterThan(0.6);
+    // The page behind can't scroll while it's open.
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe("hidden");
+
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await trigger.click();
+    await dialog.getByRole("button", { name: "Close" }).click();
+    await expect(dialog).toBeHidden();
+
+    await trigger.click();
+    await page.mouse.click(5, vp.height - 5);
+    await expect(dialog).toBeHidden();
+    expect(page.url()).toBe(url);
+  });
+
+  test("open from the keyboard", async ({ page }) => {
+    await page.goto(PAGE);
+    const trigger = page.getByRole("button", { name: /^View screenshot full screen/ }).first();
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("button", { name: "Close" })).toBeFocused();
+  });
+
+  test("the hero screenshot opens too", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: /^View screenshot full screen/ }).first().click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByRole("dialog").locator("img")).toHaveAttribute("src", /email-result@2x\.webp$/);
+  });
+});
+
 test.describe("layout", () => {
   for (const path of PAGES) {
     test(`${path}: no sideways scrolling at ${WIDTHS.join(", ")} px`, async ({ page }) => {

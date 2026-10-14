@@ -150,3 +150,31 @@
     transform: none !important;
   }
 }
+
+/* ── Screenshot lightbox ───────────────────────────────────────
+   The page behind stays put while a screenshot is open full screen. */
+html:has(dialog.lightbox[open]) {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog.lightbox[open] {
+    animation: lightbox-in 0.2s var(--ease-out-soft);
+  }
+  dialog.lightbox[open]::backdrop {
+    animation: lightbox-fade 0.2s ease-out;
+  }
+}
+
+@keyframes lightbox-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+@keyframes lightbox-fade {
+  from {
+    opacity: 0;
+  }
+}

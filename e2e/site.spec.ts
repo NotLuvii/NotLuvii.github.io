@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { featured, projectHref } from "../src/content/projects";
+import { featured, heroShot, projectHref } from "../src/content/projects";
 import { site } from "../src/content/site";
 
 const PAGES = ["/", ...featured.map((p) => projectHref(p.slug))];
@@ -27,6 +27,13 @@ async function scrollThrough(page: Page) {
   await page.waitForFunction(() => [...document.images].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 10_000 });
   await page.waitForTimeout(700);
 }
+
+/** The rotateX angle of an element's current transform, in whole degrees (0 when flat). */
+const tilt = (page: Page, selector: string) =>
+  page.locator(selector).evaluate((el) => {
+    const m = new DOMMatrixReadOnly(getComputedStyle(el).transform === "none" ? undefined : getComputedStyle(el).transform);
+    return Math.round((Math.acos(Math.max(-1, Math.min(1, m.m22))) * 180) / Math.PI);
+  });
 
 test.describe("home page", () => {
   test("says who, what and where, with the two main actions", async ({ page }) => {
@@ -63,6 +70,74 @@ test.describe("home page", () => {
       await expect(a.getByRole("heading", { level: 3 })).toHaveText(p.title);
       await expect(a.getByRole("link", { name: new RegExp(`^Read the case study\\s*: ${p.title}$`) })).toHaveAttribute("href", projectHref(p.slug));
       await expect(a.getByRole("link", { name: new RegExp(`^Code on GitHub\\s*: ${p.title}`) })).toHaveAttribute("href", p.repo.href);
+    }
+  });
+});
+
+test.describe("opening", () => {
+  test("shows the scam detection tool, centred under a centred headline, starting on the first screen", async ({ page }) => {
+    await page.goto("/");
+    const shot = page.getByRole("img", { name: heroShot.alt });
+    await expect(shot).toBeVisible();
+    const box = await shot.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return { centre: r.left + r.width / 2, top: r.top, half: document.documentElement.clientWidth / 2, fold: innerHeight };
+    });
+    expect(Math.abs(box.centre - box.half)).toBeLessThan(2);
+    expect(box.top).toBeLessThan(box.fold);
+    // Most of it is on the first screen, so the scan can be seen (once the frame has risen into place).
+    const onScreen = () => shot.evaluate((el) => { const r = el.getBoundingClientRect(); return (Math.min(r.bottom, innerHeight) - r.top) / r.height; });
+    await expect.poll(onScreen, { timeout: 4000 }).toBeGreaterThan(0.6);
+    expect(await page.getByText(site.headline).evaluate((el) => getComputedStyle(el).textAlign)).toBe("center");
+    await expect(page.locator("main figure").first().getByRole("link", { name: /case study/ })).toHaveAttribute("href", projectHref(featured[0].slug));
+  });
+
+  test("the scan passes down the screenshot once and leaves it fully revealed", async ({ page }) => {
+    await page.goto("/");
+    const cover = page.locator(".scan-cover");
+    const beam = page.locator(".scan-beam");
+    expect(await cover.evaluate((el) => el.getAnimations().length)).toBeGreaterThan(0);
+    await expect
+      .poll(() => cover.evaluate((el) => el.getAnimations().every((a) => a.playState === "finished")), { timeout: 8000 })
+      .toBe(true);
+    expect(await cover.evaluate((el) => el.getBoundingClientRect().height)).toBe(0);
+    expect(await beam.evaluate((el) => getComputedStyle(el).opacity)).toBe("0");
+  });
+
+  test("the screenshot starts tilted back and turns to face you as you scroll", async ({ page }) => {
+    await page.goto("/");
+    await expect.poll(() => tilt(page, ".hero-frame")).toBeGreaterThan(10);
+    await page.evaluate(() => window.scrollTo(0, innerHeight * 0.75));
+    await expect.poll(() => tilt(page, ".hero-frame")).toBe(0);
+  });
+
+  test("the first project doesn't repeat the opening screenshot", async ({ page }) => {
+    await page.goto("/");
+    const chapterImage = await page.locator("#projects article").first().locator("[data-frame] img").getAttribute("src");
+    expect(chapterImage).not.toContain(heroShot.src);
+  });
+
+  test("the intro is one paragraph with its key phrases in white and the rest in grey", async ({ page }) => {
+    await page.goto("/");
+    const intro = page.locator("#intro p");
+    await expect(intro).toHaveText(site.intro);
+    expect(await intro.locator("strong").allTextContents()).toEqual([...site.introKeyPhrases]);
+    expect(await intro.evaluate((el) => getComputedStyle(el).color)).toBe("rgb(152, 152, 157)");
+    const strong = await intro.locator("strong").evaluateAll((els) => els.map((e) => getComputedStyle(e).color));
+    for (const c of strong) expect(c).toBe("rgb(245, 245, 247)");
+  });
+
+  test("the opening and the intro scroll normally: nothing is held in place", async ({ page }) => {
+    await page.goto("/");
+    // The opening's figure (the headline above it lifts away on purpose) and the intro paragraph.
+    for (const selector of ["main figure >> nth=0", "#intro p"]) {
+      const at = async (y: number) => {
+        await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), y);
+        return page.locator(selector).evaluate((el) => el.getBoundingClientRect().top);
+      };
+      const start = await page.locator(selector).evaluate((el) => el.getBoundingClientRect().top + scrollY - innerHeight / 2);
+      const y0 = Math.max(0, Math.round(start));
+      expect(Math.round((await at(y0)) - (await at(y0 + 200)))).toBe(200);
     }
   });
 });
@@ -293,7 +368,8 @@ test.describe("screenshots", () => {
     await page.goto("/");
     await page.getByRole("button", { name: /^View screenshot full screen/ }).first().click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByRole("dialog").locator("img")).toHaveAttribute("src", /app@2x\.webp$/);
+    // The scam detection chapter shows its listing check (the email check is on the opening screen).
+    await expect(page.getByRole("dialog").locator("img")).toHaveAttribute("src", /listing@2x\.webp$/);
   });
 });
 
@@ -365,11 +441,11 @@ test.describe("motion", () => {
     expect(await page.locator("[data-reveal]").count()).toBe(0);
     // The scroll engine never starts, so no scene gets a progress value.
     expect(await page.locator('[data-scene][style*="--p"]').count()).toBe(0);
-    // Every word of the intro is fully lit and nothing is pinned.
-    const dim = await page.locator(".intro-word").evaluateAll((ws) => ws.filter((w) => parseFloat(getComputedStyle(w).opacity) < 1).length);
-    expect(dim).toBe(0);
-    expect(await page.locator(".intro-stage").evaluate((el) => getComputedStyle(el).position)).not.toBe("sticky");
-    expect(await page.locator(".scanner-beam").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
+    // The opening screenshot is flat, uncovered and still: no scan, no tilt.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    expect(await tilt(page, ".hero-frame")).toBe(0);
+    expect(await page.locator(".scan-cover").evaluate((el) => el.getBoundingClientRect().height)).toBe(0);
+    expect(await page.locator(".hero").evaluate((el) => el.getAnimations({ subtree: true }).length)).toBe(0);
     await context.close();
   });
 
@@ -379,32 +455,10 @@ test.describe("motion", () => {
     await page.goto("/");
     expect(await page.locator("[data-reveal]").count()).toBe(0);
     await expect(page.locator("#contact h2")).toBeVisible();
-    const dim = await page.locator(".intro-word").evaluateAll((ws) => ws.filter((w) => parseFloat(getComputedStyle(w).opacity) < 1).length);
-    expect(dim).toBe(0);
     await expect(page.getByText(site.headline)).toBeVisible();
+    await expect(page.getByRole("img", { name: heroShot.alt })).toBeVisible();
+    await expect(page.locator("#intro p")).toHaveText(site.intro);
     await context.close();
-  });
-
-  test("the intro lights word by word and ends fully lit", async ({ page }) => {
-    await page.goto("/");
-    const pin = page.locator(".intro-pin");
-    const opacities = () => page.locator(".intro-word").evaluateAll((ws) => ws.map((w) => parseFloat(getComputedStyle(w).opacity)));
-    // Part way through, the first words are lit and the last are still dim.
-    await pin.evaluate((el: HTMLElement) => window.scrollTo(0, el.getBoundingClientRect().top + scrollY - 56 + (el.offsetHeight - innerHeight) * 0.4));
-    await expect.poll(async () => { const o = await opacities(); return o[0] === 1 && o[o.length - 1] < 0.5; }).toBe(true);
-    // At the end of the hold, every word is lit.
-    await pin.evaluate((el: HTMLElement) => window.scrollTo(0, el.getBoundingClientRect().top + scrollY - 56 + (el.offsetHeight - innerHeight)));
-    await expect.poll(async () => (await opacities()).every((o) => o >= 0.99)).toBe(true);
-  });
-
-  test("the scanner pauses when it's off screen", async ({ page }) => {
-    await page.goto("/");
-    const scanner = page.locator(".scanner");
-    await expect(scanner).not.toHaveAttribute("data-paused");
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    await expect(scanner).toHaveAttribute("data-paused", "");
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await expect(scanner).not.toHaveAttribute("data-paused");
   });
 
   test("with motion allowed, everything has appeared by the time it's scrolled past", async ({ page }) => {

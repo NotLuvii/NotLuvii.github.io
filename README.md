@@ -4,8 +4,9 @@
 
 A static Next.js site: one home page and a case study for each featured project.
 
-- **Home (`/`)**: opening screen, a one-line introduction, three selected projects (each with a
-  real screenshot or code excerpt), more projects, experience, skills and background, contact.
+- **Home (`/`)**: opening screen (with a real screenshot of the scam detection tool), a short
+  introduction, three selected projects (each with a real screenshot or code excerpt), more
+  projects, experience, skills and background, contact.
 - **Case studies (`/projects/<slug>/`)**: context, what I built, the key decision (with a verbatim
   code excerpt linked to the file on GitHub), outcome with screenshots, limitations, and links into
   the repository.
@@ -30,8 +31,8 @@ Rules the content follows, enforced by `tests/content.test.ts`:
 
 ## Screenshots
 
-`public/images/` holds WebP screenshots at 1x and 2x (all under 100 KB). They were captured on
-13 October 2026 from each project running locally:
+`public/images/` holds WebP screenshots at 1x and 2x, plus a 3x copy of the opening screenshot (all under 100 KB). They were captured on
+13 October 2026 (the 3x copy on 14 October) from each project running locally:
 
 - **Scam detection tool**: `node server.js` from
   [Fraud-Detection-Tool](https://github.com/NotLuvii/Fraud-Detection-Tool), with the example
@@ -60,7 +61,7 @@ npm run dev            # http://localhost:3000
 | `npm test` | Vitest: content rules, link allow-list, screenshot files and sizes, the design rules, the scroll-progress maths |
 | `npm run build` | Static export to `out/` |
 | `npm start` | Serves `out/` on http://localhost:3000, the way GitHub Pages does |
-| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: every link, the case-study routes and their images, opening a screenshot full screen and closing it (Escape, close button, click outside) without leaving the page, the resume, the phone menu, the skip link, focus outlines, anchors below the sticky header, copying the email (including when the clipboard is refused), no sideways scrolling at 375, 390, 768, 1024 and 1440px, 44px tap targets, heading order, the word-by-word introduction, the scan line pausing off screen, reduced motion and no-JavaScript |
+| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: every link, the case-study routes and their images, opening a screenshot full screen and closing it (Escape, close button, click outside) without leaving the page, the resume, the phone menu, the skip link, focus outlines, anchors below the sticky header, copying the email (including when the clipboard is refused), no sideways scrolling at 375, 390, 768, 1024 and 1440px, 44px tap targets, heading order, the opening screenshot (centred, scanned once, turning flat as you scroll, not repeated by the first project), the introduction's highlights, nothing held in place, reduced motion and no-JavaScript |
 
 `.github/workflows/ci.yml` runs all of it on every push.
 
@@ -72,15 +73,20 @@ npm run dev            # http://localhost:3000
 - **Type**: IBM Plex Sans (variable weight and width) and IBM Plex Mono, self-hosted (licence in
   `src/fonts/IBM-Plex-LICENSE.txt`). Headings use a slightly condensed width; labels, dates and
   file names are set in Plex Mono.
-- **Opening screen**: the background is real code, lines 201 to 260 of `js/detectors.js` from the
-  scam detection tool (`src/content/heroCode.ts`, linked from the caption). An amber line sweeps
-  down it and the lines light as it passes. Only transforms animate, and it pauses off screen.
+- **Opening screen**: name, headline and the two main actions, centred, then the scam detection
+  tool's result panel (`heroShot` in `projects.ts`, also exported at 3x) framed and large on the
+  first screen. On load the frame rises into place and an amber scan line passes down the
+  screenshot once, lighting it as it goes. As you scroll, the frame turns from tilted back to
+  facing you and the words lift away, on CSS scroll timelines, so nothing waits for JavaScript and
+  nothing is held in place. Browsers without scroll timelines show the frame flat.
+- **Introduction**: one grey paragraph with its key phrases in white (`introKeyPhrases` in
+  `site.ts`), so it can be read at a glance. Static.
 - **Scroll scenes**: `src/components/motion/ScrollScenes.tsx` writes a progress value (`--p`,
   0 to 1) on each `[data-scene]` element while it is on screen; the CSS in `globals.css` reads it.
-  The introduction lights word by word, screenshots and code tilt flat as they arrive, and the
-  experience timeline fills with amber. Every rule falls back to the finished state, so with
-  JavaScript off or reduced motion on, nothing is pinned, nothing animates and everything is
-  readable. The progress maths is in `progress.ts` and unit tested.
+  Project screenshots and code tilt flat as they arrive, and the experience timeline fills with
+  amber. Every rule falls back to the finished state, so with JavaScript off or reduced motion on,
+  nothing animates and everything is readable. The progress maths is in `progress.ts` and unit
+  tested.
 - **Entrance**: below-the-fold blocks fade up the first time they scroll into view. Nothing is
   hidden in the HTML: elements are only marked for the effect after the page loads.
 - **House rules** (checked by `tests/design.test.ts`): no gradient text, no frosted glass or

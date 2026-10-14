@@ -4,9 +4,6 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { sceneProgress, type SceneMode } from "./progress";
 
-/** Height of the sticky header; pinned stages stick just below it. */
-const HEADER = 56;
-
 /**
  * The scroll engine. While a `[data-scene]` element is on screen, this writes its progress
  * (0 to 1, see ./progress.ts) to the element's `--p` custom property once per animation frame;
@@ -29,7 +26,7 @@ export function ScrollScenes() {
       for (const el of visible) {
         const mode = el.dataset.scene as SceneMode;
         const rect = el.getBoundingClientRect();
-        el.style.setProperty("--p", sceneProgress(mode, rect, vh, HEADER).toFixed(4));
+        el.style.setProperty("--p", sceneProgress(mode, rect, vh).toFixed(4));
       }
     };
     const request = () => {
@@ -46,7 +43,7 @@ export function ScrollScenes() {
             // Leaving the screen: settle at the end it left from, so it never freezes mid-way.
             visible.delete(el);
             const rect = el.getBoundingClientRect();
-            el.style.setProperty("--p", sceneProgress(el.dataset.scene as SceneMode, rect, window.innerHeight, HEADER).toFixed(4));
+            el.style.setProperty("--p", sceneProgress(el.dataset.scene as SceneMode, rect, window.innerHeight).toFixed(4));
           }
         }
         request();

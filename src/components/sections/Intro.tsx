@@ -1,28 +1,24 @@
-import { Fragment, type CSSProperties } from "react";
 import { site } from "@/content/site";
-
-const vars = (o: Record<string, number>) => o as CSSProperties;
+import { emphasize } from "@/lib/emphasize";
 
 /**
- * The intro sentence, held on screen while each word turns from dim to white in reading order
- * (CSS: .intro-pin, .intro-word). Screen readers hear one sentence; the spans are only for the
- * light. Under reduced motion every word is white and nothing is held.
+ * The intro, in one pass: a grey paragraph with its key phrases in white, so it can be read at a
+ * glance. Static; nothing is held or animated.
  */
 export function Intro() {
-  const words = site.intro.split(" ");
   return (
-    <div data-scene="pin" className="intro-pin">
-      <div className="intro-stage mx-auto max-w-[1200px] px-gutter">
-        <p className="type-statement max-w-[30ch] text-text" style={vars({ "--n": words.length })}>
-          {words.map((w, i) => (
-            <Fragment key={i}>
-              <span className="intro-word" style={vars({ "--i": i })}>
-                {w}
-              </span>{" "}
-            </Fragment>
-          ))}
-        </p>
-      </div>
+    <div id="intro" className="mx-auto max-w-[1200px] px-gutter pb-28 pt-24 md:pb-40 md:pt-36">
+      <p className="type-statement mx-auto max-w-[32ch] text-center text-text-3">
+        {emphasize(site.intro, site.introKeyPhrases).map((part, i) =>
+          part.strong ? (
+            <strong key={i} className="font-[inherit] text-text">
+              {part.text}
+            </strong>
+          ) : (
+            part.text
+          ),
+        )}
+      </p>
     </div>
   );
 }

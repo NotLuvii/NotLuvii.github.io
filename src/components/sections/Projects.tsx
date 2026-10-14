@@ -8,12 +8,12 @@ import { Reveal } from "@/components/ui/Reveal";
 import { Screenshot } from "@/components/ui/Screenshot";
 
 /**
- * The picture beside each project: its first screenshot, or for a project without screenshots,
- * the code excerpt from its case study. Both are real. It tilts flat and brightens as it arrives
- * (CSS: .frame).
+ * The picture beside each project: one of its screenshots (the first, unless the project names
+ * another), or for a project without screenshots, the code excerpt from its case study. Both are
+ * real. It tilts flat and brightens as it arrives (CSS: .frame).
  */
 function ProjectFrame({ p }: { p: FeaturedProject }) {
-  const shot = p.caseStudy.figures[0];
+  const shot = p.caseStudy.figures[p.homeFigure ?? 0];
   const code = p.caseStudy.decision.code;
   return (
     <div data-scene="pass" data-frame className="frame mx-auto w-full max-w-[540px] lg:mx-0 lg:ml-auto">

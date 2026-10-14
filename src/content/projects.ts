@@ -37,6 +37,8 @@ export type FeaturedProject = {
   team: string;
   /** Who it's for and the problem, in one or two sentences. */
   summary: string;
+  /** Which case-study figure the home page shows beside the project. Defaults to the first. */
+  homeFigure?: number;
   /** One sentence each for the home page card. */
   built: string;
   decision: string;
@@ -78,6 +80,8 @@ const scam: FeaturedProject = {
   kind: "Personal project",
   year: "2026",
   team: "Solo",
+  // The email check is on the opening screen; beside the project, show the listing check instead.
+  homeFigure: 1,
   summary:
     "A browser tool that checks a suspicious email, text message, listing or link, scores it from 0 to 100 and lists the red flags behind the score.",
   built: "Four rule-based checkers in JavaScript, and an optional Express server that fetches listing pages.",
@@ -339,13 +343,17 @@ const resume: FeaturedProject = {
   },
 };
 
-/** The hero's picture: the lead project's email check. */
+/**
+ * The opening screen's picture: the result panel from the lead project's email check. Landscape, so
+ * it fits on the first screen and the scan over it can be seen; also exported at 3x
+ * (email-result@3x.webp) because the opening frame is wider than the case-study figures.
+ */
 export const heroShot: Screenshot = {
   src: "/images/scam-detection/email-result",
   width: 592,
   height: 329,
   alt: "Result panel of the scam detection tool: risk score 100 percent, High risk, treat as suspicious. Five issues are listed: urgency language “immediately”, urgency language “click here to restore”, a generic greeting, suspicious domain-like text “paypal-secure”, and a request for sensitive information or to click or verify.",
-  caption: "The scam detection tool, running locally, scoring the sample phishing email from its README.",
+  caption: "The scam detection tool, running locally, after checking the sample phishing email from its README.",
 };
 
 /** In display order: the first is shown large on the home page. */

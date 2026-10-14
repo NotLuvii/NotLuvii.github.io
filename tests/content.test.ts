@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { featured, heroShot, more, projectHref, type Screenshot } from "@/content/projects";
 import { alsoUsed, background, education, roles, skills } from "@/content/experience";
 import { nav, site } from "@/content/site";
+import { emphasize } from "@/lib/emphasize";
 
 const PUBLIC = join(process.cwd(), "public");
 
@@ -186,6 +187,39 @@ describe("site", () => {
   it("publishes the resume that's in /public", () => {
     expect(site.resume).toBeTruthy();
     expect(existsSync(join(PUBLIC, site.resume!))).toBe(true);
+  });
+});
+
+describe("intro", () => {
+  it("marks each key phrase once and keeps the sentence whole", () => {
+    const parts = emphasize(site.intro, site.introKeyPhrases);
+    expect(parts.map((p) => p.text).join("")).toBe(site.intro);
+    expect(parts.filter((p) => p.strong).map((p) => p.text)).toEqual([...site.introKeyPhrases]);
+  });
+
+  it("refuses a key phrase that isn't in the text, so a typo can't silently drop it", () => {
+    expect(() => emphasize("I build web apps.", ["data tools"])).toThrow(/data tools/);
+  });
+});
+
+describe("opening screenshot", () => {
+  it("is the result of the scam detection tool's email check, landscape so it fits the first screen", () => {
+    expect(heroShot.src).toBe("/images/scam-detection/email-result");
+    expect(heroShot.width / heroShot.height).toBeGreaterThan(1.5);
+  });
+
+  it("isn't repeated by the lead project's chapter, which shows a different check", () => {
+    const lead = featured[0];
+    const shown = lead.caseStudy.figures[lead.homeFigure ?? 0];
+    expect(shown.caption).not.toMatch(/email/i);
+  });
+
+  it("also exists at 3x for large screens, still under 100 KB", () => {
+    const three = join(PUBLIC, `${heroShot.src}@3x.webp`);
+    const size = webpSize(three);
+    expect(size.width).toBe(heroShot.width * 3);
+    expect(Math.abs(size.height - heroShot.height * 3)).toBeLessThanOrEqual(1);
+    expect(statSync(three).size).toBeLessThan(100_000);
   });
 });
 

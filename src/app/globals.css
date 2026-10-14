@@ -27,6 +27,7 @@
   --spacing-gutter: clamp(16px, 5vw, 64px);
 
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-scan: cubic-bezier(0.45, 0, 0.25, 1);
 }
 
 @layer base {
@@ -87,6 +88,17 @@
   letter-spacing: -0.005em;
 }
 
+/* The opening headline: sized by width and, on short screens, by height, so the screenshot
+   below it always starts on the first screen. */
+@utility type-hero {
+  font-size: clamp(2.5rem, min(5vw, 8.5svh), 4.75rem);
+  line-height: 1.04;
+  font-weight: 600;
+  font-stretch: 88%;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
 @utility type-section {
   font-size: clamp(2.25rem, 4.6vw, 3.5rem);
   line-height: 1.04;
@@ -102,10 +114,11 @@
 }
 
 @utility type-statement {
-  font-size: clamp(1.75rem, 3.6vw, 3.25rem);
-  line-height: 1.22;
-  font-weight: 500;
+  font-size: clamp(1.5rem, 2.7vw, 2.5rem);
+  line-height: 1.28;
+  font-weight: 600;
   font-stretch: 95%;
+  text-wrap: pretty;
 }
 
 @utility type-lede {
@@ -130,153 +143,124 @@
   line-height: 1.5;
 }
 
+/* ── Opening (components/sections/Hero.tsx) ────────────────────
+   The screenshot's resting state is flat and uncovered; everything
+   below only adds motion when the visitor allows it. */
+.hero-stage {
+  /* As wide as the column allows, up to 860px, and narrower on short screens so that most of
+     the screenshot (and so the scan) is on the first screen. */
+  width: min(100% - 2 * var(--spacing-gutter), 860px, max(520px, (100svh - 400px) * 2.4));
+  perspective: 1400px;
+}
+.hero-frame {
+  transform-origin: 50% 0;
+}
+/* The part of the screenshot the scan hasn't reached yet, dimmed. */
+.scan-cover {
+  position: absolute;
+  inset: 0;
+  background: rgb(10 10 11 / 0.66);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  pointer-events: none;
+}
+/* The scan line: a 2px amber rule with a short glow above it. The box
+   is the screenshot's height, so translateY(100%) is the whole way down. */
+.scan-beam {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.scan-beam::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: var(--color-amber);
+}
+.scan-beam::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 100% 0;
+  height: 44px;
+  background: linear-gradient(to top, rgb(255 176 0 / 0.14), transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* On load, once: the frame rises into place, then the scan passes. */
+  .hero-arrive {
+    animation: hero-arrive 1s var(--ease-out-soft) both;
+  }
+  .scan-cover {
+    animation: scan-cover 2.6s var(--ease-scan) 0.6s both;
+  }
+  .scan-beam {
+    animation: scan-beam 2.6s var(--ease-scan) 0.6s both;
+  }
+  /* As you scroll: the frame turns to face you and the words lift away. */
+  @supports (animation-timeline: scroll()) {
+    .hero-frame {
+      animation: hero-frame-turn linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0px 60vh;
+    }
+    .hero-copy {
+      animation: hero-copy-lift linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0px 50vh;
+    }
+  }
+}
+
+@keyframes hero-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(48px);
+  }
+}
+@keyframes scan-cover {
+  from {
+    transform: scaleY(1);
+  }
+  to {
+    transform: scaleY(0);
+  }
+}
+@keyframes scan-beam {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  94% {
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+@keyframes hero-frame-turn {
+  from {
+    transform: rotateX(28deg);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes hero-copy-lift {
+  to {
+    transform: translateY(-40px);
+    opacity: 0;
+  }
+}
+
 /* ── Scroll scenes ─────────────────────────────────────────────
    components/motion/ScrollScenes.tsx writes --p (0 to 1) on each
    [data-scene] element while it is on screen. Every rule reads --p
    with a fallback that is the resting state, so with JavaScript off,
    with reduced motion, or before the engine starts, everything is
-   simply in place. Pinning (the tall containers) only exists when
-   motion is allowed. */
-
-/* Opening screen */
-.hero-stage {
-  position: relative;
-  height: calc(100svh - 56px);
-  min-height: 560px;
-  overflow: hidden;
-}
-.hero-copy {
-  transform: translateY(calc(var(--p, 0) * -72px));
-  opacity: calc(1 - var(--p, 0) * 1.4);
-}
-.hero-code {
-  transform: translateY(calc(var(--p, 0) * -140px));
-  opacity: calc(1 - var(--p, 0) * 0.9);
-}
-
-/* The scanner: a 2px amber line sweeps down your real code. A window
-   that travels with it shows the same code in amber, fading upward,
-   so lines light as the line passes and dim again behind it. Only
-   transforms animate. */
-.scanner {
-  position: absolute;
-  inset: 0;
-  container-type: size;
-  overflow: hidden;
-  --window: 168px;
-  /* Fade the code in from the left so it never runs into the headline. */
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 18%);
-  mask-image: linear-gradient(to right, transparent, #000 18%);
-}
-.scanner-code {
-  margin: 0;
-  padding-top: 24px;
-  font-family: var(--font-mono);
-  font-size: 14px;
-  line-height: 24px;
-  white-space: pre;
-}
-.scanner-dim {
-  color: rgb(255 255 255 / 0.08);
-}
-.scanner-window {
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: var(--window);
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 88%);
-  mask-image: linear-gradient(to bottom, transparent, #000 88%);
-  transform: translateY(calc(62cqh - var(--window)));
-}
-.scanner-lit {
-  color: var(--color-amber);
-  opacity: 0.8;
-  transform: translateY(calc(var(--window) - 62cqh));
-}
-.scanner-beam {
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 2px;
-  background: var(--color-amber);
-  transform: translateY(62cqh);
-}
-.scanner-beam::after {
-  content: "";
-  position: absolute;
-  inset: 2px 0 auto 0;
-  height: 40px;
-  background: linear-gradient(to bottom, rgb(255 176 0 / 0.16), transparent);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .hero-pin {
-    height: calc(150svh - 56px);
-  }
-  .hero-stage {
-    position: sticky;
-    top: 56px;
-  }
-  .scanner-beam {
-    animation: scan-beam 9s linear infinite;
-  }
-  .scanner-window {
-    animation: scan-window 9s linear infinite;
-  }
-  .scanner-lit {
-    animation: scan-lit 9s linear infinite;
-  }
-  .scanner[data-paused] .scanner-beam,
-  .scanner[data-paused] .scanner-window,
-  .scanner[data-paused] .scanner-lit {
-    animation-play-state: paused;
-  }
-}
-
-@keyframes scan-beam {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(100cqh);
-  }
-}
-@keyframes scan-window {
-  from {
-    transform: translateY(calc(0px - var(--window)));
-  }
-  to {
-    transform: translateY(calc(100cqh - var(--window)));
-  }
-}
-@keyframes scan-lit {
-  from {
-    transform: translateY(var(--window));
-  }
-  to {
-    transform: translateY(calc(var(--window) - 100cqh));
-  }
-}
-
-/* The intro, lit word by word: word i of n reaches full white as
-   progress passes i/n. */
-.intro-stage {
-  display: flex;
-  align-items: center;
-  min-height: 70svh;
-}
-.intro-word {
-  opacity: clamp(0.2, calc(var(--p, 1) * (var(--n) + 3) - var(--i)), 1);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .intro-pin {
-    height: 260svh;
-  }
-  .intro-stage {
-    position: sticky;
-    top: 56px;
-    height: calc(100svh - 56px);
-  }
-}
+   simply in place. */
 
 /* Frames (screenshots and code) tilt flat and brighten as they arrive. */
 .frame {

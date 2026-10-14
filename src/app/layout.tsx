@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { inter } from "./fonts";
+import { plexMono, plexSans } from "./fonts";
 import { site } from "@/content/site";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Footer } from "@/components/layout/Footer";
+import { ScrollScenes } from "@/components/motion/ScrollScenes";
 import "./globals.css";
 
 const title = `${site.name}, ${site.role.toLowerCase()}`;
@@ -22,19 +23,20 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
-  colorScheme: "light",
+  themeColor: "#0a0a0b",
+  colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en-CA" className={inter.variable}>
+    <html lang="en-CA" className={`${plexSans.variable} ${plexMono.variable}`}>
       <body>
         <SiteHeader />
         {children}
         <Footer />
+        <ScrollScenes />
       </body>
     </html>
   );

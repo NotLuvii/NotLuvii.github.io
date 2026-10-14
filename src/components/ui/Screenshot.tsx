@@ -54,7 +54,7 @@ export function Screenshot({
 
   return (
     <figure className={cn("min-w-0", className)}>
-      <div className="group relative overflow-hidden rounded-xl border border-line bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04),0_8px_24px_-12px_rgb(0_0_0/0.18)]">
+      <div className="group relative overflow-hidden rounded-xl border border-line bg-panel">
         {/* eslint-disable-next-line @next/next/no-img-element -- static export: pre-sized WebP files, no image optimizer */}
         <img
           src={one}
@@ -73,17 +73,17 @@ export function Screenshot({
           onClick={show}
           aria-haspopup="dialog"
           aria-label={`View screenshot full screen: ${shot.caption}`}
-          className="absolute inset-0 flex cursor-zoom-in items-center justify-center rounded-xl bg-black/0 transition-colors duration-200 hover:bg-black/[0.06] focus-visible:bg-black/[0.06] focus-visible:outline-offset-[-3px]"
+          className="absolute inset-0 flex cursor-zoom-in items-center justify-center rounded-xl bg-black/0 transition-colors duration-200 hover:bg-black/20 focus-visible:bg-black/20 focus-visible:outline-offset-[-3px]"
         >
           <span
             data-magnifier
-            className="flex size-12 scale-90 items-center justify-center rounded-full bg-ink/80 text-white opacity-0 shadow-lg backdrop-blur-sm transition duration-200 group-hover:scale-100 group-hover:opacity-100 group-has-[:focus-visible]:scale-100 group-has-[:focus-visible]:opacity-100 [@media(hover:none)]:scale-100 [@media(hover:none)]:opacity-100"
+            className="flex size-12 scale-90 items-center justify-center rounded-full bg-page text-amber opacity-0 ring-1 ring-white/25 transition duration-200 group-hover:scale-100 group-hover:opacity-100 group-has-[:focus-visible]:scale-100 group-has-[:focus-visible]:opacity-100 [@media(hover:none)]:scale-100 [@media(hover:none)]:opacity-100"
           >
             <Magnifier />
           </span>
         </button>
       </div>
-      <figcaption className="type-caption mt-3 text-ash">{shot.caption}</figcaption>
+      <figcaption className="type-caption mt-3 text-text-3">{shot.caption}</figcaption>
 
       <dialog
         ref={dialog}
@@ -118,7 +118,7 @@ export function Screenshot({
           type="button"
           onClick={close}
           aria-label="Close"
-          className="fixed right-3 top-3 inline-flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-white sm:right-5 sm:top-5"
+          className="fixed right-3 top-3 inline-flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-5 sm:top-5"
         >
           <CloseIcon />
         </button>

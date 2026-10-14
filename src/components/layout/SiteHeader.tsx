@@ -7,8 +7,9 @@ import { button } from "@/components/ui/links";
 import { cn } from "@/lib/cn";
 
 /**
- * Sticky header: the name, the section links and the resume. Below 768px the links fold into a
- * menu button. Escape or choosing a link closes the menu and returns focus to the button.
+ * Sticky header: a solid near-black bar with the name, the section links and the resume. Below
+ * 768px the links fold into a menu button. Escape or choosing a link closes the menu and returns
+ * focus to the button.
  */
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -34,15 +35,15 @@ export function SiteHeader() {
   }, [open]);
 
   return (
-    <header id="top" className="sticky top-0 z-40 border-b border-hairline bg-white/85 backdrop-blur-xl backdrop-saturate-150">
+    <header id="top" className="sticky top-0 z-40 border-b border-line bg-page">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-2 focus:z-50 focus:inline-flex focus:min-h-11 focus:items-center focus:rounded-full focus:bg-blue focus:px-5 focus:text-[15px] focus:font-medium focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-2 focus:z-50 focus:inline-flex focus:min-h-11 focus:items-center focus:rounded-full focus:bg-amber focus:px-5 focus:text-[15px] focus:font-semibold focus:text-on-amber"
       >
         Skip to content
       </a>
-      <div className="mx-auto flex h-14 max-w-[1080px] items-center justify-between gap-4 px-gutter">
-        <Link href="/" className="inline-flex min-h-11 items-center text-[17px] font-semibold tracking-[-0.02em] text-ink">
+      <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between gap-4 px-gutter">
+        <Link href="/" className="inline-flex min-h-11 items-center text-[16px] font-semibold text-text">
           {site.name}
         </Link>
 
@@ -50,14 +51,14 @@ export function SiteHeader() {
           <ul className="flex items-center gap-1">
             {nav.map((n) => (
               <li key={n.href}>
-                <a href={n.href} className="inline-flex min-h-11 items-center rounded-full px-3 text-[14px] text-ink/80 transition-colors hover:text-link">
+                <a href={n.href} className="inline-flex min-h-11 items-center px-3 text-[14px] text-text-2 transition-colors hover:text-text">
                   {n.label}
                 </a>
               </li>
             ))}
             {site.resume && (
-              <li className="ml-2">
-                <a href={site.resume} download className={button("primary", "sm")}>
+              <li className="ml-3">
+                <a href={site.resume} download className={button("secondary", "sm")}>
                   Resume <span className="sr-only">(PDF)</span>
                 </a>
               </li>
@@ -68,7 +69,7 @@ export function SiteHeader() {
         <button
           ref={toggle}
           type="button"
-          className="-mr-2 inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full px-3 text-[15px] font-medium text-ink md:hidden"
+          className="-mr-2 inline-flex min-h-11 min-w-11 items-center justify-center gap-2 px-3 text-[15px] font-medium text-text md:hidden"
           aria-expanded={open}
           aria-controls={menuId}
           onClick={() => setOpen((o) => !o)}
@@ -80,12 +81,12 @@ export function SiteHeader() {
         </button>
       </div>
 
-      <nav id={menuId} aria-label="Main" hidden={!open} className="border-t border-hairline bg-white md:hidden">
-        <div className="mx-auto max-w-[1080px] px-gutter pb-4 pt-1">
-          <ul className="divide-y divide-hairline">
+      <nav id={menuId} aria-label="Main" hidden={!open} className="border-t border-line bg-page md:hidden">
+        <div className="mx-auto max-w-[1200px] px-gutter pb-4 pt-1">
+          <ul className="divide-y divide-line">
             {nav.map((n) => (
               <li key={n.href}>
-                <a href={n.href} onClick={() => setOpen(false)} className="flex min-h-12 items-center text-[17px] text-ink">
+                <a href={n.href} onClick={() => setOpen(false)} className="flex min-h-12 items-center text-[17px] text-text">
                   {n.label}
                 </a>
               </li>

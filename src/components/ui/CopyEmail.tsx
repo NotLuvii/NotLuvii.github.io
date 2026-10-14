@@ -37,7 +37,7 @@ export function CopyEmail({ email }: { email: string }) {
       <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
         <span
           ref={text}
-          className="select-all text-[clamp(1.25rem,4.6vw,1.75rem)] font-semibold tracking-[-0.022em] text-ink [overflow-wrap:anywhere]"
+          className="select-all text-[clamp(1.375rem,4.6vw,2.5rem)] font-semibold text-text [font-stretch:92%] [overflow-wrap:anywhere]"
         >
           {email}
         </span>
@@ -45,7 +45,7 @@ export function CopyEmail({ email }: { email: string }) {
           {state === "copied" ? "Copied" : "Copy email address"}
         </button>
       </div>
-      <p className="type-small mt-2 min-h-[1.5em] text-ash" role="status" aria-live="polite">
+      <p className="type-small mt-3 min-h-[1.5em] text-text-3" role="status" aria-live="polite">
         {state === "copied" ? "Email address copied to your clipboard." : state === "selected" ? "Couldn’t copy automatically. The address is selected: press Ctrl+C, or ⌘C on a Mac." : ""}
       </p>
     </div>

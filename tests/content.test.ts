@@ -209,9 +209,13 @@ describe("claims", () => {
       "50%": "Reduced delivery delays by 50% by optimizing front-end workflows and presenting data more clearly.",
       "40%": "Reduced troubleshooting effort by 40% by improving monitoring views, interface clarity and system transparency",
     };
+    // Claims live in src/content; CSS percentages elsewhere aren't claims.
+    const content = sources(join(process.cwd(), "src/content"))
+      .map((f) => readFileSync(f, "utf8"))
+      .join("\n");
     for (const [figure, sentence] of Object.entries(figures)) {
-      expect(text).toContain(sentence);
-      expect(text.split(figure).length - 1, figure).toBe(1);
+      expect(content).toContain(sentence);
+      expect(content.split(figure).length - 1, figure).toBe(1);
     }
   });
 

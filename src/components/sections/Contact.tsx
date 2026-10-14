@@ -4,16 +4,16 @@ import { CopyEmail } from "@/components/ui/CopyEmail";
 
 export function Contact() {
   return (
-    <section id="contact" aria-labelledby="contact-title" className="bg-white py-16 md:py-24">
-      <div className="mx-auto max-w-[1080px] px-gutter">
-        <h2 id="contact-title" className="type-section text-ink">
+    <section id="contact" aria-labelledby="contact-title" className="border-t border-line py-28 md:py-40">
+      <div className="mx-auto max-w-[1200px] px-gutter">
+        <h2 id="contact-title" className="type-display text-text">
           Contact
         </h2>
-        {site.availability && <p className="mt-3 max-w-[60ch] text-[17px] text-ash">{site.availability}</p>}
-        <div className="mt-8">
+        {site.availability && <p className="type-lede mt-5 max-w-[52ch] text-text-2">{site.availability}</p>}
+        <div className="mt-12">
           <CopyEmail email={site.email} />
         </div>
-        <ul className="mt-6 flex flex-wrap gap-x-7 gap-y-1 text-[17px]">
+        <ul className="mt-8 flex flex-wrap gap-x-8 gap-y-1 text-[17px]">
           <li>
             <TextLink href={`mailto:${site.email}`}>Write an email</TextLink>
           </li>

@@ -4,10 +4,10 @@
 
 A static Next.js site: one home page and a case study for each featured project.
 
-- **Home (`/`)**: hero, selected projects (one large, two supporting, then a compact list of the
-  rest), experience, skills and background, contact.
+- **Home (`/`)**: opening screen, a one-line introduction, three selected projects (each with a
+  real screenshot or code excerpt), more projects, experience, skills and background, contact.
 - **Case studies (`/projects/<slug>/`)**: context, what I built, the key decision (with a verbatim
-  code excerpt linked to the file on GitHub), outcome, limitations, screenshots, and links into
+  code excerpt linked to the file on GitHub), outcome with screenshots, limitations, and links into
   the repository.
 
 ## Editing the words
@@ -57,23 +57,35 @@ npm run dev            # http://localhost:3000
 | --- | --- |
 | `npm run typecheck` | Generates Next.js route types, then TypeScript in strict mode |
 | `npm run lint` | ESLint with the Next.js rules |
-| `npm test` | Vitest: content rules, link allow-list, screenshot files and sizes |
+| `npm test` | Vitest: content rules, link allow-list, screenshot files and sizes, the design rules, the scroll-progress maths |
 | `npm run build` | Static export to `out/` |
 | `npm start` | Serves `out/` on http://localhost:3000, the way GitHub Pages does |
-| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: every link, the case-study routes and their images, opening a screenshot full screen and closing it (Escape, close button, click outside) without leaving the page, the resume, the phone menu, the skip link, focus outlines, anchors below the sticky header, copying the email (including when the clipboard is refused), no sideways scrolling at 375, 390, 768, 1024 and 1440px, 44px tap targets, heading order, reduced motion and no-JavaScript |
+| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: every link, the case-study routes and their images, opening a screenshot full screen and closing it (Escape, close button, click outside) without leaving the page, the resume, the phone menu, the skip link, focus outlines, anchors below the sticky header, copying the email (including when the clipboard is refused), no sideways scrolling at 375, 390, 768, 1024 and 1440px, 44px tap targets, heading order, the word-by-word introduction, the scan line pausing off screen, reduced motion and no-JavaScript |
 
 `.github/workflows/ci.yml` runs all of it on every push.
 
 ## Design
 
-- **Colour**: white and `#f5f5f7` surfaces, `#1d1d1f` text, `#6e6e73` secondary text, `#0071e3`
-  for buttons and `#0066cc` for links. Contrast ratios are listed at the top of
-  `src/app/globals.css`; all text meets WCAG AA.
-- **Type**: Inter 4, self-hosted with its optical-size axis (licence in
-  `src/fonts/Inter-LICENSE.txt`).
-- **Motion**: cards and rows fade up the first time they scroll into view. Nothing is hidden in the
-  HTML: elements are only marked for the effect after the page loads, if they start below the fold
-  and the visitor hasn't asked for reduced motion.
+- **Colour**: a near-black page (`#0a0a0b`), `#141416` panels, `#f5f5f7` text with two quieter
+  greys, `#2c2c2e` lines and one accent, signal amber (`#ffb000`). Contrast ratios are listed at
+  the top of `src/app/globals.css`; all text meets WCAG AA and the tests recheck them.
+- **Type**: IBM Plex Sans (variable weight and width) and IBM Plex Mono, self-hosted (licence in
+  `src/fonts/IBM-Plex-LICENSE.txt`). Headings use a slightly condensed width; labels, dates and
+  file names are set in Plex Mono.
+- **Opening screen**: the background is real code, lines 201 to 260 of `js/detectors.js` from the
+  scam detection tool (`src/content/heroCode.ts`, linked from the caption). An amber line sweeps
+  down it and the lines light as it passes. Only transforms animate, and it pauses off screen.
+- **Scroll scenes**: `src/components/motion/ScrollScenes.tsx` writes a progress value (`--p`,
+  0 to 1) on each `[data-scene]` element while it is on screen; the CSS in `globals.css` reads it.
+  The introduction lights word by word, screenshots and code tilt flat as they arrive, and the
+  experience timeline fills with amber. Every rule falls back to the finished state, so with
+  JavaScript off or reduced motion on, nothing is pinned, nothing animates and everything is
+  readable. The progress maths is in `progress.ts` and unit tested.
+- **Entrance**: below-the-fold blocks fade up the first time they scroll into view. Nothing is
+  hidden in the HTML: elements are only marked for the effect after the page loads.
+- **House rules** (checked by `tests/design.test.ts`): no gradient text, no frosted glass or
+  blur, no purple, corners at most 12px, shadows only on the screenshot viewer, no emoji, no
+  all-caps labels, and none of the default fonts that make sites look generated.
 
 ## Deploy
 

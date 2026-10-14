@@ -1,38 +1,39 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────────
-   Tokens. White and light grey surfaces, near-black text, one blue
-   for actions and links. Contrast (WCAG 2.2, normal text):
-     ink   #1d1d1f on white 16.8:1, on mist 15.5:1
-     ash   #6e6e73 on white  5.07:1, on mist  4.66:1
-     link  #0066cc on white  5.57:1, on mist  5.11:1
-     white on blue #0071e3   4.70:1 (hover #0062c4 5.93:1)
+   Tokens. A near-black page, one accent (signal amber) and
+   high-contrast text. Contrast, WCAG 2.2 normal text:
+     text    #f5f5f7 on page 18.2:1, on panel 16.9:1
+     text-2  #c7c7cc on page 11.8:1, on panel 10.9:1
+     text-3  #98989d on page  6.9:1, on panel  6.4:1
+     amber   #ffb000 on page 10.8:1, on panel 10.0:1
+     on-amber #0a0a0b on amber 10.8:1 (hover #ffc53d 12.5:1)
+   Checked in tests/design.test.ts.
    ────────────────────────────────────────────────────────────── */
 @theme {
-  --color-white: #ffffff;
-  --color-mist: #f5f5f7;
-  --color-ink: #1d1d1f;
-  --color-ash: #6e6e73;
-  --color-line: #d2d2d7;
-  --color-hairline: #e8e8ed;
-  --color-code: #1d1d1f;
+  --color-page: #0a0a0b;
+  --color-panel: #141416;
+  --color-text: #f5f5f7;
+  --color-text-2: #c7c7cc;
+  --color-text-3: #98989d;
+  --color-line: #2c2c2e;
+  --color-amber: #ffb000;
+  --color-amber-hover: #ffc53d;
+  --color-on-amber: #0a0a0b;
 
-  --color-blue: #0071e3;
-  --color-blue-hover: #0062c4;
-  --color-link: #0066cc;
+  --font-sans: var(--font-plex-sans), "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, Menlo, Consolas, monospace;
 
-  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
-
-  --spacing-gutter: clamp(16px, 4vw, 40px);
+  --spacing-gutter: clamp(16px, 5vw, 64px);
 
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @layer base {
   html {
-    background: var(--color-white);
-    color: var(--color-ink);
+    background: var(--color-page);
+    color: var(--color-text);
+    color-scheme: dark;
     -webkit-text-size-adjust: 100%;
     overflow-x: clip;
     scroll-behavior: smooth;
@@ -48,10 +49,8 @@
 
   body {
     font-family: var(--font-sans);
-    font-optical-sizing: auto;
     font-size: 17px;
-    line-height: 1.5;
-    letter-spacing: -0.016em;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -59,13 +58,14 @@
   }
 
   ::selection {
-    background: rgb(0 113 227 / 0.2);
+    background: rgb(255 176 0 / 0.3);
+    color: var(--color-text);
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-blue);
+    outline: 2px solid var(--color-amber);
     outline-offset: 3px;
-    border-radius: 6px;
+    border-radius: 4px;
   }
 
   button {
@@ -78,58 +78,222 @@
   }
 }
 
-/* ── Type scale ───────────────────────────────────────────── */
+/* ── Type ─────────────────────────────────────────────────── */
 @utility type-display {
-  font-size: clamp(2.5rem, 5.2vw, 3.75rem);
+  font-size: clamp(2.5rem, 4.8vw, 3.75rem);
   line-height: 1.04;
-  font-weight: 650;
-  letter-spacing: -0.035em;
-}
-
-@utility type-lede {
-  font-size: clamp(1.3125rem, 2.3vw, 1.75rem);
-  line-height: 1.25;
-  font-weight: 500;
-  letter-spacing: -0.022em;
+  font-weight: 600;
+  font-stretch: 88%;
+  letter-spacing: -0.005em;
 }
 
 @utility type-section {
-  font-size: clamp(1.75rem, 3.2vw, 2.25rem);
-  line-height: 1.1;
-  font-weight: 650;
-  letter-spacing: -0.03em;
+  font-size: clamp(2.25rem, 4.6vw, 3.5rem);
+  line-height: 1.04;
+  font-weight: 600;
+  font-stretch: 90%;
 }
 
-@utility type-card {
-  font-size: clamp(1.25rem, 2vw, 1.5rem);
-  line-height: 1.2;
+@utility type-title {
+  font-size: clamp(1.75rem, 2.8vw, 2.5rem);
+  line-height: 1.1;
   font-weight: 600;
-  letter-spacing: -0.022em;
+  font-stretch: 90%;
+}
+
+@utility type-statement {
+  font-size: clamp(1.75rem, 3.6vw, 3.25rem);
+  line-height: 1.22;
+  font-weight: 500;
+  font-stretch: 95%;
+}
+
+@utility type-lede {
+  font-size: clamp(1.1875rem, 1.7vw, 1.375rem);
+  line-height: 1.45;
 }
 
 @utility type-label {
+  font-family: var(--font-mono);
   font-size: 0.8125rem;
-  line-height: 1.4;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  line-height: 1.5;
+  font-weight: 500;
 }
 
 @utility type-small {
   font-size: 0.9375rem;
-  line-height: 1.5;
-  letter-spacing: -0.01em;
+  line-height: 1.55;
 }
 
 @utility type-caption {
   font-size: 0.875rem;
-  line-height: 1.45;
-  letter-spacing: -0.005em;
+  line-height: 1.5;
 }
 
-/* ── Entrance ──────────────────────────────────────────────────
-   Reveal (components/ui/Reveal.tsx) marks an element "pending" only
-   after the page has loaded, only if it starts below the fold, and
-   never under reduced motion. Without JavaScript nothing is hidden. */
+/* ── Scroll scenes ─────────────────────────────────────────────
+   components/motion/ScrollScenes.tsx writes --p (0 to 1) on each
+   [data-scene] element while it is on screen. Every rule reads --p
+   with a fallback that is the resting state, so with JavaScript off,
+   with reduced motion, or before the engine starts, everything is
+   simply in place. Pinning (the tall containers) only exists when
+   motion is allowed. */
+
+/* Opening screen */
+.hero-stage {
+  position: relative;
+  height: calc(100svh - 56px);
+  min-height: 560px;
+  overflow: hidden;
+}
+.hero-copy {
+  transform: translateY(calc(var(--p, 0) * -72px));
+  opacity: calc(1 - var(--p, 0) * 1.4);
+}
+.hero-code {
+  transform: translateY(calc(var(--p, 0) * -140px));
+  opacity: calc(1 - var(--p, 0) * 0.9);
+}
+
+/* The scanner: a 2px amber line sweeps down your real code. A window
+   that travels with it shows the same code in amber, fading upward,
+   so lines light as the line passes and dim again behind it. Only
+   transforms animate. */
+.scanner {
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  overflow: hidden;
+  --window: 168px;
+  /* Fade the code in from the left so it never runs into the headline. */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 18%);
+  mask-image: linear-gradient(to right, transparent, #000 18%);
+}
+.scanner-code {
+  margin: 0;
+  padding-top: 24px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 24px;
+  white-space: pre;
+}
+.scanner-dim {
+  color: rgb(255 255 255 / 0.08);
+}
+.scanner-window {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: var(--window);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 88%);
+  mask-image: linear-gradient(to bottom, transparent, #000 88%);
+  transform: translateY(calc(62cqh - var(--window)));
+}
+.scanner-lit {
+  color: var(--color-amber);
+  opacity: 0.8;
+  transform: translateY(calc(var(--window) - 62cqh));
+}
+.scanner-beam {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: var(--color-amber);
+  transform: translateY(62cqh);
+}
+.scanner-beam::after {
+  content: "";
+  position: absolute;
+  inset: 2px 0 auto 0;
+  height: 40px;
+  background: linear-gradient(to bottom, rgb(255 176 0 / 0.16), transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-pin {
+    height: calc(150svh - 56px);
+  }
+  .hero-stage {
+    position: sticky;
+    top: 56px;
+  }
+  .scanner-beam {
+    animation: scan-beam 9s linear infinite;
+  }
+  .scanner-window {
+    animation: scan-window 9s linear infinite;
+  }
+  .scanner-lit {
+    animation: scan-lit 9s linear infinite;
+  }
+  .scanner[data-paused] .scanner-beam,
+  .scanner[data-paused] .scanner-window,
+  .scanner[data-paused] .scanner-lit {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes scan-beam {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100cqh);
+  }
+}
+@keyframes scan-window {
+  from {
+    transform: translateY(calc(0px - var(--window)));
+  }
+  to {
+    transform: translateY(calc(100cqh - var(--window)));
+  }
+}
+@keyframes scan-lit {
+  from {
+    transform: translateY(var(--window));
+  }
+  to {
+    transform: translateY(calc(var(--window) - 100cqh));
+  }
+}
+
+/* The intro, lit word by word: word i of n reaches full white as
+   progress passes i/n. */
+.intro-stage {
+  display: flex;
+  align-items: center;
+  min-height: 70svh;
+}
+.intro-word {
+  opacity: clamp(0.2, calc(var(--p, 1) * (var(--n) + 3) - var(--i)), 1);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .intro-pin {
+    height: 260svh;
+  }
+  .intro-stage {
+    position: sticky;
+    top: 56px;
+    height: calc(100svh - 56px);
+  }
+}
+
+/* Frames (screenshots and code) tilt flat and brighten as they arrive. */
+.frame {
+  transform: perspective(1400px) rotateX(calc((1 - var(--p, 1)) * 16deg)) translateY(calc((1 - var(--p, 1)) * 48px));
+  transform-origin: 50% 100%;
+  opacity: calc(0.55 + var(--p, 1) * 0.45);
+}
+
+/* The experience timeline fills with amber as you scroll through it. */
+.timeline-fill {
+  transform: scaleY(var(--p, 1));
+  transform-origin: top;
+}
+
+/* ── Entrance (components/ui/Reveal.tsx) ──────────────────────
+   Marked "pending" only after load, only below the fold, never
+   under reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   [data-reveal="pending"] {
     opacity: 0;
@@ -151,7 +315,7 @@
   }
 }
 
-/* ── Screenshot lightbox ───────────────────────────────────────
+/* ── Screenshot viewer ─────────────────────────────────────────
    The page behind stays put while a screenshot is open full screen. */
 html:has(dialog.lightbox[open]) {
   overflow: hidden;

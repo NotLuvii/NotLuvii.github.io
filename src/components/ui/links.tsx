@@ -53,7 +53,7 @@ export function TextLink({ children, className, external, ...rest }: AnchorProps
       {...rest}
       {...(external ? externalProps : {})}
       className={cn(
-        "group inline-flex min-h-11 items-center gap-1.5 text-link underline-offset-[3px] hover:underline",
+        "group inline-flex min-h-11 items-center gap-1.5 text-text underline-offset-4 transition-colors hover:text-amber hover:underline",
         className,
       )}
     >
@@ -68,14 +68,14 @@ export function TextLink({ children, className, external, ...rest }: AnchorProps
   );
 }
 
-/** Pill buttons: solid blue for the main action, outlined for the second. */
+/** Pill buttons: solid amber for the main action, outlined for the second. */
 export const button = (variant: "primary" | "secondary" = "primary", size: "md" | "sm" = "md") =>
   cn(
     "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition-colors duration-200",
     size === "md" ? "min-h-11 px-5 text-[16px]" : "relative min-h-9 px-4 text-[14px] after:absolute after:inset-x-0 after:-inset-y-1 after:content-['']",
     variant === "primary"
-      ? "bg-blue text-white hover:bg-blue-hover"
-      : "bg-white text-ink ring-1 ring-inset ring-line hover:ring-ink/40",
+      ? "bg-amber font-semibold text-on-amber hover:bg-amber-hover"
+      : "text-text ring-1 ring-inset ring-white/30 hover:ring-amber hover:text-amber",
   );
 
 /** Same as `button`, as a link, with the new-tab note and arrow for external destinations. */

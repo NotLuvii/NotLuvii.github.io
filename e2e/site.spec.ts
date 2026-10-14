@@ -50,8 +50,8 @@ test.describe("home page", () => {
     await page.goto("/");
     const articles = page.locator("#projects article");
     await expect(articles).toHaveCount(3);
-    // All three cards share one layout: no card gets a picture or a different button.
-    await expect(page.locator("#projects article img")).toHaveCount(0);
+    // All three chapters share one layout: one real screenshot or code panel each, same links.
+    for (const a of await articles.all()) await expect(a.locator("[data-frame]")).toHaveCount(1);
     const caseStudyClasses = await page.locator("#projects article").evaluateAll((as) =>
       as.map((a) => [...a.querySelectorAll("a")].find((l) => l.textContent?.startsWith("Read the case study"))?.className),
     );
@@ -289,11 +289,11 @@ test.describe("screenshots", () => {
     await expect(page.getByRole("dialog").getByRole("button", { name: "Close" })).toBeFocused();
   });
 
-  test("the hero screenshot opens too", async ({ page }) => {
+  test("project screenshots on the home page open too", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: /^View screenshot full screen/ }).first().click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByRole("dialog").locator("img")).toHaveAttribute("src", /email-result@2x\.webp$/);
+    await expect(page.getByRole("dialog").locator("img")).toHaveAttribute("src", /app@2x\.webp$/);
   });
 });
 
@@ -334,10 +334,11 @@ test.describe("layout", () => {
           // Inline links in sentences are exempt; so is the skip link until it's focused.
           .filter((el) => getComputedStyle(el).display !== "inline" && !el.classList.contains("sr-only"))
           .map((el) => {
-            const r = el.getBoundingClientRect();
+            // offsetHeight ignores transforms, so a frame mid-tilt doesn't shrink its links.
+            const h = (el as HTMLElement).offsetHeight;
             const after = getComputedStyle(el, "::after");
             const extra = after.position === "absolute" ? -2 * parseFloat(after.top || "0") : 0;
-            return { text: (el.textContent ?? "").trim().slice(0, 40), h: r.height + extra };
+            return { text: (el.textContent ?? "").trim().slice(0, 40), h: h + extra };
           })
           .filter((t) => t.h < 44),
       );
@@ -356,12 +357,19 @@ test.describe("layout", () => {
 });
 
 test.describe("motion", () => {
-  test("with reduced motion, nothing is ever hidden for an entrance", async ({ browser }) => {
+  test("with reduced motion, nothing is hidden, held or animated", async ({ browser }) => {
     const context = await browser.newContext({ reducedMotion: "reduce" });
     const page = await context.newPage();
     await page.goto("/");
     await scrollThrough(page);
     expect(await page.locator("[data-reveal]").count()).toBe(0);
+    // The scroll engine never starts, so no scene gets a progress value.
+    expect(await page.locator('[data-scene][style*="--p"]').count()).toBe(0);
+    // Every word of the intro is fully lit and nothing is pinned.
+    const dim = await page.locator(".intro-word").evaluateAll((ws) => ws.filter((w) => parseFloat(getComputedStyle(w).opacity) < 1).length);
+    expect(dim).toBe(0);
+    expect(await page.locator(".intro-stage").evaluate((el) => getComputedStyle(el).position)).not.toBe("sticky");
+    expect(await page.locator(".scanner-beam").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
     await context.close();
   });
 
@@ -371,7 +379,32 @@ test.describe("motion", () => {
     await page.goto("/");
     expect(await page.locator("[data-reveal]").count()).toBe(0);
     await expect(page.locator("#contact h2")).toBeVisible();
+    const dim = await page.locator(".intro-word").evaluateAll((ws) => ws.filter((w) => parseFloat(getComputedStyle(w).opacity) < 1).length);
+    expect(dim).toBe(0);
+    await expect(page.getByText(site.headline)).toBeVisible();
     await context.close();
+  });
+
+  test("the intro lights word by word and ends fully lit", async ({ page }) => {
+    await page.goto("/");
+    const pin = page.locator(".intro-pin");
+    const opacities = () => page.locator(".intro-word").evaluateAll((ws) => ws.map((w) => parseFloat(getComputedStyle(w).opacity)));
+    // Part way through, the first words are lit and the last are still dim.
+    await pin.evaluate((el: HTMLElement) => window.scrollTo(0, el.getBoundingClientRect().top + scrollY - 56 + (el.offsetHeight - innerHeight) * 0.4));
+    await expect.poll(async () => { const o = await opacities(); return o[0] === 1 && o[o.length - 1] < 0.5; }).toBe(true);
+    // At the end of the hold, every word is lit.
+    await pin.evaluate((el: HTMLElement) => window.scrollTo(0, el.getBoundingClientRect().top + scrollY - 56 + (el.offsetHeight - innerHeight)));
+    await expect.poll(async () => (await opacities()).every((o) => o >= 0.99)).toBe(true);
+  });
+
+  test("the scanner pauses when it's off screen", async ({ page }) => {
+    await page.goto("/");
+    const scanner = page.locator(".scanner");
+    await expect(scanner).not.toHaveAttribute("data-paused");
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expect(scanner).toHaveAttribute("data-paused", "");
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(scanner).not.toHaveAttribute("data-paused");
   });
 
   test("with motion allowed, everything has appeared by the time it's scrolled past", async ({ page }) => {

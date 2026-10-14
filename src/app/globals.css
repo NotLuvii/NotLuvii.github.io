@@ -1,0 +1,262 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────
+   Tokens: Apple's product-page palette. White and light grey for the
+   page, near-black for text, one blue for everything you can click,
+   and black where the work is shown.
+   ────────────────────────────────────────────────────────────── */
+@theme {
+  --color-white: #ffffff;
+  --color-mist: #f5f5f7;
+  --color-ink: #1d1d1f;
+  --color-ash: #6e6e73;
+  --color-silver: #86868b;
+  --color-fog: #a1a1a6;
+  --color-line: #d2d2d7;
+  --color-night: #000000;
+  --color-carbon: #161617;
+  --color-graphite: #1d1d1f;
+
+  --color-blue: #0071e3;
+  --color-blue-hover: #0077ed;
+  --color-link: #0066cc;
+  --color-link-dark: #2997ff;
+
+  --color-ok: #248a3d;
+  --color-learning: #b25000;
+
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+  --spacing-gutter: max(22px, 4vw);
+
+  --ease-apple: cubic-bezier(0.28, 0.11, 0.32, 1);
+}
+
+@layer base {
+  html {
+    background: var(--color-white);
+    color: var(--color-ink);
+    -webkit-text-size-adjust: 100%;
+    overflow-x: clip;
+    scroll-behavior: smooth;
+    scroll-padding-top: 56px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-optical-sizing: auto;
+    font-size: 17px;
+    line-height: 1.47;
+    letter-spacing: -0.022em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background: rgb(0 113 227 / 0.22);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  svg {
+    display: block;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: default;
+  }
+}
+
+/* ── Type: Apple's product-page scale ─────────────────────── */
+@utility type-hero {
+  font-size: clamp(3rem, 8.2vw, 6rem);
+  line-height: 1.04;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+@utility type-headline {
+  font-size: clamp(2.5rem, 5.6vw, 4rem);
+  line-height: 1.06;
+  font-weight: 600;
+  letter-spacing: -0.028em;
+}
+
+@utility type-title {
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.024em;
+}
+
+@utility type-card {
+  font-size: clamp(1.5rem, 2.2vw, 1.75rem);
+  line-height: 1.14;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+@utility type-intro {
+  font-size: clamp(1.1875rem, 1.6vw, 1.3125rem);
+  line-height: 1.38;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+}
+
+@utility type-eyebrow {
+  font-size: clamp(1.1875rem, 1.8vw, 1.5rem);
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.016em;
+}
+
+@utility type-small {
+  font-size: 0.875rem;
+  line-height: 1.43;
+  letter-spacing: -0.016em;
+}
+
+@utility type-fine {
+  font-size: 0.75rem;
+  line-height: 1.34;
+  letter-spacing: -0.01em;
+}
+
+/* Numbers set in a gradient, the way Apple sets its headline figures. */
+@utility gradient-figure {
+  background: linear-gradient(100deg, #0071e3 10%, #6a4bd6 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ── Reveal on scroll ─────────────────────────────────────────
+   Only when JavaScript has run (html.js), so the page reads fine
+   without it, and never when the visitor asks for less motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-reveal] {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 0.9s var(--ease-apple) var(--reveal-delay, 0s),
+      transform 0.9s var(--ease-apple) var(--reveal-delay, 0s);
+  }
+  .js [data-reveal][data-shown="true"] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Project drawings ─────────────────────────────────────────
+   Shared by the drawings: strokes draw in and labels appear once a
+   tile is on screen (data-active), loops only run while it is. */
+.draw {
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset var(--draw-duration, 2.4s) cubic-bezier(0.16, 1, 0.3, 1) var(--draw-delay, 0s);
+}
+[data-active="true"] .draw {
+  stroke-dashoffset: 0;
+}
+
+.appear {
+  opacity: 0;
+  transition: opacity 1s var(--ease-apple) var(--appear-delay, 0.4s);
+}
+[data-active="true"] .appear {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draw {
+    stroke-dashoffset: 0;
+    transition: none;
+  }
+  .appear {
+    opacity: 1;
+    transition: none;
+  }
+}
+
+.svg-meta {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  fill: var(--color-silver);
+}
+.svg-ui {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  fill: var(--color-mist);
+}
+.svg-display {
+  font-family: var(--font-sans);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  font-variant-numeric: lining-nums;
+}
+
+@keyframes scan {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  10%,
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(var(--scan-distance, 300px));
+    opacity: 0;
+  }
+}
+@keyframes sweep {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(var(--sweep-distance, 400px));
+  }
+}
+@keyframes ping {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+/* Carousel track: native scrolling and snapping, scrollbar hidden. */
+.track {
+  scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+}
+.track::-webkit-scrollbar {
+  display: none;
+}
+.track > * {
+  scroll-snap-align: start;
+}

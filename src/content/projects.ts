@@ -45,7 +45,6 @@ export type FeaturedProject = {
   repo: Link;
   /** Whether there's a live demo, said plainly. */
   availability: string;
-  cover?: Screenshot;
   caseStudy: {
     context: string[];
     role: string;
@@ -88,13 +87,6 @@ const scam: FeaturedProject = {
   stack: ["JavaScript", "HTML and CSS", "Node.js", "Express", "Cheerio"],
   repo: { label: "Code on GitHub", href: `${GH}/Fraud-Detection-Tool` },
   availability: "No live demo; it runs locally.",
-  cover: {
-    src: "/images/scam-detection/url-lookalike",
-    width: 592,
-    height: 544,
-    alt: "The tool’s Link / URL panel with paypal-secure.com/verify-now entered. The result shows a risk score of 70 percent, High risk, with two issues: a brand name with a hyphen and an extra word, and a path that suggests login or verification.",
-    caption: "Link check on the address from the README’s sample phishing email: 70, High.",
-  },
   caseStudy: {
     context: [
       "Phishing emails, scam texts, fake listings and lookalike links give themselves away in different ways: urgent wording, a generic greeting, a shortened link, a request to pay by wire transfer, a misspelled domain.",
@@ -274,23 +266,23 @@ const resume: FeaturedProject = {
   year: "2024",
   team: "Solo",
   summary:
-    "Compares a résumé (PDF or Word) with a job description and gives a relevance score, the shared and missing skills, and interview questions for the role.",
+    "Compares a resume (PDF or Word) with a job description and gives a relevance score, the shared and missing skills, and interview questions for the role.",
   built: "A Flask web app and a Tkinter desktop app with charts, sharing one Python backend that parses PDF and Word files.",
   decision: "Skills are matched against curated lists of 279 technical and 49 soft skills, so ordinary words never count as skills.",
-  result: "On my résumé and a sample posting, it scored 55.6%: five of the posting’s nine skills found, Docker and Kubernetes flagged as missing.",
+  result: "On my resume and a sample posting, it scored 55.6%: five of the posting’s nine skills found, Docker and Kubernetes flagged as missing.",
   stack: ["Python", "Flask", "PyMuPDF", "python-docx", "Tkinter", "Matplotlib", "pytest", "JavaScript"],
   repo: { label: "Code on GitHub", href: `${GH}/Resume-Analyze` },
   availability: "No live demo; it runs locally with Flask.",
   caseStudy: {
     context: [
-      "Tailoring a résumé to a job posting starts with a comparison: which of the role’s skills the résumé already shows, and which it doesn’t.",
+      "Tailoring a resume to a job posting starts with a comparison: which of the role’s skills the resume already shows, and which it doesn’t.",
       "The tool makes that comparison from the two texts and suggests interview questions for the skills the posting asks for.",
     ],
     role: "Solo: the desktop version and the web version.",
     built: [
-      "Relevance score: each skill in the job description is weighted by how often the description names it, counting whole words, and the score is the weighted share of those skills the résumé also mentions, from 0 to 100%.",
-      "Desktop version (November 2024): a Tkinter app with drag-and-drop résumés, a results table with each résumé’s score, and Matplotlib charts of matched skills and the spread of scores.",
-      "Web version (December 2024): a Flask endpoint, POST /upload, that takes the posting and a résumé, reads PDFs with PyMuPDF and Word files with python-docx, and returns the analysis as JSON to a small JavaScript front end that shows the score as a bar.",
+      "Relevance score: each skill in the job description is weighted by how often the description names it, counting whole words, and the score is the weighted share of those skills the resume also mentions, from 0 to 100%.",
+      "Desktop version (November 2024): a Tkinter app with drag-and-drop resumes, a results table with each resume’s score, and Matplotlib charts of matched skills and the spread of scores.",
+      "Web version (December 2024): a Flask endpoint, POST /upload, that takes the posting and a resume, reads PDFs with PyMuPDF and Word files with python-docx, and returns the analysis as JSON to a small JavaScript front end that shows the score as a bar.",
       "Skill extraction: the text is lower-cased, punctuation and stop words are removed, and the words that remain are kept only if they appear in the technical or soft-skill list.",
       "Interview questions from templates for each skill found in the posting, followed by general, behavioural and technical questions.",
       "October 2026 update: the score restored in both versions, the desktop version brought back in line with the current backend, and tests added (pytest) for the scoring, the web endpoint and the desktop window.",
@@ -298,7 +290,7 @@ const resume: FeaturedProject = {
     decision: {
       title: "Curated skill lists instead of word overlap",
       body: [
-        "Comparing every word of a posting with every word of a résumé would report ordinary words as matches. Matching only against curated lists of 279 technical and 49 soft skills keeps the output to actual skills, and splits it into technical and soft.",
+        "Comparing every word of a posting with every word of a resume would report ordinary words as matches. Matching only against curated lists of 279 technical and 49 soft skills keeps the output to actual skills, and splits it into technical and soft.",
         "The cost is coverage: a skill that isn’t on a list is never found, and synonyms aren’t recognised. The README lists this as a known issue.",
       ],
       code: {
@@ -321,11 +313,11 @@ const resume: FeaturedProject = {
       },
     },
     outcome: [
-      "The screenshot compares my own résumé with a short sample posting that names nine listed skills once each. The tool scored it 55.6%: it found SQL, React, TypeScript, AWS and Python in both, listed Docker and Kubernetes as missing technical skills, and communication and teamwork as missing soft skills, since my résumé doesn’t use those words.",
+      "The screenshot below compares my own resume with a short sample posting that names nine listed skills once each. The tool scored it 55.6%: it found SQL, React, TypeScript, AWS and Python in both, listed Docker and Kubernetes as missing technical skills, and communication and teamwork as missing soft skills, since my resume doesn’t use those words.",
       "Twelve automated tests cover the weighting (including that short skill names like R are counted as whole words), the score from 0 to 100%, the web endpoint and the desktop window.",
     ],
     limitations: [
-      "Text is split into single words before matching, so list entries with spaces or punctuation can’t match: 58 of the 279 technical entries, including Power BI, C++ and scikit-learn, and 25 of the 49 soft skills, including problem-solving. In the screenshot, “problem-solving” is in the posting but isn’t reported.",
+      "Text is split into single words before matching, so list entries with spaces or punctuation can’t match: 58 of the 279 technical entries, including Power BI, C++ and scikit-learn, and 25 of the 49 soft skills, including problem-solving. In the screenshot above, “problem-solving” is in the posting but isn’t reported.",
       "Only listed skills count towards the score, so a posting whose requirements aren’t on the lists scores 0.",
     ],
     figuresNote: "Screenshot of the web version running locally, October 2026.",
@@ -336,7 +328,7 @@ const resume: FeaturedProject = {
         height: 1191,
         alt: "The Resume Analyzer web page. A sample job description is in the text box and Luvneet_Bamrah_Resume.pdf is selected. The relevance score is 55.6 percent, shown with a bar. Gap analysis lists teamwork and communication as missing soft skills and Docker and Kubernetes as missing technical skills; matched technical skills are AWS, TypeScript, React, SQL and Python.",
         caption:
-          "My résumé scored 55.6% against a sample posting: “Software developer. You will build web applications in React and TypeScript, write SQL and Python to validate data, and deploy services on AWS. Experience with Docker and Kubernetes is an asset. We value communication, teamwork and problem-solving.”",
+          "My resume scored 55.6% against a sample posting: “Software developer. You will build web applications in React and TypeScript, write SQL and Python to validate data, and deploy services on AWS. Experience with Docker and Kubernetes is an asset. We value communication, teamwork and problem-solving.”",
       },
     ],
     files: [

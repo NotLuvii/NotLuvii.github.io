@@ -11,7 +11,8 @@ function Section({ id, title, children }: { id: string; title: string; children:
       <h2 id={id} className="text-[19px] font-semibold tracking-[-0.02em] text-ink">
         {title}
       </h2>
-      <div className="mt-3 max-w-[68ch] space-y-4 text-[17px] leading-[1.6] text-ink/85 md:mt-0">{children}</div>
+      {/* Text keeps a readable measure; screenshots may use the column's full width. */}
+      <div className="mt-3 min-w-0 space-y-4 text-[17px] leading-[1.6] text-ink/85 md:mt-0 [&>*:not(.figures)]:max-w-[68ch]">{children}</div>
     </section>
   );
 }
@@ -31,7 +32,6 @@ function Bullets({ items }: { items: string[] }) {
 
 export function CaseStudy({ project: p }: { project: FeaturedProject }) {
   const c = p.caseStudy;
-  const [leadFigure, ...otherFigures] = c.figures;
   const index = featured.findIndex((f) => f.slug === p.slug);
   const next = featured[(index + 1) % featured.length];
 
@@ -44,7 +44,7 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
               <Chevron left className="translate-y-px" />
               All projects
             </Link>
-            <div className={leadFigure ? "mt-4 grid items-start gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,400px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] lg:gap-16" : "mt-4"}>
+            <div className="mt-4">
               <div>
                 <p className="type-label text-ash">
                   {p.kind} · {p.year} · {p.team}
@@ -71,7 +71,6 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
                   </ButtonLink>
                 </div>
               </div>
-              {leadFigure && <Screenshot shot={leadFigure} priority sizes="(min-width: 1024px) 440px, (min-width: 768px) 400px, 100vw" />}
             </div>
           </div>
         </header>
@@ -103,25 +102,21 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
             {c.outcome.map((t) => (
               <p key={t}>{t}</p>
             ))}
+            {c.figures.length > 0 && (
+              <div className="figures space-y-4 pt-4">
+                {c.figuresNote && <p className="type-small text-ash">{c.figuresNote}</p>}
+                <div className={c.figures.length > 1 ? "grid items-start gap-8 sm:grid-cols-2" : "max-w-[560px]"}>
+                  {c.figures.map((f) => (
+                    <Screenshot key={f.src} shot={f} sizes="(min-width: 1080px) 370px, (min-width: 640px) 45vw, 100vw" />
+                  ))}
+                </div>
+              </div>
+            )}
           </Section>
 
           <Section id="limitations" title="Limitations">
             <Bullets items={c.limitations} />
           </Section>
-
-          {otherFigures.length > 0 && (
-            <section aria-labelledby="screenshots" className="border-t border-hairline py-10">
-              <h2 id="screenshots" className="text-[19px] font-semibold tracking-[-0.02em] text-ink">
-                Screenshots
-              </h2>
-              {c.figuresNote && <p className="type-small mt-2 text-ash">{c.figuresNote}</p>}
-              <div className="mt-6 grid items-start gap-8 md:grid-cols-2">
-                {otherFigures.map((f) => (
-                  <Screenshot key={f.src} shot={f} sizes="(min-width: 1080px) 500px, (min-width: 768px) 46vw, 100vw" />
-                ))}
-              </div>
-            </section>
-          )}
 
           <Section id="code" title="Inspect the code">
             <ul className="space-y-0">

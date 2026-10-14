@@ -20,7 +20,7 @@ export function Hero() {
             <ButtonLink href="#projects">View projects</ButtonLink>
             {site.resume && (
               <ButtonLink href={site.resume} download variant="secondary">
-                Download résumé <span className="text-ash">(PDF)</span>
+                Download resume <span className="text-ash">(PDF)</span>
               </ButtonLink>
             )}
           </div>

@@ -1,6 +1,6 @@
 /**
  * Identity, links and navigation. Everything a visitor reads lives in /src/content: edit the words
- * there, not in components. Facts here come from the résumé (public/Luvneet_Bamrah_Resume.pdf).
+ * there, not in components. Facts here come from the resume (public/Luvneet_Bamrah_Resume.pdf).
  */
 export const site = {
   name: "Luvneet Bamrah",
@@ -15,8 +15,8 @@ export const site = {
 
   email: "luvneetbamrah@gmail.com",
   github: { handle: "NotLuvii", url: "https://github.com/NotLuvii" },
-  linkedin: { handle: "luvneet-bamrah", url: "https://www.linkedin.com/in/luvneet-bamrah" },
-  /** Served from /public. Set to null (and delete the file) to stop publishing the résumé. */
+  linkedin: { handle: "luvneet-bamrah-157281214", url: "https://www.linkedin.com/in/luvneet-bamrah-157281214" },
+  /** Served from /public. Set to null (and delete the file) to stop publishing the resume. */
   resume: "/Luvneet_Bamrah_Resume.pdf" as string | null,
 
   /** This site's address on GitHub Pages: canonical URLs, the sitemap and link previews. */

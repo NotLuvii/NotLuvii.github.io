@@ -16,7 +16,7 @@ Everything a visitor reads lives in `src/content/`:
 
 | File | What's in it |
 | --- | --- |
-| `site.ts` | Name, headline, intro, contact links, résumé path, navigation |
+| `site.ts` | Name, headline, intro, contact links, resume path, navigation |
 | `projects.ts` | Featured projects and their case studies, the "More projects" list, screenshots and their captions |
 | `experience.ts` | Roles, education, background, skills |
 
@@ -24,7 +24,7 @@ Rules the content follows, enforced by `tests/content.test.ts`:
 
 - Every project link goes to a specific repository or page that was checked by hand. Private
   repositories and projects without public code get a note instead of a link.
-- Each figure from the résumé (75%, 50%, 40%) appears once, in the résumé's own words.
+- Each figure from the resume (75%, 50%, 40%) appears once, in the resume's own words.
 - Every screenshot is a real capture, exists at 1x and 2x with the size declared in
   `projects.ts`, and has alt text and a caption saying what it shows.
 
@@ -37,7 +37,7 @@ Rules the content follows, enforced by `tests/content.test.ts`:
   [Fraud-Detection-Tool](https://github.com/NotLuvii/Fraud-Detection-Tool), with the example
   inputs from its README.
 - **Resume Analyzer**: the Flask web version of
-  [Resume-Analyze](https://github.com/NotLuvii/Resume-Analyze), comparing the published résumé with
+  [Resume-Analyze](https://github.com/NotLuvii/Resume-Analyze), comparing the published resume with
   a short sample job description (quoted in the caption).
 
 To replace one, keep the file name, export a 2x WebP and a 1x WebP at half the width, and update
@@ -59,7 +59,7 @@ npm run dev            # http://localhost:3000
 | `npm test` | Vitest: content rules, link allow-list, screenshot files and sizes |
 | `npm run build` | Static export to `out/` |
 | `npm start` | Serves `out/` on http://localhost:3000, the way GitHub Pages does |
-| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: every link, the case-study routes and their images, the résumé, the phone menu, the skip link, focus outlines, anchors below the sticky header, copying the email (including when the clipboard is refused), no sideways scrolling at 375, 390, 768, 1024 and 1440px, 44px tap targets, heading order, reduced motion and no-JavaScript |
+| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: every link, the case-study routes and their images, the resume, the phone menu, the skip link, focus outlines, anchors below the sticky header, copying the email (including when the clipboard is refused), no sideways scrolling at 375, 390, 768, 1024 and 1440px, 44px tap targets, heading order, reduced motion and no-JavaScript |
 
 `.github/workflows/ci.yml` runs all of it on every push.
 

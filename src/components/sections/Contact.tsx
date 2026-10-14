@@ -30,7 +30,7 @@ export function Contact() {
           {site.resume && (
             <li>
               <TextLink href={site.resume} download>
-                Résumé (PDF)
+                Resume (PDF)
               </TextLink>
             </li>
           )}

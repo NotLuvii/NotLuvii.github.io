@@ -9,7 +9,7 @@ const WIDTHS = [375, 390, 768, 1024, 1440];
 const EXTERNAL = [
   /^https:\/\/github\.com\/NotLuvii$/,
   /^https:\/\/github\.com\/NotLuvii\/(Fraud-Detection-Tool|Mobile-app|Resume-Analyze|Traffic-Detection|StockPredictor|CS3035-Individual-Graphing-Project)(\/blob\/(main|master)\/[\w./-]+(#L\d+-L\d+)?)?$/,
-  /^https:\/\/www\.linkedin\.com\/in\/luvneet-bamrah$/,
+  /^https:\/\/www\.linkedin\.com\/in\/luvneet-bamrah-157281214$/,
   /^https:\/\/youtu\.be\/qHmMMeWLiNo$/,
   /^mailto:luvneetbamrah@gmail\.com$/,
 ];
@@ -35,7 +35,7 @@ test.describe("home page", () => {
     await expect(page.getByText(site.headline)).toBeVisible();
     const view = page.getByRole("link", { name: "View projects" });
     await expect(view).toHaveAttribute("href", "#projects");
-    const resume = page.locator("main").getByRole("link", { name: /Download résumé/ });
+    const resume = page.locator("main").getByRole("link", { name: /Download resume/ });
     await expect(resume).toHaveAttribute("href", site.resume!);
     await expect(resume).toHaveAttribute("download", "");
   });
@@ -50,6 +50,14 @@ test.describe("home page", () => {
     await page.goto("/");
     const articles = page.locator("#projects article");
     await expect(articles).toHaveCount(3);
+    // All three cards share one layout: no card gets a picture or a different button.
+    await expect(page.locator("#projects article img")).toHaveCount(0);
+    const caseStudyClasses = await page.locator("#projects article").evaluateAll((as) =>
+      as.map((a) => [...a.querySelectorAll("a")].find((l) => l.textContent?.startsWith("Read the case study"))?.className),
+    );
+    expect(new Set(caseStudyClasses).size).toBe(1);
+    const cardClasses = await articles.evaluateAll((as) => as.map((a) => a.className));
+    expect(new Set(cardClasses).size).toBe(1);
     for (const [i, p] of featured.entries()) {
       const a = articles.nth(i);
       await expect(a.getByRole("heading", { level: 3 })).toHaveText(p.title);
@@ -70,6 +78,9 @@ test.describe("case studies", () => {
         await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
       }
       await expect(page.getByRole("link", { name: "All projects" })).toHaveAttribute("href", "/#projects");
+      // Screenshots sit in the Outcome section, next to the text that describes them.
+      await expect(page.locator("main img")).toHaveCount(p.caseStudy.figures.length);
+      await expect(page.locator('section[aria-labelledby="outcome"] img')).toHaveCount(p.caseStudy.figures.length);
       // Fails if any image is missing or never loads.
       await scrollThrough(page);
     });
@@ -114,7 +125,7 @@ test.describe("links", () => {
     }
   });
 
-  test("the résumé is a PDF", async ({ request }) => {
+  test("the resume is a PDF", async ({ request }) => {
     const res = await request.get(site.resume!);
     expect(res.status()).toBe(200);
     expect(res.headers()["content-type"]).toContain("application/pdf");

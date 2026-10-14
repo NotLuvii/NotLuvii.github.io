@@ -7,7 +7,7 @@ import { button } from "@/components/ui/links";
 import { cn } from "@/lib/cn";
 
 /**
- * Sticky header: the name, the section links and the résumé. Below 768px the links fold into a
+ * Sticky header: the name, the section links and the resume. Below 768px the links fold into a
  * menu button. Escape or choosing a link closes the menu and returns focus to the button.
  */
 export function SiteHeader() {
@@ -58,7 +58,7 @@ export function SiteHeader() {
             {site.resume && (
               <li className="ml-2">
                 <a href={site.resume} download className={button("primary", "sm")}>
-                  Résumé <span className="sr-only">(PDF)</span>
+                  Resume <span className="sr-only">(PDF)</span>
                 </a>
               </li>
             )}
@@ -93,7 +93,7 @@ export function SiteHeader() {
           </ul>
           {site.resume && (
             <a href={site.resume} download onClick={() => setOpen(false)} className={cn(button("primary"), "mt-3 w-full")}>
-              Download résumé (PDF)
+              Download resume (PDF)
             </a>
           )}
         </div>

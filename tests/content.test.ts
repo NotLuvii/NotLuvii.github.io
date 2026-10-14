@@ -22,7 +22,7 @@ function webpSize(file: string) {
   throw new Error(`Unknown WebP chunk ${chunk} in ${file}`);
 }
 
-const allShots: Screenshot[] = [heroShot, ...featured.flatMap((p) => [...(p.cover ? [p.cover] : []), ...p.caseStudy.figures])];
+const allShots: Screenshot[] = [heroShot, ...featured.flatMap((p) => p.caseStudy.figures)];
 
 /** Every repository and page a project links to, checked by hand in October 2026. */
 const VERIFIED_LINKS = new Set([
@@ -142,7 +142,7 @@ describe("more projects", () => {
 });
 
 describe("experience and skills", () => {
-  it("lists the three roles from the résumé, newest first, with two or three distinct points each", () => {
+  it("lists the three roles from the resume, newest first, with two or three distinct points each", () => {
     expect(roles.map((r) => r.organization)).toEqual(["AiKnod", "SafeTrack", "Immensa Tech"]);
     for (const r of roles) {
       expect(r.points.length).toBeGreaterThanOrEqual(2);
@@ -174,12 +174,16 @@ describe("site", () => {
     for (const n of nav) expect(n.href).toBe(`/#${n.id}`);
   });
 
+  it("links to the right LinkedIn profile", () => {
+    expect(site.linkedin.url).toBe("https://www.linkedin.com/in/luvneet-bamrah-157281214");
+  });
+
   it("uses the requested headline", () => {
     expect(site.name).toBe("Luvneet Bamrah");
     expect(site.headline).toBe("Software engineer building reliable web apps and data tools.");
   });
 
-  it("publishes the résumé that's in /public", () => {
+  it("publishes the resume that's in /public", () => {
     expect(site.resume).toBeTruthy();
     expect(existsSync(join(PUBLIC, site.resume!))).toBe(true);
   });
@@ -199,7 +203,7 @@ describe("claims", () => {
     .map((f) => readFileSync(f, "utf8"))
     .join("\n");
 
-  it("states each résumé figure once, in the résumé's own words", () => {
+  it("states each resume figure once, in the resume's own words", () => {
     const figures = {
       "75%": "Increased route data accuracy by 75% through systematic data validation and alignment of system logic.",
       "50%": "Reduced delivery delays by 50% by optimizing front-end workflows and presenting data more clearly.",
@@ -213,6 +217,10 @@ describe("claims", () => {
 
   it("presents no illustrated interfaces or sample data as evidence", () => {
     for (const leftover of ["Illustrative data", "Illustration", "Sample client", "<svg viewBox=\"0 0 1200"]) expect(text).not.toContain(leftover);
+  });
+
+  it("spells resume without accents", () => {
+    expect(text).not.toMatch(/r\u00e9sum\u00e9/i);
   });
 
   it("leaves no editorial placeholders on the page", () => {

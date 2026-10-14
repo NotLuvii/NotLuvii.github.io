@@ -1,10 +1,10 @@
 /**
- * Work history, education, skills and the short background, from the résumé
- * (public/Luvneet_Bamrah_Resume.pdf). Figures are quoted in the résumé's own words.
+ * Work history, education, skills and the short background, from the resume
+ * (public/Luvneet_Bamrah_Resume.pdf). Figures are quoted in the resume's own words.
  */
 export type Role = {
   organization: string;
-  /** One line on what the organization or product is, where the résumé says. */
+  /** One line on what the organization or product is, where the resume says. */
   about?: string;
   title: string;
   period: string;
@@ -64,7 +64,7 @@ export const background = [
 ];
 
 /**
- * Skills in four groups, each tied to where it was used. Only what the résumé lists or a linked
+ * Skills in four groups, each tied to where it was used. Only what the resume lists or a linked
  * repository shows.
  */
 export const skills: { group: string; items: string[]; usedIn: string }[] = [
@@ -90,5 +90,5 @@ export const skills: { group: string; items: string[]; usedIn: string }[] = [
   },
 ];
 
-/** Languages and libraries outside the four groups, from the résumé and the linked repositories. */
+/** Languages and libraries outside the four groups, from the resume and the linked repositories. */
 export const alsoUsed = ["Java", "Kotlin (Android)", "C#", "C++", "C", "TensorFlow/Keras", "OpenCV"];

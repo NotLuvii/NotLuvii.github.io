@@ -68,17 +68,33 @@ export function TextLink({ children, className, external, ...rest }: AnchorProps
   );
 }
 
+export type ButtonVariant = "primary" | "secondary" | "light" | "outline";
+
+const variants: Record<ButtonVariant, string> = {
+  primary: "bg-amber font-semibold text-on-amber hover:bg-amber-hover",
+  secondary: "bg-raised text-text hover:bg-[#2c2c2e]",
+  light: "bg-text text-on-amber hover:bg-white",
+  // A 1px ring drawn as an outline (no borders or shadows on this site). Utilities outrank the
+  // base focus style, so the amber focus ring is restated here.
+  outline:
+    "text-text outline outline-1 -outline-offset-1 outline-text-3 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber",
+};
+
 /**
- * Pill buttons: solid amber for the main action, a filled grey for the second (no outline). Both
+ * Pill buttons, as on apple.com: solid amber for the one main action, a light pill for a tile's
+ * main link, an outline pill beside it, and a filled grey for the header's resume button. All
  * shrink slightly the moment they're pressed, so a tap is answered before the finger lifts.
  */
-export const button = (variant: "primary" | "secondary" = "primary", size: "md" | "sm" = "md") =>
+export const button = (variant: ButtonVariant = "primary", size: "md" | "sm" = "md") =>
   cn(
     "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium",
     "transition-[scale,background-color] duration-150 ease-out active:scale-[0.97]",
-    size === "md" ? "min-h-11 px-5 text-[17px]" : "relative min-h-9 px-4 text-[14px] after:absolute after:inset-x-0 after:-inset-y-1 after:content-['']",
-    variant === "primary" ? "bg-amber font-semibold text-on-amber hover:bg-amber-hover" : "bg-raised text-text hover:bg-[#2c2c2e]",
+    size === "md" ? "min-h-11 px-[22px] text-[17px]" : "relative min-h-9 px-4 text-[14px] after:absolute after:inset-x-0 after:-inset-y-1 after:content-['']",
+    variants[variant],
   );
+
+/** For a pair of pills that stack on a phone: the same width there, so they line up; natural width from 640px. */
+export const pairedPill = "w-60 sm:w-auto";
 
 /** Same as `button`, as a link, with the new-tab note and arrow for external destinations. */
 export function ButtonLink({
@@ -88,7 +104,7 @@ export function ButtonLink({
   variant = "primary",
   size = "md",
   ...rest
-}: AnchorProps & { variant?: "primary" | "secondary"; size?: "md" | "sm" }) {
+}: AnchorProps & { variant?: ButtonVariant; size?: "md" | "sm" }) {
   return (
     <Anchor {...rest} {...(external ? externalProps : {})} className={cn(button(variant, size), className)}>
       {children}

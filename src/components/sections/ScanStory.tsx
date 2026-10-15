@@ -130,7 +130,7 @@ export function ScanStory({ story }: { story: Story }) {
   const level = levelFor(display, story.thresholds);
 
   return (
-    <div ref={root} data-story data-frame className="story mt-12 md:mt-16">
+    <div ref={root} data-story data-frame className="story mt-12 text-left md:mt-16">
       <div ref={pin} data-story-pin className="story-pin">
         <div data-story-stage className="story-stage">
           <div className="mx-auto grid w-full max-w-[1200px] items-center gap-8 px-gutter md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:gap-16">
@@ -142,9 +142,9 @@ export function ScanStory({ story }: { story: Story }) {
                 </p>
                 <div ref={beam} aria-hidden className="story-beam" />
               </div>
-              <p className="type-small mt-3 text-text-3">
+              <p className="mt-3 text-[17px] text-text-3">
                 The tool’s own rules, applied one at a time.{" "}
-                <TextLink href={story.source.href} external className="type-small">
+                <TextLink href={story.source.href} external>
                   View the rules on GitHub
                 </TextLink>
               </p>
@@ -153,7 +153,7 @@ export function ScanStory({ story }: { story: Story }) {
             <div className="min-w-0">
               <p className="type-small text-text-3">Risk score</p>
               <p aria-hidden className="mt-1 flex items-baseline gap-4">
-                <span data-story-score className="story-score">
+                <span data-story-score className="type-figure text-text">
                   {display}
                 </span>
                 <span data-story-level className="type-title text-text">

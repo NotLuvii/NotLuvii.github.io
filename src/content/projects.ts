@@ -60,10 +60,14 @@ export type FeaturedProject = {
   team: string;
   /** Who it's for and the problem, in one or two sentences. */
   summary: string;
-  /** The part of the summary shown in white on the home page, so it can be read at a glance. */
+  /** The summary's key phrase: the part a skimming reader most needs. */
   summaryKeyPhrase: string;
-  /** Two or three figures from the result, for the home page. Each must be true of the project. */
+  /** One line under the title on the home page's tile. */
+  tileLine: string;
+  /** Two or three figures from the result, each true of the project; the case study states them in prose. */
   stats: Stat[];
+  /** Figures shown on the home page's tile, with short labels: the same values as `stats`. */
+  tileFigures?: Stat[];
   /** The screenshot the home page shows, if not the first case-study figure (or the code, if none). */
   homeShot?: Screenshot;
   /** Told as you scroll on the home page, in place of a screenshot. */
@@ -108,6 +112,7 @@ const scam: FeaturedProject = {
   summary:
     "A browser tool that checks a suspicious email, text message, listing or link, scores it from 0 to 100 and lists the red flags behind the score.",
   summaryKeyPhrase: "scores it from 0 to 100 and lists the red flags behind the score",
+  tileLine: "Watch it score a scam text, one rule at a time.",
   // From the outcome below: the README's sample inputs, scored by the tool.
   stats: [
     { value: "100", label: "The README’s sample phishing email, flagged High" },
@@ -222,11 +227,17 @@ const immensa: FeaturedProject = {
   summary:
     "An Android app for sales inquiries about 3D-printed industrial parts: one form for the part, material, files, criticality and testing, sent as one structured email.",
   summaryKeyPhrase: "sent as one structured email",
+  tileLine: "An Android form, sent as one structured email.",
   // From the case study: the required fields, and the tools screen's currencies and alloys.
   stats: [
     { value: "3", label: "Fields required before an inquiry can be sent: client, part and material" },
     { value: "6", label: "Currencies in the converter, from the UAE dirham to the Canadian dollar" },
     { value: "9", label: "Alloys in the part-weight calculator, including Inconel 718 and Ti-6Al-4V" },
+  ],
+  tileFigures: [
+    { value: "3", label: "required fields" },
+    { value: "6", label: "currencies" },
+    { value: "9", label: "alloys" },
   ],
   stack: ["Kotlin", "Android SDK"],
   repo: { label: "Code on GitHub", href: `${GH}/Mobile-app` },
@@ -317,6 +328,7 @@ const resume: FeaturedProject = {
   summary:
     "Compares a resume (PDF or Word) with a job description and gives a relevance score, the shared and missing skills, and interview questions for the role.",
   summaryKeyPhrase: "gives a relevance score",
+  tileLine: "Scores a resume against a job posting.",
   // From the outcome: my resume against the sample posting shown in the screenshot.
   stats: [
     { value: "55.6%", label: "Relevance score for my resume against a sample posting" },
@@ -399,20 +411,35 @@ const resume: FeaturedProject = {
   },
 };
 
+/** A screen recording: a desktop and a phone crop, each with a still of its last frame. */
+export type Recording = {
+  /**
+   * Path under /public without extension: `${src}.webm` (VP9), `${src}.mp4` (H.264) and the still,
+   * `${src}.webp` at 1x plus `@2x` and `@3x`. Width and height: the recorded viewport, in CSS pixels
+   * (the size of the 1x still).
+   */
+  desktop: { src: string; width: number; height: number };
+  phone: { src: string; width: number; height: number };
+  /** Describes the still, the recording's last frame (the finished result). */
+  alt: string;
+  caption: string;
+  /** The README sample the recording checks, word for word. */
+  input: string;
+};
+
 /**
- * The opening screen's picture: the result panel from the lead project's email check. Landscape, so
- * it fits on the first screen and the scan over it can be seen; also exported at 3x
- * (email-result@3x.webp) because the opening frame is wider than the case-study figures.
+ * The opening screen's film: the scam detection tool, running locally, checking the sample
+ * phishing email from its README (made by scripts/record-scam-tool.mjs). About 7 seconds: the
+ * result, the tool as it opens, the email pasted in, "Analyze email" pressed, the result again.
+ * The desktop crop starts at the tool's tabs, so its risk score is on the first screen.
  */
-export const heroShot: Screenshot & { phone: { src: string; width: number; height: number } } = {
-  src: "/images/scam-detection/email-result",
-  width: 592,
-  height: 329,
-  large: true,
-  /** The same result from the tool's own phone layout, for phone screens (1x, 2x and 3x). */
-  phone: { src: "/images/scam-detection/email-result-phone", width: 390, height: 407 },
-  alt: "Result panel of the scam detection tool: risk score 100 percent, High risk, treat as suspicious. Five issues are listed: urgency language “immediately”, urgency language “click here to restore”, a generic greeting, suspicious domain-like text “paypal-secure”, and a request for sensitive information or to click or verify.",
-  caption: "The scam detection tool, running locally, after checking the sample phishing email from its README.",
+export const heroRecording: Recording = {
+  desktop: { src: "/images/scam-detection/recording-desktop", width: 1000, height: 640 },
+  phone: { src: "/images/scam-detection/recording-phone", width: 390, height: 560 },
+  alt: "The scam detection tool after checking the sample phishing email from its README. The email is in the input field, and the result reads: risk score 100%, High risk, treat as suspicious and avoid clicking links or sharing info.",
+  caption: "A recording of the scam detection tool running locally, checking the sample phishing email from its README.",
+  input:
+    "Dear Customer, Your account has been suspended due to unusual activity.\nVerify your identity immediately: https://paypal-secure.com/verify-now\nClick here to restore access. Do not ignore this message.",
 };
 
 /** In display order: the first is shown large on the home page. */

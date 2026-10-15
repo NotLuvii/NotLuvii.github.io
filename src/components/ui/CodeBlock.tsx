@@ -5,10 +5,11 @@ import { ExternalIcon } from "./links";
 /**
  * A verbatim excerpt from a repository, with the file it came from and a link to it. It's an
  * interface fragment (data-code, data-ui): the only place the site uses monospace type or
- * outlines. `compact` caps its height (the rest scrolls), for the home page; `scan` carries the
- * scan overlay, run by a surrounding ScanOnView.
+ * outlines. `teaser`, for a home-page tile that cuts it off like a picture: it doesn't scroll and
+ * isn't a stop for Tab (the whole excerpt is on the case study), and its caption is read out, not
+ * shown. `scan` carries the scan overlay, run by a surrounding ScanOnView.
  */
-export function CodeBlock({ excerpt, compact = false, scan = false }: { excerpt: CodeExcerpt; compact?: boolean; scan?: boolean }) {
+export function CodeBlock({ excerpt, teaser = false, scan = false }: { excerpt: CodeExcerpt; teaser?: boolean; scan?: boolean }) {
   return (
     <figure className="min-w-0" data-code data-ui>
       <div className="overflow-hidden rounded-lg border border-line bg-raised">
@@ -27,10 +28,8 @@ export function CodeBlock({ excerpt, compact = false, scan = false }: { excerpt:
         </div>
         <div className="relative">
           <pre
-            tabIndex={0}
-            role="region"
-            aria-label={`Code from ${excerpt.file}`}
-            className={cn("overflow-auto p-4 text-[13px] leading-[1.65] text-text-2 focus-visible:outline-offset-[-2px]", compact && "max-h-[22rem]")}
+            {...(teaser ? {} : { tabIndex: 0, role: "region", "aria-label": `Code from ${excerpt.file}` })}
+            className={cn("p-4 text-[13px] leading-[1.65] text-text-2 focus-visible:outline-offset-[-2px]", teaser ? "overflow-hidden" : "overflow-auto")}
           >
             <code>{excerpt.code}</code>
           </pre>
@@ -42,7 +41,7 @@ export function CodeBlock({ excerpt, compact = false, scan = false }: { excerpt:
           )}
         </div>
       </div>
-      <figcaption className="type-small mt-3 text-text-3">{excerpt.caption}</figcaption>
+      <figcaption className={teaser ? "sr-only" : "type-small mt-3 text-text-3"}>{excerpt.caption}</figcaption>
     </figure>
   );
 }

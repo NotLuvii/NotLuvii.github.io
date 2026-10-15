@@ -1,20 +1,21 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────────
-   Tokens. A near-black page and a dark-grey panel tone that
-   sections alternate between (instead of dividing lines), a
-   slightly lighter "raised" tone for screenshot bezels and code,
-   high-contrast text and one accent, signal amber, kept for the
-   main action. Contrast, WCAG 2.2 normal text:
-     text    #f5f5f7 on page 18.2:1, panel 16.4:1, raised 15.4:1
-     text-2  #c7c7cc on page 11.8:1, panel 10.6:1, raised  9.9:1
-     text-3  #98989d on page  6.9:1, panel  6.2:1, raised  5.8:1
-     amber   #ffb000 on page 10.8:1, panel  9.7:1
-     on-amber #0a0a0b on amber 10.8:1 (hover #ffc53d 12.5:1)
+   Tokens. A true-black page and a dark-grey panel tone for the
+   tiles on it (separated by 12px of black, not by lines), a
+   slightly lighter "raised" tone for frames and code, high-contrast
+   text and one accent, signal amber, kept for the main action.
+   Contrast, WCAG 2.2 normal text:
+     text    #f5f5f7 on page 19.3:1, panel 16.4:1, raised 15.4:1
+     text-2  #c7c7cc on page 12.5:1, panel 10.6:1, raised  9.9:1
+     text-3  #98989d on page  7.3:1, panel  6.2:1, raised  5.8:1
+     amber   #ffb000 on page 11.5:1, panel  9.7:1
+     on-amber #0a0a0b on amber 10.8:1 (hover #ffc53d 12.5:1),
+       and on the light pill (#f5f5f7) 18.2:1
    Checked in tests/design.test.ts.
    ────────────────────────────────────────────────────────────── */
 @theme {
-  --color-page: #0a0a0b;
+  --color-page: #000000;
   --color-panel: #161617;
   --color-raised: #1d1d1f;
   --color-text: #f5f5f7;
@@ -133,6 +134,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The largest figures: the story's risk score and the experience results. */
+@utility type-figure {
+  font-size: clamp(5rem, 10vw, 9.5rem);
+  line-height: 0.9;
+  font-weight: 600;
+  font-stretch: 85%;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
 @utility type-title {
   font-size: clamp(1.5rem, 2vw, 1.75rem);
   line-height: 1.2;
@@ -156,9 +167,9 @@
    The screenshot's resting state is flat and uncovered; everything
    below only adds motion when the visitor allows it. */
 .hero-stage {
-  /* As wide as the column allows, up to 1000px, and narrower on short screens so that most of
-     the screenshot (and so the scan) is on the first screen. */
-  width: min(100% - 2 * var(--spacing-gutter), 1000px, max(520px, (100svh - 400px) * 2.4));
+  /* As wide as the column allows, up to 900px, and narrower on short screens so that the tool's
+     risk score (82% of the way down the recording) is on the first screen. */
+  width: min(100% - 2 * var(--spacing-gutter), 900px, max(480px, (100svh - 430px) * 1.6));
   perspective: 1400px;
 }
 .hero-frame {
@@ -283,7 +294,7 @@
    them show through, blurred, with no dividing line. Solid where
    blur isn't supported or the visitor asks for less transparency. */
 .site-bar {
-  background: rgb(10 10 11 / 0.78);
+  background: rgb(0 0 0 / 0.78);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
 }
@@ -319,15 +330,6 @@
    Finished by default: every rule shown, the final score. Only
    when motion is allowed does the script mark it live, which holds
    the stage under the site bar while the story plays. */
-.story-score {
-  font-size: clamp(5rem, 10vw, 9.5rem);
-  line-height: 0.9;
-  font-weight: 600;
-  font-stretch: 85%;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-text);
-}
 .story-bar {
   height: 6px;
   margin-top: 20px;
@@ -394,9 +396,89 @@
   }
 }
 
-/* Project showcases alternate in tone, starting on the panel. */
-.showcase:nth-of-type(odd) {
+/* ── Tiles (home page) ──────────────────────────────────────────
+   As on apple.com: the page is a stack of tiles in the panel tone
+   on black, 12px apart, two across from 834px. A tile clips what
+   runs past its edges with overflow: clip, which (unlike hidden)
+   doesn't make a scroll container, so the story can still hold its
+   stage (position: sticky) inside one. */
+.tile-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px;
+}
+@media (min-width: 834px) {
+  .tile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.tile {
+  position: relative;
+  overflow: clip;
   background: var(--color-panel);
+}
+.tile-wide {
+  grid-column: 1 / -1;
+}
+/* More projects: a sideways row on phones (snapping to each tile, scrolling inside itself so the
+   page never does), two across from 640px, four from 1024px. */
+.more-row {
+  display: flex;
+  gap: 12px;
+  padding: 0 12px 12px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 12px;
+  scrollbar-width: none;
+}
+.more-row > li {
+  flex: 0 0 82%;
+  scroll-snap-align: start;
+}
+/* The last tile can't reach the row's start, so it snaps to the end; otherwise the row snaps back
+   to the tile before it and Tab leaves the last link off screen. */
+.more-row > li:last-child {
+  scroll-snap-align: end;
+}
+@media (min-width: 640px) {
+  .more-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+  }
+}
+@media (min-width: 1024px) {
+  .more-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Experience: the roles as tiles, three across from 1024px. */
+.role-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding: 0 12px 12px;
+}
+@media (min-width: 1024px) {
+  .role-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* A tile's picture: at the bottom, cut off by the tile's edge. */
+.tile-picture {
+  width: min(88%, 620px);
+  height: 300px;
+  margin: auto auto 0;
+  overflow: clip;
+}
+@media (min-width: 834px) {
+  .tile-picture {
+    height: 380px;
+  }
 }
 
 /* ── Scroll scenes ─────────────────────────────────────────────
@@ -411,12 +493,6 @@
   transform: perspective(1400px) rotateX(calc((1 - var(--p, 1)) * 16deg)) translateY(calc((1 - var(--p, 1)) * 48px));
   transform-origin: 50% 100%;
   opacity: calc(0.55 + var(--p, 1) * 0.45);
-}
-
-/* The experience timeline fills with amber as you scroll through it. */
-.timeline-fill {
-  transform: scaleY(var(--p, 1));
-  transform-origin: top;
 }
 
 /* ── Screenshot viewer ─────────────────────────────────────────

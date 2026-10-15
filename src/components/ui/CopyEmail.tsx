@@ -1,13 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { button } from "./links";
+import { useRef, useState, type ReactNode } from "react";
+import { cn } from "@/lib/cn";
+import { button, pairedPill } from "./links";
 
 /**
- * The address as selectable text, with a button that copies it. If the browser refuses clipboard
- * access, the address is selected instead and the message says how to finish copying.
+ * The address as selectable text, centred, then a row of buttons: any passed in (`children`), and
+ * one that copies the address. If the browser refuses clipboard access, the address is selected
+ * instead and the message says how to finish copying.
  */
-export function CopyEmail({ email }: { email: string }) {
+export function CopyEmail({ email, children }: { email: string; children?: ReactNode }) {
   const text = useRef<HTMLSpanElement>(null);
   const [state, setState] = useState<"idle" | "copied" | "selected">("idle");
 
@@ -33,15 +35,16 @@ export function CopyEmail({ email }: { email: string }) {
   };
 
   return (
-    <div>
-      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
-        <span
-          ref={text}
-          className="select-all text-[clamp(1.375rem,2.4vw,2.25rem)] font-semibold text-text [font-stretch:92%] [overflow-wrap:anywhere]"
-        >
-          {email}
-        </span>
-        <button type="button" onClick={copy} className={button("secondary")}>
+    <div className="text-center">
+      <span
+        ref={text}
+        className="select-all text-[clamp(1.375rem,2.4vw,2.25rem)] font-semibold text-text [font-stretch:92%] [overflow-wrap:anywhere]"
+      >
+        {email}
+      </span>
+      <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
+        {children}
+        <button type="button" onClick={copy} className={cn(button("outline"), pairedPill)}>
           {state === "copied" ? "Copied" : "Copy email address"}
         </button>
       </div>

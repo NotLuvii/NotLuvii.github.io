@@ -35,6 +35,7 @@ export function Screenshot({
   className,
   sizes,
   scan = false,
+  captionHidden = false,
 }: {
   shot: Shot;
   priority?: boolean;
@@ -43,6 +44,8 @@ export function Screenshot({
   sizes?: string;
   /** Carries the scan overlay, run by a surrounding ScanOnView. */
   scan?: boolean;
+  /** For a picture cut off by its tile: the caption is read out, not shown (it would be clipped). */
+  captionHidden?: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   // The full-size image loads the first time the viewer opens, then stays, so it can fade out.
@@ -96,7 +99,7 @@ export function Screenshot({
           </span>
         </button>
       </div>
-      <figcaption className="type-small mt-3 text-text-3">{shot.caption}</figcaption>
+      <figcaption className={captionHidden ? "sr-only" : "type-small mt-3 text-text-3"}>{shot.caption}</figcaption>
 
       <dialog
         ref={dialog}

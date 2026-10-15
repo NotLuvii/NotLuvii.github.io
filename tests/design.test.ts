@@ -116,6 +116,11 @@ describe("colour", () => {
     }
   });
 
+  it("sets the page in true black, like Apple's dark tiles", () => {
+    expect(token("page")).toBe("#000000");
+    expect(css).toMatch(/\.site-bar\s*\{[^}]*background:\s*rgb\(0 0 0 \/ 0\.78\)/);
+  });
+
   it("uses one accent, signal amber", () => {
     expect(token("amber")).toBe("#ffb000");
   });
@@ -159,6 +164,13 @@ describe("shape and labels", () => {
 
   it("puts shadows only on the full-screen screenshot viewer", () => {
     expect(offenders(/\bshadow-(sm|md|lg|xl|2xl|\[)|box-shadow:/, (path) => path.endsWith("ui/Screenshot.tsx"))).toEqual([]);
+  });
+
+  it("draws outline pills with an outline, not a border or a shadow, and keeps the amber focus ring", () => {
+    const links = readFileSync(join(SRC, "components/ui/links.tsx"), "utf8");
+    expect(links).toMatch(/"outline"/);
+    expect(links).toMatch(/outline-1/);
+    expect(links).toMatch(/focus-visible:outline-amber/);
   });
 
   it("uses no emoji", () => {

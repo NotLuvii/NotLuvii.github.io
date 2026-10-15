@@ -1,9 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
-import { featured, heroShot, projectHref } from "../src/content/projects";
+import { featured, heroRecording, more, projectHref } from "../src/content/projects";
+import { roles } from "../src/content/experience";
 import { site } from "../src/content/site";
 
 const PAGES = ["/", ...featured.map((p) => projectHref(p.slug))];
-const WIDTHS = [375, 390, 768, 1024, 1440];
+const WIDTHS = [320, 375, 390, 768, 1024, 1440];
 
 /** External destinations the site may link to: verified repositories and profiles only. */
 const EXTERNAL = [
@@ -40,31 +41,28 @@ test.describe("home page", () => {
     await page.goto("/");
     await expect(page.locator("h1")).toHaveText(site.name);
     await expect(page.getByText(site.headline)).toBeVisible();
-    const view = page.getByRole("link", { name: "View projects" });
+    const view = page.getByRole("link", { name: "See the projects" });
     await expect(view).toHaveAttribute("href", "#projects");
     const resume = page.locator("main").getByRole("link", { name: /Download resume/ });
     await expect(resume).toHaveAttribute("href", site.resume!);
     await expect(resume).toHaveAttribute("download", "");
   });
 
-  test("runs Hero, Selected projects, Experience, Skills and background, Contact, in that order", async ({ page }) => {
+  test("runs Hero, Projects, Experience, About and skills, Contact, in that order", async ({ page }) => {
     await page.goto("/");
     const headings = await page.locator("main h2").allTextContents();
-    expect(headings).toEqual(["Selected projects", "Experience", "Skills and background", "Contact"]);
+    expect(headings).toEqual(["Projects", "Experience", "About and skills", "Contact"]);
   });
 
   test("features three projects, each linking to its case study and its own repository", async ({ page }) => {
     await page.goto("/");
     const articles = page.locator("#projects article");
     await expect(articles).toHaveCount(3);
-    // All three chapters share one layout: one real screenshot or code panel each, same links.
-    for (const a of await articles.all()) await expect(a.locator("[data-frame]")).toHaveCount(1);
+    // All three tiles share one set of buttons.
     const caseStudyClasses = await page.locator("#projects article").evaluateAll((as) =>
       as.map((a) => [...a.querySelectorAll("a")].find((l) => l.textContent?.startsWith("Read the case study"))?.className),
     );
     expect(new Set(caseStudyClasses).size).toBe(1);
-    const cardClasses = await articles.evaluateAll((as) => as.map((a) => a.className));
-    expect(new Set(cardClasses).size).toBe(1);
     for (const [i, p] of featured.entries()) {
       const a = articles.nth(i);
       await expect(a.getByRole("heading", { level: 3 })).toHaveText(p.title);
@@ -77,7 +75,7 @@ test.describe("home page", () => {
 test.describe("opening", () => {
   test("shows the scam detection tool, centred under a centred headline, starting on the first screen", async ({ page }) => {
     await page.goto("/");
-    const shot = page.getByRole("img", { name: heroShot.alt });
+    const shot = page.getByRole("img", { name: heroRecording.alt });
     await expect(shot).toBeVisible();
     const box = await shot.evaluate((el) => {
       const r = el.getBoundingClientRect();
@@ -90,6 +88,19 @@ test.describe("opening", () => {
     await expect.poll(onScreen, { timeout: 4000 }).toBeGreaterThan(0.6);
     expect(await page.getByText(site.headline).evaluate((el) => getComputedStyle(el).textAlign)).toBe("center");
     await expect(page.locator("main figure").first().getByRole("link", { name: /case study/ })).toHaveAttribute("href", projectHref(featured[0].slug));
+  });
+
+  test("the frame shows most of the tool on a 1440×900 screen and runs into the hero's bottom edge", async ({ page }) => {
+    test.skip(isPhone(page), "desktop only");
+    await page.goto("/");
+    const still = page.getByRole("img", { name: heroRecording.alt });
+    await expect
+      .poll(() => still.evaluate((el) => { const r = el.getBoundingClientRect(); return (Math.min(r.bottom, innerHeight) - r.top) / r.height; }), { timeout: 4000 })
+      .toBeGreaterThan(0.8);
+    // Measured once the frame has turned to face you (it starts tilted back, which lifts its bottom edge).
+    await page.evaluate(() => window.scrollTo({ top: innerHeight * 0.75, behavior: "instant" }));
+    const gap = () => page.locator("section.hero").evaluate((s) => Math.abs(s.getBoundingClientRect().bottom - s.querySelector(".hero-frame")!.getBoundingClientRect().bottom));
+    await expect.poll(gap).toBeLessThanOrEqual(1);
   });
 
   test("the scan passes down the screenshot once and leaves it fully revealed", async ({ page }) => {
@@ -115,12 +126,12 @@ test.describe("opening", () => {
     await page.goto("/");
     const first = page.locator("#projects article").first();
     await expect(first.locator("[data-story]")).toHaveCount(1);
-    await expect(first.locator(`img[src*="${heroShot.src}"]`)).toHaveCount(0);
+    await expect(first.locator(`img[src*="recording-"]`)).toHaveCount(0);
   });
 
   test("the intro is one paragraph with its key phrases in white and the rest in grey", async ({ page }) => {
     await page.goto("/");
-    const intro = page.locator("#intro p");
+    const intro = page.locator("#skills p.type-statement");
     await expect(intro).toHaveText(site.intro);
     expect(await intro.locator("strong").allTextContents()).toEqual([...site.introKeyPhrases]);
     expect(await intro.evaluate((el) => getComputedStyle(el).color)).toBe("rgb(152, 152, 157)");
@@ -131,7 +142,7 @@ test.describe("opening", () => {
   test("the opening and the intro scroll normally: nothing is held in place", async ({ page }) => {
     await page.goto("/");
     // The opening's figure (the headline above it lifts away on purpose) and the intro paragraph.
-    for (const selector of ["main figure >> nth=0", "#intro p"]) {
+    for (const selector of ["main figure >> nth=0"]) {
       const at = async (y: number) => {
         await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), y);
         return page.locator(selector).evaluate((el) => el.getBoundingClientRect().top);
@@ -140,6 +151,122 @@ test.describe("opening", () => {
       const y0 = Math.max(0, Math.round(start));
       expect(Math.round((await at(y0)) - (await at(y0 + 200)))).toBe(200);
     }
+  });
+});
+
+test.describe("opening recording", () => {
+  const video = (page: Page) => page.locator("[data-recording] video");
+  const playing = (page: Page) => video(page).evaluate((v: HTMLVideoElement) => !v.paused && v.currentTime > 0);
+  const button = (page: Page, name: "Pause the recording" | "Play the recording") => page.locator("[data-recording]").getByRole("button", { name });
+  /** Collects uncaught page errors, for the failure cases. */
+  const errors = (page: Page) => {
+    const list: string[] = [];
+    page.on("pageerror", (e) => list.push(String(e)));
+    return list;
+  };
+
+  test("plays once the scan has passed, using the crop for the screen", async ({ page }) => {
+    await page.goto("/");
+    await expect.poll(() => playing(page), { timeout: 10_000 }).toBe(true);
+    expect(await video(page).evaluate((v: HTMLVideoElement) => v.currentSrc)).toContain(isPhone(page) ? "recording-phone.webm" : "recording-desktop.webm");
+    await expect(page.locator("[data-recording] video[data-playing]")).toHaveCount(1);
+  });
+
+  test("the button pauses and resumes it", async ({ page }) => {
+    await page.goto("/");
+    await expect.poll(() => playing(page), { timeout: 10_000 }).toBe(true);
+    await button(page, "Pause the recording").click();
+    await expect.poll(() => video(page).evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+    await expect(button(page, "Play the recording")).toBeVisible();
+    await button(page, "Play the recording").click();
+    await expect.poll(() => playing(page)).toBe(true);
+  });
+
+  test("keyboard: Tab reaches the button, Space toggles it, the focus ring is amber", async ({ page }) => {
+    test.skip(isPhone(page), "keyboard on desktop");
+    await page.goto("/");
+    await expect.poll(() => playing(page), { timeout: 10_000 }).toBe(true);
+    const pause = button(page, "Pause the recording");
+    for (let i = 0; i < 30 && !(await pause.evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press("Tab");
+    expect(await pause.evaluate((el) => el === document.activeElement)).toBe(true);
+    expect(await pause.evaluate((el) => getComputedStyle(el).outlineColor)).toBe("rgb(255, 176, 0)");
+    await page.keyboard.press("Space");
+    await expect.poll(() => video(page).evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+  });
+
+  test("turning a phone sideways switches to the crop for the new screen and keeps playing", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    await expect.poll(() => playing(page), { timeout: 10_000 }).toBe(true);
+    expect(await video(page).evaluate((v: HTMLVideoElement) => v.currentSrc)).toContain("recording-phone");
+    await page.setViewportSize({ width: 844, height: 390 });
+    // On a short landscape screen the frame starts below the fold; bring it on screen.
+    await page.locator("[data-recording]").evaluate((el) => el.scrollIntoView({ block: "center", behavior: "instant" }));
+    await expect.poll(() => video(page).evaluate((v: HTMLVideoElement) => v.currentSrc)).toContain("recording-desktop");
+    await expect.poll(() => playing(page), { timeout: 10_000 }).toBe(true);
+  });
+
+  test("the button's focus ring is drawn inside its dark disc, so it shows over the light recording", async ({ page }) => {
+    test.skip(isPhone(page), "keyboard on desktop");
+    await page.goto("/");
+    const btn = page.locator("[data-recording] button");
+    await btn.focus();
+    const ring = await btn.evaluate((el) => ({ offset: parseFloat(getComputedStyle(el).outlineOffset), width: parseFloat(getComputedStyle(el).outlineWidth) }));
+    expect(ring.offset + ring.width).toBeLessThanOrEqual(0);
+  });
+
+  test("pauses off screen and resumes on return", async ({ page }) => {
+    await page.goto("/");
+    await expect.poll(() => playing(page), { timeout: 10_000 }).toBe(true);
+    await page.evaluate(() => window.scrollTo({ top: innerHeight * 2, behavior: "instant" }));
+    await expect.poll(() => video(page).evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    await expect.poll(() => playing(page)).toBe(true);
+  });
+
+  test("with reduced motion nothing loads or plays until asked", async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await page.goto("/");
+    await page.waitForTimeout(5000);
+    expect(await video(page).getAttribute("src")).toBeNull();
+    expect(await video(page).evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+    await button(page, "Play the recording").click();
+    await expect.poll(() => playing(page), { timeout: 10_000 }).toBe(true);
+    await context.close();
+  });
+
+  test("without JavaScript the still shows and there is no button", async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto("/");
+    await expect(page.getByRole("img", { name: heroRecording.alt })).toBeVisible();
+    await expect(page.locator("[data-recording] button")).toHaveCount(0);
+    expect(await video(page).getAttribute("src")).toBeNull();
+    await context.close();
+  });
+
+  test("autoplay refused: the still stays and the button offers Play", async ({ page }) => {
+    const seen = errors(page);
+    await page.addInitScript(() => {
+      HTMLMediaElement.prototype.play = () => Promise.reject(new DOMException("blocked", "NotAllowedError"));
+    });
+    await page.goto("/");
+    await page.waitForTimeout(5000);
+    await expect(page.locator("[data-recording] video[data-playing]")).toHaveCount(0);
+    await expect(button(page, "Play the recording")).toBeVisible();
+    await expect(page.getByRole("img", { name: heroRecording.alt })).toBeVisible();
+    expect(seen).toEqual([]);
+  });
+
+  test("video fails to load: the still stays and nothing throws", async ({ page }) => {
+    const seen = errors(page);
+    await page.route(/recording-(desktop|phone)\.(webm|mp4)$/, (route) => route.fulfill({ status: 404, body: "" }));
+    await page.goto("/");
+    await page.waitForTimeout(6000);
+    await expect(page.locator("[data-recording] video[data-playing]")).toHaveCount(0);
+    await expect(page.getByRole("img", { name: heroRecording.alt })).toBeVisible();
+    expect(seen).toEqual([]);
   });
 });
 
@@ -167,7 +294,8 @@ test.describe("after the Apple audit", () => {
         const past = await page.evaluate(() => {
           const vw = document.documentElement.clientWidth;
           return [...document.querySelectorAll("main p, main h1, main h2, main h3, main li, main a, main dt, main dd, footer p, footer a")]
-            .filter((el) => !el.closest("pre, [data-code]") && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > vw + 1)
+            // Text in a row that scrolls sideways on purpose (More projects on a phone) is reached by scrolling the row.
+            .filter((el) => !el.closest("pre, [data-code], .more-row") && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > vw + 1)
             .map((el) => el.textContent!.trim().slice(0, 40));
         });
         expect(past, `${path} at ${width}px`).toEqual([]);
@@ -238,23 +366,69 @@ test.describe("after the Apple audit", () => {
   test("on a phone the opening shows the tool's own phone layout", async ({ page }) => {
     test.skip(!isPhone(page), "phone only");
     await page.goto("/");
-    const shot = page.getByRole("img", { name: heroShot.alt });
-    await expect.poll(() => shot.evaluate((img: HTMLImageElement) => img.currentSrc)).toContain(heroShot.phone!.src);
+    const shot = page.getByRole("img", { name: heroRecording.alt });
+    await expect.poll(() => shot.evaluate((img: HTMLImageElement) => img.currentSrc)).toContain(heroRecording.phone.src);
   });
 
-  test("each project is a showcase: a large picture and a row of figures in white", async ({ page }) => {
-    test.skip(isPhone(page), "desktop only");
+  test("Immensa's code is cut off by its tile like a picture: not a scroll region, caption read out", async ({ page }) => {
     await page.goto("/");
-    for (const [i, p] of featured.entries()) {
-      const article = page.locator("#projects article").nth(i);
-      expect(await article.locator("[data-frame]").evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThanOrEqual(600);
-      const values = article.locator("[data-stat-value]");
-      await expect(values).toHaveText(p.stats.map((s) => s.value));
-      for (const style of await values.evaluateAll((els) => els.map((e) => ({ color: getComputedStyle(e).color, size: parseFloat(getComputedStyle(e).fontSize) })))) {
-        expect(style.color).toBe("rgb(245, 245, 247)");
-        expect(style.size).toBeGreaterThanOrEqual(32);
-      }
+    const code = page.locator("#projects article").nth(1).locator("[data-code]");
+    await expect(code.locator("pre")).not.toHaveAttribute("tabindex", /.*/);
+    expect(await code.locator("pre").evaluate((el) => getComputedStyle(el).overflowY)).not.toMatch(/auto|scroll/);
+    await expect(code.locator("figcaption")).toHaveClass(/sr-only/);
+  });
+
+  test("projects are tiles 12px apart: the story full width, the other two side by side and at least 640px tall", async ({ page }) => {
+    test.skip(isPhone(page), "desktop layout");
+    await page.goto("/");
+    const boxes = await page.locator("#projects article").evaluateAll((as) =>
+      as.map((a) => {
+        const r = a.getBoundingClientRect();
+        return { x: r.x, y: r.y + scrollY, w: r.width, h: r.height, bg: getComputedStyle(a).backgroundColor };
+      }),
+    );
+    expect(boxes[0].w).toBeGreaterThan(1400);
+    expect(boxes[1].y).toBeCloseTo(boxes[0].y + boxes[0].h + 12, 0);
+    expect(boxes[2].x - (boxes[1].x + boxes[1].w)).toBeCloseTo(12, 0);
+    for (const b of boxes.slice(1)) expect(b.h).toBeGreaterThanOrEqual(640);
+    for (const b of boxes) expect(b.bg).toBe("rgb(22, 22, 23)");
+  });
+
+  test("more projects: four across on desktop, a sideways row on a phone", async ({ page }) => {
+    await page.goto("/");
+    const row = page.locator("#projects ul[aria-labelledby=more-title]");
+    await expect(row.locator(":scope > li")).toHaveCount(more.length + 1);
+    const tops = await row.locator(":scope > li").evaluateAll((ls) => ls.map((l) => Math.round(l.getBoundingClientRect().top)));
+    if (isPhone(page)) {
+      expect(new Set(tops).size).toBe(1);
+      expect(await row.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+    } else {
+      expect(new Set(tops).size).toBe(2);
     }
+    for (const p of more) await expect(row).toContainText(p.summary);
+  });
+
+  test("on a phone, pressing Tab through the row brings its last link fully into view", async ({ page }) => {
+    for (const width of [320, 390, 412]) {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto("/");
+      await page.getByRole("link", { name: /Video demo on YouTube/ }).focus();
+      await page.keyboard.press("Tab");
+      const last = page.getByRole("link", { name: /Everything else on GitHub/ });
+      await expect(last).toBeFocused();
+      await expect
+        .poll(() => last.evaluate((el) => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; }), { message: `${width}px` })
+        .toBe(true);
+    }
+  });
+
+  test("no sideways page scroll at 320px, and Tab scrolls row links into view", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 700 });
+    await page.goto("/");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+    const last = page.getByRole("link", { name: /Everything else on GitHub/ });
+    await last.focus();
+    await expect.poll(() => last.evaluate((el) => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; })).toBe(true);
   });
 
   test("resume figures are white, not amber", async ({ page }) => {
@@ -273,7 +447,7 @@ test.describe("after the Apple audit", () => {
 
   test("buttons respond the moment they're pressed", async ({ page }) => {
     await page.goto("/");
-    const button = page.getByRole("link", { name: "View projects" });
+    const button = page.getByRole("link", { name: "See the projects" });
     const box = (await button.boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
@@ -307,8 +481,8 @@ test.describe("after the Apple audit", () => {
 
   test("each project's picture is scanned once as it arrives, and ends fully revealed", async ({ page }) => {
     await page.goto("/");
-    // The scam detection showcase tells its story instead; the other two have a picture to scan.
-    for (const i of [1, 2]) {
+    // The scam detection tile tells its story and Immensa's shows code; Resume Analyzer's picture is scanned.
+    for (const i of [2]) {
       const frame = page.locator("#projects article").nth(i).locator("[data-scan]");
       // Waiting, dimmed, before it's on screen; then scanned once it arrives.
       await expect(frame).toHaveAttribute("data-scan", "wait");
@@ -326,15 +500,22 @@ test.describe("after the Apple audit", () => {
       const page = await context.newPage();
       await page.goto("/");
       const heights = await page.locator("#projects .scan-cover").evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
-      expect(heights.length).toBe(2);
+      expect(heights.length).toBe(1);
       for (const h of heights) expect(h).toBe(0);
       await context.close();
     }
   });
 
-  test("the timeline's scroll progress is written on the line, not the whole section", async ({ page }) => {
+  test("experience leads with its two figures, large and white, then every role and bullet word for word", async ({ page }) => {
     await page.goto("/");
-    expect(await page.locator('#experience [data-scene="span"]').evaluate((el) => el.querySelectorAll("*").length)).toBeLessThanOrEqual(1);
+    const figures = page.locator("#experience [data-figure]");
+    await expect(figures).toHaveText(["75%", "50%"]);
+    for (const s of await figures.evaluateAll((els) => els.map((e) => ({ c: getComputedStyle(e).color, f: parseFloat(getComputedStyle(e).fontSize) })))) {
+      expect(s.c).toBe("rgb(245, 245, 247)");
+      expect(s.f).toBeGreaterThanOrEqual(80);
+    }
+    for (const r of roles) for (const point of r.points) await expect(page.locator("#experience")).toContainText(point);
+    await expect(page.locator("#experience [data-scene]")).toHaveCount(0);
   });
 });
 
@@ -536,6 +717,14 @@ test.describe("navigation", () => {
 });
 
 test.describe("contact", () => {
+  test("contact is one wide tile with the address and two pill buttons", async ({ page }) => {
+    await page.goto("/");
+    const tile = page.locator("#contact .tile");
+    await expect(tile.getByRole("link", { name: "Write an email" })).toHaveAttribute("href", `mailto:${site.email}`);
+    await expect(tile.getByRole("button", { name: "Copy email address" })).toBeVisible();
+    expect(await tile.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(22, 22, 23)");
+  });
+
   test("copies the email address and confirms it", async ({ page, context, browserName }) => {
     test.skip(browserName !== "chromium", "clipboard permissions are Chromium-only");
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -714,10 +903,10 @@ test.describe("motion", () => {
     const page = await context.newPage();
     await page.goto("/");
     expect(await page.locator("[data-reveal]").count()).toBe(0);
-    await expect(page.locator("#contact h2")).toBeVisible();
+    await expect(page.getByText(site.availability!)).toBeVisible();
     await expect(page.getByText(site.headline)).toBeVisible();
-    await expect(page.getByRole("img", { name: heroShot.alt })).toBeVisible();
-    await expect(page.locator("#intro p")).toHaveText(site.intro);
+    await expect(page.getByRole("img", { name: heroRecording.alt })).toBeVisible();
+    await expect(page.locator("#skills p.type-statement")).toHaveText(site.intro);
     await context.close();
   });
 

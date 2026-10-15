@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { featured, heroShot, more, projectHref, type Screenshot } from "@/content/projects";
+import { featured, heroRecording, more, projectHref, type Screenshot } from "@/content/projects";
 import { alsoUsed, background, education, roles, skills } from "@/content/experience";
 import { nav, site } from "@/content/site";
 import { emphasize } from "@/lib/emphasize";
@@ -23,7 +23,7 @@ function webpSize(file: string) {
   throw new Error(`Unknown WebP chunk ${chunk} in ${file}`);
 }
 
-const allShots: Screenshot[] = [heroShot, ...featured.flatMap((p) => [...p.caseStudy.figures, ...(p.homeShot ? [p.homeShot] : [])])];
+const allShots: Screenshot[] = [...featured.flatMap((p) => [...p.caseStudy.figures, ...(p.homeShot ? [p.homeShot] : [])])];
 
 /** Every repository and page a project links to, checked by hand in October 2026. */
 const VERIFIED_LINKS = new Set([
@@ -104,6 +104,17 @@ describe("featured projects", () => {
     expect(story.thresholds).toEqual({ medium: 35, high: 60 });
     // Its source is a specific file in the project's repository.
     expect(story.source.href.startsWith(`${lead.repo.href}/blob/`)).toBe(true);
+  });
+
+  it("gives each tile its one line, and Immensa's tile the same figures as its case study", () => {
+    expect(featured.map((p) => p.tileLine)).toEqual([
+      "Watch it score a scam text, one rule at a time.",
+      "An Android form, sent as one structured email.",
+      "Scores a resume against a job posting.",
+    ]);
+    const immensa = featured.find((p) => p.slug === "immensa-inquiry-app")!;
+    expect(immensa.tileFigures!.map((s) => s.value)).toEqual(immensa.stats.map((s) => s.value));
+    expect(immensa.tileFigures!.map((s) => s.label)).toEqual(["required fields", "currencies", "alloys"]);
   });
 
   it("builds case-study paths with a trailing slash, for the static export", () => {
@@ -237,37 +248,45 @@ describe("intro", () => {
   });
 });
 
-describe("opening screenshot", () => {
-  it("is the result of the scam detection tool's email check, landscape so it fits the first screen", () => {
-    expect(heroShot.src).toBe("/images/scam-detection/email-result");
-    expect(heroShot.width / heroShot.height).toBeGreaterThan(1.5);
+describe("opening recording", () => {
+  const crops = [heroRecording.desktop, heroRecording.phone];
+
+  it("checks the README's sample phishing email, word for word", () => {
+    const readme =
+      "Dear Customer, Your account has been suspended due to unusual activity.\nVerify your identity immediately: https://paypal-secure.com/verify-now\nClick here to restore access. Do not ignore this message.";
+    expect(heroRecording.input).toBe(readme);
+    expect(heroRecording.caption).toBe("A recording of the scam detection tool running locally, checking the sample phishing email from its README.");
+    expect(heroRecording.alt).toMatch(/100/);
   });
 
-  it("isn't repeated by the lead project's showcase, which tells the text-message story instead", () => {
+  it("has a still for each crop at 1x, 2x and 3x, at the declared size, under 150 KB", () => {
+    for (const c of crops)
+      for (const [suffix, scale] of [["", 1], ["@2x", 2], ["@3x", 3]] as const) {
+        const file = join(PUBLIC, `${c.src}${suffix}.webp`);
+        const size = webpSize(file);
+        expect(size.width, file).toBe(c.width * scale);
+        expect(Math.abs(size.height - c.height * scale), file).toBeLessThanOrEqual(1);
+        expect(statSync(file).size, file).toBeLessThan(150_000);
+      }
+  });
+
+  it("isn't repeated by the lead project's tile, which tells the text-message story instead", () => {
     const lead = featured[0];
     expect(lead.story?.text).not.toMatch(/Dear Customer/);
     expect(lead.homeShot).toBeUndefined();
   });
 
-  it("has a phone version, from the tool's own phone layout, at 1x, 2x and 3x", () => {
-    const phone = heroShot.phone!;
-    expect(phone).toBeTruthy();
-    expect(phone.width).toBeLessThanOrEqual(400);
-    for (const [suffix, scale] of [["", 1], ["@2x", 2], ["@3x", 3]] as const) {
-      const file = join(PUBLIC, `${phone.src}${suffix}.webp`);
-      const size = webpSize(file);
-      expect(size.width, file).toBe(phone.width * scale);
-      expect(Math.abs(size.height - phone.height * scale), file).toBeLessThanOrEqual(1);
-      expect(statSync(file).size).toBeLessThan(100_000);
-    }
+  it("no longer ships the old opening screenshot", () => {
+    expect(existsSync(join(PUBLIC, "images/scam-detection/email-result.webp"))).toBe(false);
   });
 
-  it("also exists at 3x for large screens, still under 100 KB", () => {
-    const three = join(PUBLIC, `${heroShot.src}@3x.webp`);
-    const size = webpSize(three);
-    expect(size.width).toBe(heroShot.width * 3);
-    expect(Math.abs(size.height - heroShot.height * 3)).toBeLessThanOrEqual(1);
-    expect(statSync(three).size).toBeLessThan(100_000);
+  it("ships each crop as WebM and MP4, each under 1.5 MB", () => {
+    for (const c of crops)
+      for (const ext of ["webm", "mp4"]) {
+        const file = join(PUBLIC, `${c.src}.${ext}`);
+        expect(existsSync(file), file).toBe(true);
+        expect(statSync(file).size, file).toBeLessThan(1_500_000);
+      }
   });
 });
 

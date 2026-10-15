@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
-import { featured, heroRecording, more, projectHref } from "../src/content/projects";
-import { roles } from "../src/content/experience";
-import { site } from "../src/content/site";
+import { featured, more, projectHref } from "../src/content/projects";
+import { background, roles } from "../src/content/experience";
+import { heroLine, site } from "../src/content/site";
 
 const PAGES = ["/", ...featured.map((p) => projectHref(p.slug))];
 const WIDTHS = [320, 375, 390, 768, 1024, 1440];
@@ -28,13 +28,6 @@ async function scrollThrough(page: Page) {
   await page.waitForFunction(() => [...document.images].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 10_000 });
   await page.waitForTimeout(700);
 }
-
-/** The rotateX angle of an element's current transform, in whole degrees (0 when flat). */
-const tilt = (page: Page, selector: string) =>
-  page.locator(selector).evaluate((el) => {
-    const m = new DOMMatrixReadOnly(getComputedStyle(el).transform === "none" ? undefined : getComputedStyle(el).transform);
-    return Math.round((Math.acos(Math.max(-1, Math.min(1, m.m22))) * 180) / Math.PI);
-  });
 
 test.describe("home page", () => {
   test("says who, what and where, with the two main actions", async ({ page }) => {
@@ -70,63 +63,11 @@ test.describe("home page", () => {
       await expect(a.getByRole("link", { name: new RegExp(`^Code on GitHub\\s*: ${p.title}`) })).toHaveAttribute("href", p.repo.href);
     }
   });
-});
 
-test.describe("opening", () => {
-  test("shows the scam detection tool, centred under a centred headline, starting on the first screen", async ({ page }) => {
-    await page.goto("/");
-    const shot = page.getByRole("img", { name: heroRecording.alt });
-    await expect(shot).toBeVisible();
-    const box = await shot.evaluate((el) => {
-      const r = el.getBoundingClientRect();
-      return { centre: r.left + r.width / 2, top: r.top, half: document.documentElement.clientWidth / 2, fold: innerHeight };
-    });
-    expect(Math.abs(box.centre - box.half)).toBeLessThan(2);
-    expect(box.top).toBeLessThan(box.fold);
-    // Most of it is on the first screen, so the scan can be seen (once the frame has risen into place).
-    const onScreen = () => shot.evaluate((el) => { const r = el.getBoundingClientRect(); return (Math.min(r.bottom, innerHeight) - r.top) / r.height; });
-    await expect.poll(onScreen, { timeout: 4000 }).toBeGreaterThan(0.6);
-    expect(await page.getByText(site.headline).evaluate((el) => getComputedStyle(el).textAlign)).toBe("center");
-    await expect(page.locator("main figure").first().getByRole("link", { name: /case study/ })).toHaveAttribute("href", projectHref(featured[0].slug));
-  });
-
-  test("the frame shows most of the tool on a 1440×900 screen and runs into the hero's bottom edge", async ({ page }) => {
-    test.skip(isPhone(page), "desktop only");
-    await page.goto("/");
-    const still = page.getByRole("img", { name: heroRecording.alt });
-    await expect
-      .poll(() => still.evaluate((el) => { const r = el.getBoundingClientRect(); return (Math.min(r.bottom, innerHeight) - r.top) / r.height; }), { timeout: 4000 })
-      .toBeGreaterThan(0.8);
-    // Measured once the frame has turned to face you (it starts tilted back, which lifts its bottom edge).
-    await page.evaluate(() => window.scrollTo({ top: innerHeight * 0.75, behavior: "instant" }));
-    const gap = () => page.locator("section.hero").evaluate((s) => Math.abs(s.getBoundingClientRect().bottom - s.querySelector(".hero-frame")!.getBoundingClientRect().bottom));
-    await expect.poll(gap).toBeLessThanOrEqual(1);
-  });
-
-  test("the scan passes down the screenshot once and leaves it fully revealed", async ({ page }) => {
-    await page.goto("/");
-    const cover = page.locator(".hero .scan-cover");
-    const beam = page.locator(".hero .scan-beam");
-    expect(await cover.evaluate((el) => el.getAnimations().length)).toBeGreaterThan(0);
-    await expect
-      .poll(() => cover.evaluate((el) => el.getAnimations().every((a) => a.playState === "finished")), { timeout: 8000 })
-      .toBe(true);
-    expect(await cover.evaluate((el) => el.getBoundingClientRect().height)).toBe(0);
-    expect(await beam.evaluate((el) => getComputedStyle(el).opacity)).toBe("0");
-  });
-
-  test("the screenshot starts tilted back and turns to face you as you scroll", async ({ page }) => {
-    await page.goto("/");
-    await expect.poll(() => tilt(page, ".hero-frame")).toBeGreaterThan(10);
-    await page.evaluate(() => window.scrollTo(0, innerHeight * 0.75));
-    await expect.poll(() => tilt(page, ".hero-frame")).toBe(0);
-  });
-
-  test("the first project doesn't repeat the opening screenshot: it tells its story instead", async ({ page }) => {
+  test("the first project tells its story", async ({ page }) => {
     await page.goto("/");
     const first = page.locator("#projects article").first();
     await expect(first.locator("[data-story]")).toHaveCount(1);
-    await expect(first.locator(`img[src*="recording-"]`)).toHaveCount(0);
   });
 
   test("the intro is one paragraph with its key phrases in white and the rest in grey", async ({ page }) => {
@@ -138,135 +79,42 @@ test.describe("opening", () => {
     const strong = await intro.locator("strong").evaluateAll((els) => els.map((e) => getComputedStyle(e).color));
     for (const c of strong) expect(c).toBe("rgb(245, 245, 247)");
   });
-
-  test("the opening and the intro scroll normally: nothing is held in place", async ({ page }) => {
-    await page.goto("/");
-    // The opening's figure (the headline above it lifts away on purpose) and the intro paragraph.
-    for (const selector of ["main figure >> nth=0"]) {
-      const at = async (y: number) => {
-        await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), y);
-        return page.locator(selector).evaluate((el) => el.getBoundingClientRect().top);
-      };
-      const start = await page.locator(selector).evaluate((el) => el.getBoundingClientRect().top + scrollY - innerHeight / 2);
-      const y0 = Math.max(0, Math.round(start));
-      expect(Math.round((await at(y0)) - (await at(y0 + 200)))).toBe(200);
-    }
-  });
 });
 
-test.describe("opening recording", () => {
-  const video = (page: Page) => page.locator("[data-recording] video");
-  const playing = (page: Page) => video(page).evaluate((v: HTMLVideoElement) => !v.paused && v.currentTime > 0);
-  const button = (page: Page, name: "Pause the recording" | "Play the recording") => page.locator("[data-recording]").getByRole("button", { name });
-  /** Collects uncaught page errors, for the failure cases. */
-  const errors = (page: Page) => {
-    const list: string[] = [];
-    page.on("pageerror", (e) => list.push(String(e)));
-    return list;
-  };
 
-  test("plays once the scan has passed, using the crop for the screen", async ({ page }) => {
+test.describe("first screen", () => {
+  test("nothing removed is left behind", async ({ page }) => {
     await page.goto("/");
-    await expect.poll(() => playing(page), { timeout: 10_000 }).toBe(true);
-    expect(await video(page).evaluate((v: HTMLVideoElement) => v.currentSrc)).toContain(isPhone(page) ? "recording-phone.webm" : "recording-desktop.webm");
-    await expect(page.locator("[data-recording] video[data-playing]")).toHaveCount(1);
+    for (const sel of ["[data-recording]", ".hero-frame", ".more-row", "[data-figure]", "video"]) await expect(page.locator(sel), sel).toHaveCount(0);
   });
 
-  test("the button pauses and resumes it", async ({ page }) => {
+  test("says who and what: name, headline, where and what for, two buttons, and nothing else", async ({ page }) => {
     await page.goto("/");
-    await expect.poll(() => playing(page), { timeout: 10_000 }).toBe(true);
-    await button(page, "Pause the recording").click();
-    await expect.poll(() => video(page).evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
-    await expect(button(page, "Play the recording")).toBeVisible();
-    await button(page, "Play the recording").click();
-    await expect.poll(() => playing(page)).toBe(true);
+    const hero = page.locator("section.hero");
+    await expect(hero.locator("h1")).toHaveText(site.name);
+    await expect(hero).toContainText(site.headline);
+    await expect(hero).toContainText(`Based in Fredericton, New Brunswick. ${site.availability}`);
+    await expect(hero.getByRole("link", { name: "See the projects" })).toHaveAttribute("href", "#projects");
+    await expect(hero.getByRole("link", { name: /Download resume/ })).toHaveAttribute("download", "");
+    await expect(hero.locator("img, video, picture, figure")).toHaveCount(0);
+    for (const p of featured) await expect(hero).not.toContainText(p.title);
   });
 
-  test("keyboard: Tab reaches the button, Space toggles it, the focus ring is amber", async ({ page }) => {
-    test.skip(isPhone(page), "keyboard on desktop");
-    await page.goto("/");
-    await expect.poll(() => playing(page), { timeout: 10_000 }).toBe(true);
-    const pause = button(page, "Pause the recording");
-    for (let i = 0; i < 30 && !(await pause.evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press("Tab");
-    expect(await pause.evaluate((el) => el === document.activeElement)).toBe(true);
-    expect(await pause.evaluate((el) => getComputedStyle(el).outlineColor)).toBe("rgb(255, 176, 0)");
-    await page.keyboard.press("Space");
-    await expect.poll(() => video(page).evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
-  });
-
-  test("turning a phone sideways switches to the crop for the new screen and keeps playing", async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/");
-    await expect.poll(() => playing(page), { timeout: 10_000 }).toBe(true);
-    expect(await video(page).evaluate((v: HTMLVideoElement) => v.currentSrc)).toContain("recording-phone");
-    await page.setViewportSize({ width: 844, height: 390 });
-    // On a short landscape screen the frame starts below the fold; bring it on screen.
-    await page.locator("[data-recording]").evaluate((el) => el.scrollIntoView({ block: "center", behavior: "instant" }));
-    await expect.poll(() => video(page).evaluate((v: HTMLVideoElement) => v.currentSrc)).toContain("recording-desktop");
-    await expect.poll(() => playing(page), { timeout: 10_000 }).toBe(true);
-  });
-
-  test("the button's focus ring is drawn inside its dark disc, so it shows over the light recording", async ({ page }) => {
-    test.skip(isPhone(page), "keyboard on desktop");
-    await page.goto("/");
-    const btn = page.locator("[data-recording] button");
-    await btn.focus();
-    const ring = await btn.evaluate((el) => ({ offset: parseFloat(getComputedStyle(el).outlineOffset), width: parseFloat(getComputedStyle(el).outlineWidth) }));
-    expect(ring.offset + ring.width).toBeLessThanOrEqual(0);
-  });
-
-  test("pauses off screen and resumes on return", async ({ page }) => {
-    await page.goto("/");
-    await expect.poll(() => playing(page), { timeout: 10_000 }).toBe(true);
-    await page.evaluate(() => window.scrollTo({ top: innerHeight * 2, behavior: "instant" }));
-    await expect.poll(() => video(page).evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
-    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
-    await expect.poll(() => playing(page)).toBe(true);
-  });
-
-  test("with reduced motion nothing loads or plays until asked", async ({ browser }) => {
-    const context = await browser.newContext({ reducedMotion: "reduce" });
-    const page = await context.newPage();
-    await page.goto("/");
-    await page.waitForTimeout(5000);
-    expect(await video(page).getAttribute("src")).toBeNull();
-    expect(await video(page).evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
-    await button(page, "Play the recording").click();
-    await expect.poll(() => playing(page), { timeout: 10_000 }).toBe(true);
-    await context.close();
-  });
-
-  test("without JavaScript the still shows and there is no button", async ({ browser }) => {
-    const context = await browser.newContext({ javaScriptEnabled: false });
-    const page = await context.newPage();
-    await page.goto("/");
-    await expect(page.getByRole("img", { name: heroRecording.alt })).toBeVisible();
-    await expect(page.locator("[data-recording] button")).toHaveCount(0);
-    expect(await video(page).getAttribute("src")).toBeNull();
-    await context.close();
-  });
-
-  test("autoplay refused: the still stays and the button offers Play", async ({ page }) => {
-    const seen = errors(page);
-    await page.addInitScript(() => {
-      HTMLMediaElement.prototype.play = () => Promise.reject(new DOMException("blocked", "NotAllowedError"));
-    });
-    await page.goto("/");
-    await page.waitForTimeout(5000);
-    await expect(page.locator("[data-recording] video[data-playing]")).toHaveCount(0);
-    await expect(button(page, "Play the recording")).toBeVisible();
-    await expect(page.getByRole("img", { name: heroRecording.alt })).toBeVisible();
-    expect(seen).toEqual([]);
-  });
-
-  test("video fails to load: the still stays and nothing throws", async ({ page }) => {
-    const seen = errors(page);
-    await page.route(/recording-(desktop|phone)\.(webm|mp4)$/, (route) => route.fulfill({ status: 404, body: "" }));
-    await page.goto("/");
-    await page.waitForTimeout(6000);
-    await expect(page.locator("[data-recording] video[data-playing]")).toHaveCount(0);
-    await expect(page.getByRole("img", { name: heroRecording.alt })).toBeVisible();
-    expect(seen).toEqual([]);
+  test("the first screen fits: at least the screen's height, its content centred and clear of the bar", async ({ page }) => {
+    for (const [w, h] of [[1440, 900], [1280, 720], [375, 667]] as const) {
+      await page.setViewportSize({ width: w, height: h });
+      await page.goto("/");
+      const box = await page.locator("section.hero").evaluate((s) => {
+        const r = s.getBoundingClientRect();
+        const c = s.querySelector(".hero-copy")!.getBoundingClientRect();
+        return { h: r.height, top: c.top, bottom: c.bottom, above: c.top - r.top, below: r.bottom - c.bottom, vh: innerHeight };
+      });
+      expect(box.h, `${w}x${h}`).toBeGreaterThanOrEqual(box.vh - 56 - 1);
+      expect(box.top, `${w}x${h}`).toBeGreaterThanOrEqual(56);
+      // All of it on the first screen, and centred: as much room above the words as below.
+      expect(box.bottom, `${w}x${h}`).toBeLessThanOrEqual(box.vh);
+      expect(Math.abs(box.above - box.below), `${w}x${h} centred`).toBeLessThanOrEqual(2);
+    }
   });
 });
 
@@ -287,15 +135,14 @@ const textNodes = (page: Page) =>
 
 test.describe("after the Apple audit", () => {
   test("no text runs past the edge of a phone screen", async ({ page }) => {
-    for (const width of [375, 390]) {
+    for (const width of [320, 375, 390]) {
       await page.setViewportSize({ width, height: 800 });
       for (const path of PAGES) {
         await page.goto(path);
         const past = await page.evaluate(() => {
           const vw = document.documentElement.clientWidth;
           return [...document.querySelectorAll("main p, main h1, main h2, main h3, main li, main a, main dt, main dd, footer p, footer a")]
-            // Text in a row that scrolls sideways on purpose (More projects on a phone) is reached by scrolling the row.
-            .filter((el) => !el.closest("pre, [data-code], .more-row") && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > vw + 1)
+            .filter((el) => !el.closest("pre, [data-code]") && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > vw + 1)
             .map((el) => el.textContent!.trim().slice(0, 40));
         });
         expect(past, `${path} at ${width}px`).toEqual([]);
@@ -363,72 +210,66 @@ test.describe("after the Apple audit", () => {
     expect(lines).toBeLessThanOrEqual(2);
   });
 
-  test("on a phone the opening shows the tool's own phone layout", async ({ page }) => {
-    test.skip(!isPhone(page), "phone only");
-    await page.goto("/");
-    const shot = page.getByRole("img", { name: heroRecording.alt });
-    await expect.poll(() => shot.evaluate((img: HTMLImageElement) => img.currentSrc)).toContain(heroRecording.phone.src);
-  });
 
   test("Immensa's code is cut off by its tile like a picture: not a scroll region, caption read out", async ({ page }) => {
     await page.goto("/");
-    const code = page.locator("#projects article").nth(1).locator("[data-code]");
+    const code = page.locator("#projects article").nth(2).locator("[data-code]");
     await expect(code.locator("pre")).not.toHaveAttribute("tabindex", /.*/);
     expect(await code.locator("pre").evaluate((el) => getComputedStyle(el).overflowY)).not.toMatch(/auto|scroll/);
     await expect(code.locator("figcaption")).toHaveClass(/sr-only/);
   });
 
-  test("projects are tiles 12px apart: the story full width, the other two side by side and at least 640px tall", async ({ page }) => {
-    test.skip(isPhone(page), "desktop layout");
+  test("projects stack one tile per row, 12px apart, all the same width", async ({ page }) => {
     await page.goto("/");
+    await expect(page.locator("#projects h2")).toHaveText("Projects");
+    await expect(page.locator("#projects h2 + p")).toHaveText("Three with public code and a case study each, then the rest.");
     const boxes = await page.locator("#projects article").evaluateAll((as) =>
       as.map((a) => {
         const r = a.getBoundingClientRect();
-        return { x: r.x, y: r.y + scrollY, w: r.width, h: r.height, bg: getComputedStyle(a).backgroundColor };
+        return { x: Math.round(r.x), y: r.y + scrollY, w: Math.round(r.width), h: r.height };
       }),
     );
-    expect(boxes[0].w).toBeGreaterThan(1400);
-    expect(boxes[1].y).toBeCloseTo(boxes[0].y + boxes[0].h + 12, 0);
-    expect(boxes[2].x - (boxes[1].x + boxes[1].w)).toBeCloseTo(12, 0);
-    for (const b of boxes.slice(1)) expect(b.h).toBeGreaterThanOrEqual(640);
-    for (const b of boxes) expect(b.bg).toBe("rgb(22, 22, 23)");
+    expect(new Set(boxes.map((b) => b.x)).size).toBe(1);
+    expect(new Set(boxes.map((b) => b.w)).size).toBe(1);
+    for (let i = 1; i < boxes.length; i++) expect(boxes[i].y).toBeCloseTo(boxes[i - 1].y + boxes[i - 1].h + 12, 0);
   });
 
-  test("more projects: four across on desktop, a sideways row on a phone", async ({ page }) => {
+  test("more projects: a plain list, two columns on desktop and one on a phone, no boxes", async ({ page }) => {
     await page.goto("/");
-    const row = page.locator("#projects ul[aria-labelledby=more-title]");
-    await expect(row.locator(":scope > li")).toHaveCount(more.length + 1);
-    const tops = await row.locator(":scope > li").evaluateAll((ls) => ls.map((l) => Math.round(l.getBoundingClientRect().top)));
-    if (isPhone(page)) {
-      expect(new Set(tops).size).toBe(1);
-      expect(await row.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
-    } else {
-      expect(new Set(tops).size).toBe(2);
-    }
-    for (const p of more) await expect(row).toContainText(p.summary);
+    const list = page.locator("#projects ul[aria-labelledby=more-title]");
+    await expect(page.locator("#more-title")).toBeVisible();
+    await expect(list.locator(":scope > li")).toHaveCount(more.length + 1);
+    const lefts = await list.locator(":scope > li").evaluateAll((ls) => ls.map((l) => Math.round(l.getBoundingClientRect().left)));
+    expect(new Set(lefts).size).toBe(isPhone(page) ? 1 : 2);
+    const bgs = await list.locator(":scope > li").evaluateAll((ls) => ls.map((l) => getComputedStyle(l).backgroundColor));
+    for (const bg of bgs) expect(bg).toBe("rgba(0, 0, 0, 0)");
+    for (const p of more) await expect(list).toContainText(p.summary);
   });
 
-  test("on a phone, pressing Tab through the row brings its last link fully into view", async ({ page }) => {
-    for (const width of [320, 390, 412]) {
-      await page.setViewportSize({ width, height: 800 });
-      await page.goto("/");
-      await page.getByRole("link", { name: /Video demo on YouTube/ }).focus();
-      await page.keyboard.press("Tab");
-      const last = page.getByRole("link", { name: /Everything else on GitHub/ });
-      await expect(last).toBeFocused();
-      await expect
-        .poll(() => last.evaluate((el) => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; }), { message: `${width}px` })
-        .toBe(true);
+
+
+  test("more projects says what kind of project each one is and when, links or not", async ({ page }) => {
+    await page.goto("/");
+    const items = page.locator("#projects ul[aria-labelledby=more-title] > li");
+    for (const [i, p] of more.entries()) {
+      const when = [p.kind, p.year].filter(Boolean).join(", ");
+      if (when) await expect(items.nth(i), p.title).toContainText(when);
     }
   });
 
-  test("no sideways page scroll at 320px, and Tab scrolls row links into view", async ({ page }) => {
+  test("at 320px one long unbroken word in more projects stays inside its own item", async ({ page }) => {
+    // html and body clip sideways overflow, so the page never scrolls; check the boxes instead.
     await page.setViewportSize({ width: 320, height: 700 });
     await page.goto("/");
-    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
-    const last = page.getByRole("link", { name: /Everything else on GitHub/ });
-    await last.focus();
-    await expect.poll(() => last.evaluate((el) => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; })).toBe(true);
+    const past = await page.evaluate(() => {
+      const list = document.querySelector("#projects ul[aria-labelledby=more-title]")!;
+      list.querySelector("li p")!.textContent = "x".repeat(60);
+      const vw = document.documentElement.clientWidth;
+      return [...list.querySelectorAll("li, li p, li h4")]
+        .filter((el) => el.getBoundingClientRect().right > vw + 1)
+        .map((el) => el.textContent!.trim().slice(0, 30));
+    });
+    expect(past).toEqual([]);
   });
 
   test("resume figures are white, not amber", async ({ page }) => {
@@ -482,7 +323,7 @@ test.describe("after the Apple audit", () => {
   test("each project's picture is scanned once as it arrives, and ends fully revealed", async ({ page }) => {
     await page.goto("/");
     // The scam detection tile tells its story and Immensa's shows code; Resume Analyzer's picture is scanned.
-    for (const i of [2]) {
+    for (const i of [1]) {
       const frame = page.locator("#projects article").nth(i).locator("[data-scan]");
       // Waiting, dimmed, before it's on screen; then scanned once it arrives.
       await expect(frame).toHaveAttribute("data-scan", "wait");
@@ -506,16 +347,33 @@ test.describe("after the Apple audit", () => {
     }
   });
 
-  test("experience leads with its two figures, large and white, then every role and bullet word for word", async ({ page }) => {
+  test("experience is the three roles, every bullet word for word, figures white inside their sentences", async ({ page }) => {
     await page.goto("/");
-    const figures = page.locator("#experience [data-figure]");
-    await expect(figures).toHaveText(["75%", "50%"]);
-    for (const s of await figures.evaluateAll((els) => els.map((e) => ({ c: getComputedStyle(e).color, f: parseFloat(getComputedStyle(e).fontSize) })))) {
-      expect(s.c).toBe("rgb(245, 245, 247)");
-      expect(s.f).toBeGreaterThanOrEqual(80);
-    }
+    await expect(page.locator("#experience [data-figure]")).toHaveCount(0);
+    await expect(page.locator("#experience h3")).toHaveCount(roles.length);
     for (const r of roles) for (const point of r.points) await expect(page.locator("#experience")).toContainText(point);
-    await expect(page.locator("#experience [data-scene]")).toHaveCount(0);
+    await expect(page.locator("#experience strong")).toHaveText(["75%", "50%"]);
+  });
+
+  test("the roles are separate tiles: three across on desktop, stacked 12px apart on a phone", async ({ page }) => {
+    await page.goto("/");
+    const boxes = await page.locator("#experience .role-grid > li").evaluateAll((ls) =>
+      ls.map((l) => { const r = l.getBoundingClientRect(); return { x: Math.round(r.x), y: r.y + scrollY, w: r.width, h: r.height }; }),
+    );
+    expect(boxes).toHaveLength(roles.length);
+    if (isPhone(page)) {
+      for (let i = 1; i < boxes.length; i++) expect(boxes[i].y).toBeCloseTo(boxes[i - 1].y + boxes[i - 1].h + 12, 0);
+    } else {
+      expect(new Set(boxes.map((b) => b.x)).size).toBe(3);
+      expect(new Set(boxes.map((b) => Math.round(b.y))).size).toBe(1);
+    }
+  });
+
+  test("about and skills names no company I worked at", async ({ page }) => {
+    await page.goto("/");
+    const text = await page.locator("#skills").innerText();
+    for (const name of ["AiKnod", "SafeTrack", "Immensa Tech", "Used in"]) expect(text).not.toContain(name);
+    await expect(page.locator("#skills")).toContainText(background[0]);
   });
 });
 
@@ -890,10 +748,8 @@ test.describe("motion", () => {
     expect(await page.locator("[data-reveal]").count()).toBe(0);
     // The scroll engine never starts, so no scene gets a progress value.
     expect(await page.locator('[data-scene][style*="--p"]').count()).toBe(0);
-    // The opening screenshot is flat, uncovered and still: no scan, no tilt.
+    // The first screen is still.
     await page.evaluate(() => window.scrollTo(0, 0));
-    expect(await tilt(page, ".hero-frame")).toBe(0);
-    expect(await page.locator(".hero .scan-cover").evaluate((el) => el.getBoundingClientRect().height)).toBe(0);
     expect(await page.locator(".hero").evaluate((el) => el.getAnimations({ subtree: true }).length)).toBe(0);
     await context.close();
   });
@@ -903,9 +759,9 @@ test.describe("motion", () => {
     const page = await context.newPage();
     await page.goto("/");
     expect(await page.locator("[data-reveal]").count()).toBe(0);
-    await expect(page.getByText(site.availability!)).toBeVisible();
+    await expect(page.locator("#contact").getByText(site.availability!)).toBeVisible();
     await expect(page.getByText(site.headline)).toBeVisible();
-    await expect(page.getByRole("img", { name: heroRecording.alt })).toBeVisible();
+    await expect(page.locator("section.hero").getByText(heroLine())).toBeVisible();
     await expect(page.locator("#skills p.type-statement")).toHaveText(site.intro);
     await context.close();
   });

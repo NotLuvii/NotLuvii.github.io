@@ -3,9 +3,9 @@ import { site } from "@/content/site";
 import { emphasize } from "@/lib/emphasize";
 
 /**
- * About and skills, as tiles: the intro, wide and centred (grey, its key phrases in white, so it
- * can be read at a glance), with the background line under it; then education beside the skills,
- * each skill group tied to where it was used.
+ * About and skills, as tiles: what I do, wide and centred (grey, its key phrases in white, so it
+ * can be read at a glance), with a line on how I work under it; then education beside the skills.
+ * It names no company: the work history is in Experience.
  */
 export function About() {
   return (
@@ -51,10 +51,7 @@ export function About() {
             {skills.map((s) => (
               <div key={s.group}>
                 <dt className="text-[17px] font-semibold text-text">{s.group}</dt>
-                <dd>
-                  <p className="text-[17px] leading-relaxed text-text-2">{s.items.join(", ")}</p>
-                  <p className="type-small mt-1 text-text-3">Used in: {s.usedIn}</p>
-                </dd>
+                <dd className="text-[17px] leading-relaxed text-text-2">{s.items.join(", ")}</dd>
               </div>
             ))}
           </dl>

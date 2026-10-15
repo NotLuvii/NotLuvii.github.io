@@ -58,35 +58,31 @@ export const education = {
   coursework: ["System analysis and project management", "statistics", "operating systems", "cybersecurity", "discrete mathematics"],
 };
 
-/** A short, factual introduction for the background column. */
+/** A line on how I work, under the intro. It says what I do, not where: no company names. */
 export const background = [
-  "I’m a software engineer in Fredericton, New Brunswick. Since 2024 I’ve built front ends, API integrations and data checks for an education platform, a university rideshare service and Immensa Tech, and I build my own tools on the side.",
+  "Most of my work sits where software meets data: validating it, finding the defects that let it go wrong, and writing things down so a fix stays fixed. Outside work, I build my own tools.",
 ];
 
 /**
  * Skills in four groups, each tied to where it was used. Only what the resume lists or a linked
  * repository shows.
  */
-export const skills: { group: string; items: string[]; usedIn: string }[] = [
+export const skills: { group: string; items: string[] }[] = [
   {
     group: "Frontend",
     items: ["React", "TypeScript", "JavaScript", "HTML", "CSS"],
-    usedIn: "AiKnod, SafeTrack, scam detection tool",
   },
   {
     group: "Data and automation",
     items: ["SQL", "MySQL", "Python", "Databricks", "Power BI", "Pandas", "NumPy"],
-    usedIn: "Immensa Tech reports and data checks, Resume Analyzer",
   },
   {
     group: "APIs and cloud",
     items: ["REST APIs", "Node.js", "Express", "Flask", "AWS API Gateway", "WebSockets"],
-    usedIn: "AiKnod integrations, SafeTrack live tracking, scam tool server",
   },
   {
     group: "Engineering practices",
     items: ["Git", "testing and debugging", "root-cause analysis", "requirements gathering"],
-    usedIn: "AiKnod assessment logic, Immensa Tech discrepancy tracing, SafeTrack specifications",
   },
 ];
 

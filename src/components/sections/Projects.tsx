@@ -10,12 +10,12 @@ import { Screenshot } from "@/components/ui/Screenshot";
 
 /**
  * One project as a tile, as on apple.com: the name (a link to the case study), one line, and two
- * pill buttons, centred at the top; then what the project shows, which sits at the bottom of the
- * tile and runs past its edge (CSS: .tile, .tile-picture).
+ * pill buttons, centred at the top; then what the project shows: the story, or a picture that sits
+ * at the bottom of the tile and runs past its edge (CSS: .tile, .tile-picture).
  */
-function ProjectTile({ p, wide = false, children }: { p: FeaturedProject; wide?: boolean; children: ReactNode }) {
+function ProjectTile({ p, children }: { p: FeaturedProject; children: ReactNode }) {
   return (
-    <article className={`tile flex flex-col pt-11 text-center min-[834px]:pt-14 ${wide ? "tile-wide pb-12 md:pb-16" : "min-h-[540px] min-[834px]:min-h-[640px]"}`}>
+    <article className={`tile flex flex-col pt-11 text-center min-[834px]:pt-14 ${p.story ? "pb-12 md:pb-16" : ""}`}>
       <div className="px-gutter">
         <h3 className="type-section text-text">
           <Link href={projectHref(p.slug)} className="decoration-2 underline-offset-[8px] hover:underline">
@@ -38,28 +38,16 @@ function ProjectTile({ p, wide = false, children }: { p: FeaturedProject; wide?:
   );
 }
 
-/** What each project's tile shows: the story, a screenshot, or (for Immensa) its figures and code. */
+/** What each project's tile shows: the story, a screenshot, or (for Immensa, which has none) its code. */
 function TileContent({ p }: { p: FeaturedProject }) {
   if (p.story) return <ScanStory story={p.story} />;
   const code = p.caseStudy.decision.code;
   return (
     <>
-      {p.tileFigures && (
-        <ul className="mx-auto mt-20 flex justify-center gap-10 md:gap-12">
-          {p.tileFigures.map((s) => (
-            <li key={s.label}>
-              <span data-stat-value className="type-stat block text-text">
-                {s.value}
-              </span>
-              <span className="type-small block text-text-3">{s.label}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className="tile-picture mt-10">
+      <div className="tile-picture">
         {p.homeShot ? (
           <ScanOnView>
-            <Screenshot shot={p.homeShot} scan captionHidden sizes="(min-width: 834px) 600px, 88vw" />
+            <Screenshot shot={p.homeShot} scan captionHidden sizes="(min-width: 870px) 760px, 88vw" />
           </ScanOnView>
         ) : code ? (
           <div className="text-left">
@@ -72,21 +60,20 @@ function TileContent({ p }: { p: FeaturedProject }) {
 }
 
 /**
- * The projects, as tiles: the scam detection tool full width, telling its story as you scroll,
- * then the other two side by side, then the rest as small tiles (MoreProjects).
+ * The projects: a heading, then one full-width tile per project, stacked (CSS: .tile-stack), the
+ * scam detection tool first, telling its story as you scroll; then the rest as a plain list.
  */
 export function Projects() {
-  const [lead, ...rest] = featured;
   return (
     <section id="projects" aria-labelledby="projects-title">
-      <h2 id="projects-title" className="sr-only">
-        Projects
-      </h2>
-      <div className="tile-grid">
-        <ProjectTile p={lead} wide>
-          <TileContent p={lead} />
-        </ProjectTile>
-        {rest.map((p) => (
+      <div className="mx-auto max-w-[1200px] px-gutter pb-8 pt-24 md:pb-10 md:pt-32">
+        <h2 id="projects-title" className="type-section text-text">
+          Projects
+        </h2>
+        <p className="type-lede mt-3 text-text-3">Three with public code and a case study each, then the rest.</p>
+      </div>
+      <div className="tile-stack">
+        {featured.map((p) => (
           <ProjectTile key={p.slug} p={p}>
             <TileContent p={p} />
           </ProjectTile>

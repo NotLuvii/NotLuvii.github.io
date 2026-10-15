@@ -6,10 +6,8 @@ export const site = {
   name: "Luvneet Bamrah",
   role: "Software engineer",
   headline: "Software engineer building reliable web apps and data tools.",
-  intro:
-    "I build front ends in React and TypeScript, and write SQL and Python to automate reports and check data against its source. Most recently I worked on an AI-powered education platform at AiKnod.",
-  /** Shown in white within the grey intro, so it can be read at a glance. In the order they appear. */
-  introKeyPhrases: ["front ends in React and TypeScript", "SQL and Python", "an AI-powered education platform at AiKnod"],
+  intro: "I build front ends in React and TypeScript, and write SQL and Python to automate reports and check data against its source.",
+  introKeyPhrases: ["front ends in React and TypeScript", "SQL and Python"],
   description:
     "Luvneet Bamrah is a software engineer in Fredericton, New Brunswick, building web apps in React and TypeScript and data tools in SQL and Python.",
 
@@ -27,6 +25,12 @@ export const site = {
   /** One line in the contact section. Set to null to hide it. */
   availability: "Open to software roles in quality, manufacturing and data." as string | null,
 } as const;
+
+/** The first screen's line under the headline: where I am, and what I'm looking for. */
+export function heroLine(): string {
+  const where = `Based in ${site.location.city}, ${site.location.region}.`;
+  return site.availability ? `${where} ${site.availability}` : where;
+}
 
 /**
  * Section links, in page order. Root-relative so they work from the case-study pages too; on the

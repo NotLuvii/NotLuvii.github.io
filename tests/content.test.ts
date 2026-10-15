@@ -1,9 +1,9 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { featured, heroRecording, more, projectHref, type Screenshot } from "@/content/projects";
+import { featured, more, projectHref, type Screenshot } from "@/content/projects";
 import { alsoUsed, background, education, roles, skills } from "@/content/experience";
-import { nav, site } from "@/content/site";
+import { heroLine, nav, site } from "@/content/site";
 import { emphasize } from "@/lib/emphasize";
 
 const PUBLIC = join(process.cwd(), "public");
@@ -39,8 +39,8 @@ const VERIFIED_LINKS = new Set([
 describe("featured projects", () => {
   it("features exactly three, scam detection first", () => {
     expect(featured).toHaveLength(3);
-    expect(featured[0].slug).toBe("scam-detection");
-    expect(new Set(featured.map((p) => p.slug)).size).toBe(3);
+    // In the order of the approved home-page design: the story, then Resume Analyzer, then Immensa.
+    expect(featured.map((p) => p.slug)).toEqual(["scam-detection", "resume-analyzer", "immensa-inquiry-app"]);
   });
 
   it("each links to its own verified repository, never the bare profile", () => {
@@ -106,15 +106,12 @@ describe("featured projects", () => {
     expect(story.source.href.startsWith(`${lead.repo.href}/blob/`)).toBe(true);
   });
 
-  it("gives each tile its one line, and Immensa's tile the same figures as its case study", () => {
+  it("gives each tile its one line", () => {
     expect(featured.map((p) => p.tileLine)).toEqual([
       "Watch it score a scam text, one rule at a time.",
-      "An Android form, sent as one structured email.",
       "Scores a resume against a job posting.",
+      "An Android form, sent as one structured email.",
     ]);
-    const immensa = featured.find((p) => p.slug === "immensa-inquiry-app")!;
-    expect(immensa.tileFigures!.map((s) => s.value)).toEqual(immensa.stats.map((s) => s.value));
-    expect(immensa.tileFigures!.map((s) => s.label)).toEqual(["required fields", "currencies", "alloys"]);
   });
 
   it("builds case-study paths with a trailing slash, for the static export", () => {
@@ -198,9 +195,18 @@ describe("experience and skills", () => {
     }
   });
 
-  it("groups skills under the four requested headings, each tied to where it was used", () => {
+  it("groups skills under the four requested headings", () => {
     expect(skills.map((s) => s.group)).toEqual(["Frontend", "Data and automation", "APIs and cloud", "Engineering practices"]);
-    for (const s of skills) expect(s.usedIn.length).toBeGreaterThan(10);
+  });
+
+  it("says what I do without naming the companies I worked at", () => {
+    expect(site.intro).toBe("I build front ends in React and TypeScript, and write SQL and Python to automate reports and check data against its source.");
+    expect(site.introKeyPhrases).toEqual(["front ends in React and TypeScript", "SQL and Python"]);
+    expect(background).toEqual([
+      "Most of my work sits where software meets data: validating it, finding the defects that let it go wrong, and writing things down so a fix stays fixed. Outside work, I build my own tools.",
+    ]);
+    for (const text of [site.intro, ...background, ...skills.flatMap((s) => [s.group, ...s.items]), ...alsoUsed])
+      for (const company of ["AiKnod", "SafeTrack", "Immensa"]) expect(text).not.toContain(company);
   });
 
   it("doesn't claim tools only this site's build uses", () => {
@@ -248,45 +254,19 @@ describe("intro", () => {
   });
 });
 
-describe("opening recording", () => {
-  const crops = [heroRecording.desktop, heroRecording.phone];
-
-  it("checks the README's sample phishing email, word for word", () => {
-    const readme =
-      "Dear Customer, Your account has been suspended due to unusual activity.\nVerify your identity immediately: https://paypal-secure.com/verify-now\nClick here to restore access. Do not ignore this message.";
-    expect(heroRecording.input).toBe(readme);
-    expect(heroRecording.caption).toBe("A recording of the scam detection tool running locally, checking the sample phishing email from its README.");
-    expect(heroRecording.alt).toMatch(/100/);
-  });
-
-  it("has a still for each crop at 1x, 2x and 3x, at the declared size, under 150 KB", () => {
-    for (const c of crops)
-      for (const [suffix, scale] of [["", 1], ["@2x", 2], ["@3x", 3]] as const) {
-        const file = join(PUBLIC, `${c.src}${suffix}.webp`);
-        const size = webpSize(file);
-        expect(size.width, file).toBe(c.width * scale);
-        expect(Math.abs(size.height - c.height * scale), file).toBeLessThanOrEqual(1);
-        expect(statSync(file).size, file).toBeLessThan(150_000);
-      }
-  });
-
+describe("first screen", () => {
   it("isn't repeated by the lead project's tile, which tells the text-message story instead", () => {
     const lead = featured[0];
     expect(lead.story?.text).not.toMatch(/Dear Customer/);
     expect(lead.homeShot).toBeUndefined();
   });
 
-  it("no longer ships the old opening screenshot", () => {
-    expect(existsSync(join(PUBLIC, "images/scam-detection/email-result.webp"))).toBe(false);
+  it("no longer ships the opening recording", () => {
+    expect(existsSync(join(PUBLIC, "images/scam-detection/recording-desktop.webm"))).toBe(false);
   });
 
-  it("ships each crop as WebM and MP4, each under 1.5 MB", () => {
-    for (const c of crops)
-      for (const ext of ["webm", "mp4"]) {
-        const file = join(PUBLIC, `${c.src}.${ext}`);
-        expect(existsSync(file), file).toBe(true);
-        expect(statSync(file).size, file).toBeLessThan(1_500_000);
-      }
+  it("says where and what for, from the site's own location and availability", () => {
+    expect(heroLine()).toBe(`Based in Fredericton, New Brunswick. ${site.availability}`);
   });
 });
 

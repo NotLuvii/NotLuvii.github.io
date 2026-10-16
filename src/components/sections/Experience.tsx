@@ -46,7 +46,7 @@ export function Experience() {
   return (
     <section id="experience" aria-labelledby="experience-title" className="pt-24 md:pt-32">
       <div className="mx-auto max-w-[1200px] px-gutter">
-        <h2 id="experience-title" className="type-section text-text">
+        <h2 id="experience-title" className="type-display section-title text-text">
           Experience
         </h2>
         <div className="timeline mt-10 md:mt-14">

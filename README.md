@@ -4,10 +4,11 @@
 
 A static Next.js site: one home page and a case study for each featured project.
 
-- **Home (`/`)**: marked up by hand. A first screen that is only who I am and what I do, with a
-  hand-drawn sketch of it; the three featured projects, one full-width tile each (the scam
-  detection story and a box to try its rules on your own text, Resume Analyzer, Immensa), each
-  with a note in the margin pointing at its evidence; the rest of the projects as a plain list;
+- **Home (`/`)**: marked up by hand. A first screen that is only who I am and what I do: a status
+  line with my local time, the name set huge, the headline and intro, and a scan line checking
+  rows of data beside them; a marquee of the tools I use; the three featured projects as a row of
+  cards that scrolls sideways (the scam detection tool, Resume Analyzer, Immensa), then a box to
+  try the scam tool's rules on your own text; the rest of the projects as a plain list;
   experience as a drawn timeline; about and skills; contact.
 - **Case studies (`/projects/<slug>/`)**: context, what I built, the key decision (with a verbatim
   code excerpt linked to the file on GitHub), outcome with screenshots, limitations, and links into
@@ -19,13 +20,9 @@ Everything a visitor reads lives in `src/content/`:
 
 | File | What's in it |
 | --- | --- |
-| `site.ts` | Name, headline, intro, contact links, resume path, navigation |
-| `projects.ts` | Featured projects and their case studies, the "More projects" list, screenshots and their captions, and each tile's note (`note`) and what it marks (`ring` on a screenshot, `mark` on a code excerpt) |
-| `experience.ts` | Roles, education, background, skills, and `timeline()`, which orders them for Experience |
-
-The first screen's sketch says the intro sentence in its own words; its labels are in
-`src/components/ink/Sketch.tsx`. The other notes are in the section that shows them
-(`TryScamRules.tsx`, `Contact.tsx`).
+| `site.ts` | Name, headline, intro, availability (the first screen's status line), contact links, resume path, navigation, and the sections the dots point to |
+| `projects.ts` | Featured projects and their case studies, the "More projects" list, screenshots and their captions, each card's line (`tileLine`) and the ring on Resume Analyzer's score (`ring`) |
+| `experience.ts` | Roles, education, background, skills (also the marquee's list), and `timeline()`, which orders them for Experience |
 
 Rules the content follows, enforced by `tests/content.test.ts`:
 
@@ -75,91 +72,92 @@ npm run dev            # http://localhost:3000
 | --- | --- |
 | `npm run typecheck` | Generates Next.js route types, then TypeScript in strict mode |
 | `npm run lint` | ESLint with the Next.js rules |
-| `npm test` | Vitest: content rules (including no company names in About), link allow-list, screenshot files and sizes, the design rules (fonts, true-black page, colours and contrast, one see-through surface, gradient hues, outline pills, monospace, touch, ink drawn at rest), the ink (same seed, same line), the scam tool's copied rules (the sample scores 94, High; repeated runs agree; thresholds; underline ranges), the timeline's order, the scroll-progress and story maths, the story's steps against the case study |
+| `npm test` | Vitest: content rules (including no company names in About), link allow-list, screenshot files and sizes, the design rules (fonts, true-black page, colours and contrast, one see-through surface, gradient hues, outline pills, monospace, touch, ink drawn at rest), the ink (same seed, same line), the scam tool's copied rules (the sample scores 94, High; repeated runs agree; thresholds; underline ranges), the timeline's order, the scroll-progress maths, the clock (Fredericton time, ADT and AST), the defect red kept to the data check |
 | `npm run build` | Static export to `out/` |
 | `npm start` | Serves `out/` on http://localhost:3000, the way GitHub Pages does |
-| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: every link, the case-study routes and their images, opening a screenshot full screen and closing it (Escape, close button, click outside) without leaving the page, the resume, the phone menu, the skip link, focus outlines, anchors below the sticky header, copying the email (including when the clipboard is refused), no sideways scrolling and no text past the edge of a phone screen, 44px tap targets, heading order, the first screen (who and what and the sketch, no project; fits short and narrow screens; the sketch legible at 320px), the project tiles (one per row, 12px apart, read left to right, their notes and marks on the evidence), trying the scam rules (your own text scored like the tool; empty and odd input; without JavaScript), More projects (a plain list, two columns or one, nothing past the edge at 320px), Experience as a drawn timeline with the degree in it and its figures ringed, About naming no company and underlining its key phrases, nothing removed left behind, the contact tile and its note, the scroll story (held while the score climbs through the real steps; its phrases underlined in ink; finished at once with reduced motion or no JavaScript; fits a phone screen), the type scale, monospace only in code, no dividing lines, amber only on the main action and the ink, every mark drawn with reduced motion, the see-through bar, press feedback, the menu and viewer transitions, reduced motion and no-JavaScript |
+| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: every link, the case-study routes and their images, opening a screenshot full screen and closing it (Escape, close button, click outside) without leaving the page, the resume, the site bar (monogram, section pills that follow the scroll, nothing marked on case studies), the section dots, the phone menu, the skip link, focus outlines, anchors below the sticky header, copying the email (including when the clipboard is refused), no sideways scrolling and no text past the edge of a phone screen, 44px tap targets, heading order, the first screen (status, live clock and city-only without JavaScript, name, headline, intro, buttons, the data check; no project; fits short and narrow screens; still and complete with reduced motion; the reveal in step with the scan line), the marquee, the selected-work carousel (three cards and their links, Previous and Next and their ends, keyboard focus brings a card into view, the ring on the score, nothing of the old story left), trying the scam rules (your own text scored like the tool; empty and odd input; without JavaScript), More projects, Experience as a drawn timeline with its figures ringed, About naming no company, section titles in the display face, the footer name, the type scale, monospace only in code, no dividing lines, amber only on the main action, the ink and the signals, every mark drawn with reduced motion, the see-through bar, press feedback, the menu and viewer transitions, reduced motion and no-JavaScript |
 
 `.github/workflows/ci.yml` runs all of it on every push.
 
 ## Design
 
-The tiles are modelled on apple.com/ca. The ink comes from five personal sites: Shantell Martin's
-line and lettering, Tania Rascia's margin notes and brief timeline, Danny Garcia's large name,
-Narrow Design's notes set at an angle, and Bruno Simon's site you play with rather than read.
+The first screen, the marquee, the pill navigation, the section dots and the carousel come from
+developer portfolios the owner pointed to (Aaftab's status line, clock, marquee and dots;
+Redoyan's huge name and project carousel; Sawad's condensed capitals and pill navigation; the
+scroll-following navigation of the sites in emmabostian/developer-portfolios). The tiles are
+modelled on apple.com/ca. The hand-drawn ink stays where it marks real evidence.
 
-- **The ink**: an amber marker that annotates the page's real evidence: the sketch of what I
-  do, the ring round Resume Analyzer's score, the bracket on Immensa's code, the underlines in the
-  scam story and in the checker, the timeline's spine, years and rings, and the notes in the
-  margin. The marks are drawn by rough.js (MIT) at build time, from fixed seeds
-  (`src/lib/ink.ts`, server only), so every build draws the same lines and no drawing library
-  reaches the browser; `components/ink/Ink.tsx` renders them. The notes are set in Gochi Hand
-  (SIL Open Font License, `src/fonts/Gochi-Hand-LICENSE.txt`), which is used for nothing else.
-  At rest every mark is fully drawn. When motion is allowed, the sketch draws itself on arrival
-  and the other marks draw as they scroll into view (CSS scroll timelines, where the browser has
-  them). To change a mark's shape, change its seed.
-- **Try the rules**: under the scam story, a box runs the tool's own text-message rules on your
-  text as you type and underlines what they matched. `src/lib/scam-sms.ts` is a verbatim copy of
-  the `sms` detector in Fraud-Detection-Tool's `js/detectors.js` (commit 558fa66) with two type
-  annotations; it resets the original's global short-link regex before each run, so repeated
-  checks agree. Nothing is sent anywhere. Without JavaScript it shows the sample's result.
-
-- **Tiles**: sections are tiles in the dark-grey panel tone (`#161617`) on a true-black page
-  (`#000`), 12px apart (`.tile`, `.tile-grid`, `.tile-stack` in `globals.css`). The project
-  tiles stack one per row at every width; each has its name, one line (`tileLine` in
-  `projects.ts`) and two pill buttons at the top, and what it shows below. Tiles clip
-  with `overflow: clip`, not `hidden`, so the scroll story can still hold its stage inside one.
-- **Colour**: black page, panel tiles, a slightly lighter `#1d1d1f` for frames and code;
-  `#f5f5f7` text with two quieter greys; and one accent, signal amber (`#ffb000`): the main
-  action, the ink, the scan line and keyboard focus. Contrast ratios are listed
-  at the top of `src/app/globals.css`; all text meets WCAG AA and the tests recheck them.
-- **Buttons**: pills, as on apple.com (`button()` in `components/ui/links.tsx`): amber for the one
-  main action, a light pill for a tile's main link, an outline pill beside it (drawn with
-  `outline`, not a border), and a grey pill for the header's resume button. On phones a pair stacks
-  at one width.
+- **First screen** (`components/sections/Hero.tsx`): who I am and what I do, and no project. A
+  status pill ("Now: " and `site.availability`) with an amber dot; Fredericton and the time there
+  (`LiveClock.tsx`, `src/lib/clock.ts`: America/Moncton, so ADT or AST), added in the browser, so
+  without JavaScript only the city shows; the name in the display face; the headline and intro;
+  "See the work" and "Download resume". Beside them from 1024px (a band under them below that),
+  the data check (`DataCheck.tsx`): an amber line scans down a grid of bars, and the rows it has
+  passed show their marks, seven ticked and one defect in red. It holds no numbers or records, and
+  it is decoration only (`aria-hidden`). A soft amber glow sits behind it: the page's one
+  gradient. As you scroll, the words lift away.
+- **Marquee** (`Marquee.tsx`): the skills from `experience.ts`, in the display face, sliding left
+  with amber dots between them. Hidden from screen readers (About lists the same skills).
+- **Selected work** (`Projects.tsx`, `WorkCarousel.tsx`): three cards in a row that scrolls
+  sideways and snaps to each card, by touch, trackpad or Tab; from 768px, Previous and Next
+  buttons move it one card (each says it's unavailable at its end), and a card that gets focus
+  scrolls fully into view. Each card has its picture in a 16:10 window (the scam tool's result and
+  Resume Analyzer's ringed score, held at their foot; Immensa's code), its name, one line, three
+  tools and two links. Under the cards, "Try the scam checker on your own text"; then More
+  projects as a plain list.
+- **Try the scam checker**: runs the tool's own text-message rules on your text as you type and
+  underlines what they matched. `src/lib/scam-sms.ts` is a verbatim copy of the `sms` detector in
+  Fraud-Detection-Tool's `js/detectors.js` (commit 558fa66) with two type annotations; it resets
+  the original's global short-link regex before each run, so repeated checks agree. Nothing is
+  sent anywhere. Without JavaScript it shows the sample's result.
+- **Site bar**: the monogram "LB" (home), the section links in a pill that marks the section in
+  view on the home page (`useActiveSection.ts`, an IntersectionObserver), and the resume as an
+  outline pill. The one see-through surface: it blurs what scrolls under it, solid where blur
+  isn't supported or the visitor asks for less transparency. On phones the links fold into a menu.
+- **Section dots** (`SectionDots.tsx`): from 1280px, a dot per home-page section down the right
+  edge; the one in view is amber and shows its name. Without JavaScript they are plain links.
+- **Footer**: the name in the display face across the width of the screen.
+- **The ink**: an amber marker on the page's real evidence: the timeline's spine, years and
+  rings, the ring round Resume Analyzer's score, and the checker's underlines. The marks are drawn
+  by rough.js (MIT) at build time, from fixed seeds (`src/lib/ink.ts`, server only), so every
+  build draws the same lines and no drawing library reaches the browser; `components/ink/Ink.tsx`
+  renders them. The years are set in Gochi Hand (SIL Open Font License,
+  `src/fonts/Gochi-Hand-LICENSE.txt`), which is used for nothing else. At rest every mark is fully
+  drawn; when motion is allowed they draw as they scroll into view (CSS scroll timelines, where
+  the browser has them). To change a mark's shape, change its seed.
+- **Colour**: a true-black page (`#000`), panel tiles (`#161617`), a slightly lighter `#1d1d1f`
+  for frames and code; `#f5f5f7` text with two quieter greys; and one accent, signal amber
+  (`#ffb000`): the main action, the ink, the signals (`[data-signal]`: the status dot, the active
+  section dot, the scan line and its ticks, the marquee's dots) and keyboard focus. One red,
+  `--color-defect`, for the data check's flagged bar only. Contrast ratios are listed at the top of
+  `src/app/globals.css`; all text meets WCAG AA and the tests recheck them.
 - **Type**: IBM Plex Sans (variable weight and width), self-hosted (licence in
-  `src/fonts/IBM-Plex-LICENSE.txt`), on eight sizes at desktop width: 144 (the name and the
-  story's score), 63, 56, 35, 28, 21, 17 and 14px. Most reading happens at 17–21px; body copy is grey with key
-  phrases in white. IBM Plex Mono is used for code only.
-- **Site bar**: the one see-through surface: it blurs the sections scrolling under it instead of
-  drawing a line. Solid where blur isn't supported or the visitor asks for less transparency.
-- **First screen**: who I am and what I do, and no project: the name, very large; the headline;
-  where I am and what I'm looking for (`heroLine()` in `site.ts`); the two main actions; and
-  beside them (under them on a phone) the sketch of what I do. As you scroll the words lift away,
-  on a CSS scroll timeline.
-- **Projects**: each tile reads left to right from 1024px: name, line, buttons and a note on the
-  left, the picture on the right. The scam detection tile tells its story, then lets you try the
-  rules; Resume Analyzer's shows its screenshot, which the scan line passes over once as it
-  arrives (`components/motion/ScanOnView.tsx`); Immensa's shows its code, cut off by the tile like
-  a picture. More projects follow as a plain
-  list, two columns on a wide screen and one on a phone, with nothing boxed: each says what kind of
-  project it was and when, then gives its links (or why there are none).
+  `src/fonts/IBM-Plex-LICENSE.txt`). The display face (`type-display`) is Plex Sans at its
+  narrowest (75%) and boldest, in capitals: the name (187px at 1440), section titles (115px) and
+  the footer name; it is the only place capitals are used. Reading happens at 17–21px; body copy
+  is grey with key phrases in white. The home page keeps to eight sizes at desktop width. IBM Plex
+  Mono is used for code only.
+- **Buttons**: pills, as on apple.com (`button()` in `components/ui/links.tsx`): amber for the one
+  main action, a light pill for a card's main link, and outline pills (drawn with `outline`, not a
+  border) beside it and for the header's resume. On phones a pair stacks at one width.
 - **Experience**: a timeline drawn by hand: the three roles and the degree, newest first, each
   year written once in the margin, every bullet word for word, each resume figure white and
   circled where it stands.
-- **About and skills**: what I do, set large, its key phrases underlined in ink; a line on how I
-  work; and the four skill groups. No company names.
-- **Scroll story** (`components/sections/ScanStory.tsx`): the scam detection tile holds on screen for about two screens of scrolling while the scan line moves down the
-  README's sample text message. Each time it reaches a phrase a rule fired on, the phrase lights,
-  the rule appears with its weight and the score counts up through the tool's own levels, to 94,
-  High. The steps (`story` in `projects.ts`) were traced by running the project's
-  `js/detectors.js` on that sample, and the tests check they add up to the 94 in the case study.
-  The page is rendered finished; with reduced motion or without JavaScript nothing is held and the
-  result shows at once. The maths is in `components/motion/story.ts` and unit tested.
-- **Scroll scenes**: `src/components/motion/ScrollScenes.tsx` writes a progress value (`--p`,
-  0 to 1) on each `[data-scene]` element while it is on screen; the CSS in `globals.css` reads it.
-  On the case-study pages, pictures tilt flat as they arrive. Text never animates. Every rule falls back to the finished state, so with JavaScript off or reduced
-  motion on, nothing moves and everything is readable. The progress maths is in `progress.ts` and
-  unit tested.
+- **About and skills**: what I do, set large, its key phrases in white; a line on how I work; and
+  the four skill groups. No company names.
+- **Motion**: the scan line and the marquee loop, the words lift away as you scroll, the case
+  studies' pictures tilt flat as they arrive (`ScrollScenes.tsx` writes `--p`, 0 to 1, and the
+  CSS reads it, falling back to the finished state). With reduced motion nothing moves and the
+  data check shows every mark; without JavaScript everything is readable. Text never animates in.
 - **Feel**: buttons shrink slightly the moment they're pressed; taps don't flash the browser's
   grey highlight or wait for a double-tap; the phone menu eases down; a full-screen screenshot
   fades in and out.
 - **House rules** (checked by `tests/design.test.ts` and the end-to-end tests): one see-through
-  surface (the site bar); one gradient, the scan line's amber glow, and never a blue or purple
-  one; no gradient text; no dividing lines (code panels aside); monospace for code only;
-  corners at most 12px; shadows only on the screenshot viewer; no emoji; no all-caps labels; and
-  none of the default fonts that make sites look generated; amber only on the main action and
-  the ink; and every mark drawn at rest.
+  surface (the site bar); one gradient, the first screen's amber glow, and never a blue or purple
+  one; no gradient text; no dividing lines (code panels aside); monospace for code only; corners
+  at most 12px; shadows only on the screenshot viewer; no emoji; capitals only in the display
+  face; none of the default fonts that make sites look generated; amber only on the main action,
+  the ink and the signals; and every mark drawn at rest.
 
 ## Deploy
 

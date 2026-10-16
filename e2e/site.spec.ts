@@ -56,8 +56,18 @@ test.describe("home page", () => {
 
   test("runs Hero, Projects, Experience, About and skills, Contact, in that order", async ({ page }) => {
     await page.goto("/");
-    const headings = await page.locator("main h2").allTextContents();
-    expect(headings).toEqual(["Selected work", "Experience", "About and skills", "Contact"]);
+    // Compared without case: the visible titles are set in capitals by CSS, the text is as written.
+    const headings = (await page.locator("main h2").allTextContents()).map((h) => h.toLowerCase());
+    expect(headings).toEqual(["Selected work", "Experience", "About and skills", "Contact"].map((h) => h.toLowerCase()));
+  });
+
+  test("section titles are set in the display face", async ({ page }) => {
+    await page.goto("/");
+    const titles = await page.locator("main h2:not(.sr-only), #more-title").evaluateAll((hs) =>
+      hs.map((h) => ({ text: h.textContent, transform: getComputedStyle(h).textTransform, stretch: getComputedStyle(h).fontStretch })),
+    );
+    expect(titles.map((t) => t.text)).toEqual(["Selected work", "More projects", "Experience", "About and skills"]);
+    for (const t of titles) expect([t.text, t.transform, t.stretch]).toEqual([t.text, "uppercase", "75%"]);
   });
 
   test("selected work is a carousel of three cards, each linking to its case study and code", async ({ page }) => {
@@ -229,7 +239,11 @@ test.describe("after the Apple audit", () => {
     await page.goto("/");
     // Code excerpts keep their own size and aren't counted.
     const nodes = (await textNodes(page)).filter((n) => !n.inCode);
-    const sizes = new Set(nodes.map((n) => n.size));
+    // The site bar counts too: the monogram and the pills share the page's sizes.
+    const bar = await page.locator("header").evaluate((h) =>
+      [...h.querySelectorAll("a, button")].filter((el) => el.getBoundingClientRect().width > 0 && !el.classList.contains("sr-only")).map((el) => Math.round(parseFloat(getComputedStyle(el).fontSize))),
+    );
+    const sizes = new Set([...nodes.map((n) => n.size), ...bar]);
     expect([...sizes].sort((a, b) => a - b).length, [...sizes].join(", ")).toBeLessThanOrEqual(8);
     const words = nodes.reduce((sum, n) => sum + n.words, 0);
     const small = nodes.filter((n) => n.size < 16).reduce((sum, n) => sum + n.words, 0);
@@ -266,14 +280,13 @@ test.describe("after the Apple audit", () => {
     expect(panels).toBeGreaterThanOrEqual(3);
   });
 
-  test("notes are 28px on a desktop and 24px on a phone, in blocks of their own", async ({ page }) => {
+  test("no notes are left but the timeline years and the ring", async ({ page }) => {
     await page.goto("/");
-    const notes = await page.locator(".note").evaluateAll((ns) => ns.map((n) => ({ size: getComputedStyle(n).fontSize, display: getComputedStyle(n).display })));
-    expect(notes.length).toBeGreaterThanOrEqual(1);
-    for (const n of notes) {
-      expect(n.size).toBe(isPhone(page) ? "24px" : "28px");
-      expect(n.display).toBe("block");
-    }
+    await expect(page.locator(".note")).toHaveCount(0);
+    // The ink that stays: the timeline's spine and years, the rings on its figures and on Resume
+    // Analyzer's score, and the checker's underlines.
+    const ink = await page.locator("main svg[data-ink]").evaluateAll((svgs) => svgs.map((s) => s.closest("#experience") ? "experience" : s.closest("#projects article") ? "card" : "other"));
+    expect(ink.filter((k) => k === "other")).toEqual([]);
   });
 
   test("amber is only the main action, the ink and the signals", async ({ page }) => {
@@ -425,21 +438,11 @@ test.describe("after the Apple audit", () => {
     expect(await page.locator("#skills").innerText()).not.toContain("University of New Brunswick");
   });
 
-  test("key phrases are underlined in ink, line by line", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 800 });
+  test("About's key phrases are white, without ink underlines", async ({ page }) => {
     await page.goto("/");
-    const phrases = await page.locator("#skills p.type-statement strong").evaluateAll((els) =>
-      els.map((e) => {
-        const cs = getComputedStyle(e);
-        return { bg: cs.backgroundImage, clone: cs.getPropertyValue("box-decoration-break") || cs.getPropertyValue("-webkit-box-decoration-break"), lines: e.getClientRects().length };
-      }),
-    );
-    expect(phrases).toHaveLength(2);
-    for (const p of phrases) {
-      expect(p.bg).toContain("underline.svg");
-      expect(p.clone).toBe("clone");
-      expect(p.lines).toBeGreaterThanOrEqual(1);
-    }
+    const phrases = page.locator("#skills p.type-statement strong");
+    await expect(phrases).toHaveCount(2);
+    for (const bg of await phrases.evaluateAll((els) => els.map((e) => getComputedStyle(e).backgroundImage))) expect(bg).toBe("none");
   });
 
   test("about and skills names no company I worked at", async ({ page }) => {
@@ -797,13 +800,6 @@ test.describe("contact", () => {
     await expect(tile.getByRole("link", { name: "Write an email" })).toHaveAttribute("href", `mailto:${site.email}`);
     await expect(tile.getByRole("button", { name: "Copy email address" })).toBeVisible();
     expect(await tile.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(22, 22, 23)");
-  });
-
-  test("contact says where the email goes", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.locator("#contact .note")).toHaveText("goes straight to my inbox");
-    await expect(page.locator("#contact .note")).toBeVisible();
-    expect(await page.locator("#contact svg[data-ink]").count()).toBeGreaterThan(0);
   });
 
   test("copies the email address and confirms it", async ({ page, context, browserName }) => {

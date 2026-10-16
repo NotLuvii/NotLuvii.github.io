@@ -3,15 +3,15 @@ import { site } from "@/content/site";
 import { emphasize } from "@/lib/emphasize";
 
 /**
- * About and skills, as tiles: what I do, wide and centred (grey, its key phrases in white and
- * underlined in ink, so it can be read at a glance), with a line on how I work under it; then the
+ * About and skills, as tiles: what I do, wide and centred (grey, its key phrases in white, so it
+ * can be read at a glance), with a line on how I work under it; then the
  * skills. It names no company: the work history, and the degree, are in Experience.
  */
 export function About() {
   return (
     <section id="skills" aria-labelledby="skills-title" className="pt-24 md:pt-32">
       <div className="mx-auto max-w-[1200px] px-gutter pb-8 md:pb-10">
-        <h2 id="skills-title" className="type-section text-text">
+        <h2 id="skills-title" className="type-display section-title text-text">
           About and skills
         </h2>
       </div>
@@ -21,7 +21,7 @@ export function About() {
           <p className="type-statement mx-auto max-w-[48ch] text-text-3">
             {emphasize(site.intro, site.introKeyPhrases).map((part, i) =>
               part.strong ? (
-                <strong key={i} className="ink-underline font-[inherit] text-text">
+                <strong key={i} className="font-[inherit] text-text">
                   {part.text}
                 </strong>
               ) : (

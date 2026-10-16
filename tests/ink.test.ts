@@ -5,16 +5,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { arrow, box, bracket, ring, spine, tick, underline } from "@/lib/ink";
+import { ring, spine, underline } from "@/lib/ink";
 
 const kinds: Record<string, () => string[]> = {
   ring: () => ring(100, 50, 3),
   underline: () => underline(200, 4),
-  arrow: () => arrow([[10, 10], [60, 30], [140, 120]], 5),
-  tick: () => tick(40, 6),
-  box: () => box(230, 74, 1),
   spine: () => spine(1000, 31),
-  bracket: () => bracket(150, 8),
 };
 
 describe("ink", () => {

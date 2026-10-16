@@ -34,7 +34,7 @@ function MoreItem({ p }: { p: MoreProject }) {
 export function MoreProjects() {
   return (
     <div className="mx-auto max-w-[1200px] px-gutter pt-24 md:pt-32">
-      <h3 id="more-title" className="type-title text-text">
+      <h3 id="more-title" className="type-display more-title text-text">
         More projects
       </h3>
       <ul aria-labelledby="more-title" className="mt-10 grid grid-cols-1 gap-x-16 gap-y-12 min-[834px]:grid-cols-2">

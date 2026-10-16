@@ -98,7 +98,7 @@
 
 /* ── Type ─────────────────────────────────────────────────────
    At most eight sizes on the home page at desktop width: the display
-   face for the name (187) and the section titles (116); 56 (the
+   face for the name (187) and the section titles (115); 56 (the
    checker's score), 35 (statements, the marquee, the timeline's
    years), 28 (titles), 21 (lede), 17 (body), 14 (small print). Case
    studies add 63 for their headlines. Most reading happens at 17–21px
@@ -162,12 +162,14 @@
 }
 
 /* ── Ink ───────────────────────────────────────────────────────
-   The amber marker (src/lib/ink.ts, components/ink): hand-drawn
-   marks that point at the page's real evidence, and notes written
-   in the margin. Amber means ink: apart from the main action, only
-   [data-ink] is amber. At rest every mark is fully drawn; it is
-   only drawn in when motion is allowed (see the end of this block).
-   Gochi Hand is for the ink only. */
+   The amber marker (src/lib/ink.ts, components/ink): a few
+   hand-drawn marks on the page's real evidence: the timeline's
+   spine and years, rings on its figures and on Resume Analyzer's
+   score, and the checker's underlines. Amber is for the main
+   action, the ink ([data-ink]) and the signals ([data-signal]). At
+   rest every mark is fully drawn; it is only drawn in when motion
+   is allowed (see the end of this block). Gochi Hand is for the
+   ink only. */
 [data-ink] {
   color: var(--color-amber);
 }
@@ -179,21 +181,6 @@ svg[data-ink] {
   stroke-width: 2.4px;
   stroke-dasharray: 1;
   stroke-dashoffset: 0;
-}
-.note {
-  display: block;
-  width: fit-content;
-  font-family: var(--font-hand);
-  font-size: 1.5rem;
-  line-height: 1.15;
-  font-weight: 400;
-  rotate: -2deg;
-  text-wrap: balance;
-}
-@media (min-width: 834px) {
-  .note {
-    font-size: 1.75rem;
-  }
 }
 /* An underline drawn by hand, under each line of a phrase that wraps. */
 .ink-underline {
@@ -600,6 +587,10 @@ svg[data-ink] {
 .section-title {
   font-size: clamp(3rem, 8vw, 7.25rem);
 }
+/* More projects: the display face at the checker score's size. */
+.more-title {
+  font-size: clamp(2.25rem, 4.4vw, 3.5rem);
+}
 /* The row and each card are positioned, so the hidden text inside the
    cards' links (.sr-only, absolutely placed) scrolls and clips with
    them instead of widening the page. */
@@ -770,28 +761,6 @@ svg[data-ink] {
   top: -0.3em;
   width: calc(100% + 0.24em);
   height: calc(100% + 0.6em);
-}
-
-/* Contact: the note beside the email buttons, in the margin to their
-   left from 1360px (narrower, it would crowd the tile's edge), so the
-   column itself stays centred; above them below that. */
-.contact-note {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-@media (min-width: 1360px) {
-  .contact-note {
-    position: absolute;
-    right: 100%;
-    /* Level with the buttons, above the copy status line under them. */
-    bottom: 35px;
-    flex-direction: row;
-    margin-right: 8px;
-  }
-  .contact-note .note {
-    text-wrap: nowrap;
-  }
 }
 
 /* ── Scroll scenes ─────────────────────────────────────────────

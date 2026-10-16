@@ -25,8 +25,8 @@ export const plexMono = localFont({
 });
 
 /**
- * Gochi Hand, a marker hand, for the ink only: margin notes, the sketch's labels and the
- * timeline's years (globals.css, "Ink"). Self-hosted, latin only; SIL Open Font License
+ * Gochi Hand, a marker hand, for the ink only: the timeline's years (globals.css, "Ink").
+ * Self-hosted, latin only; SIL Open Font License
  * (src/fonts/Gochi-Hand-LICENSE.txt).
  */
 export const gochiHand = localFont({

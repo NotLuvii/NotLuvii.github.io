@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { featured, more, projectHref } from "../src/content/projects";
-import { background, roles } from "../src/content/experience";
-import { heroLine, site } from "../src/content/site";
+import { alsoUsed, background, roles, skills } from "../src/content/experience";
+import { site } from "../src/content/site";
 import { checkSms } from "../src/lib/scam-sms";
 
 const PAGES = ["/", ...featured.map((p) => projectHref(p.slug))];
@@ -15,8 +15,6 @@ const EXTERNAL = [
   /^https:\/\/youtu\.be\/qHmMMeWLiNo$/,
   /^mailto:luvneetbamrah@gmail\.com$/,
 ];
-
-const SKETCH_LABEL = "A sketch of what I do: front ends in React and TypeScript; SQL and Python, for automated reports and for data checked against its source.";
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 0) < 768;
 
@@ -37,7 +35,7 @@ test.describe("home page", () => {
     await page.goto("/");
     await expect(page.locator("h1")).toHaveText(site.name);
     await expect(page.getByText(site.headline)).toBeVisible();
-    const view = page.getByRole("link", { name: "See the projects" });
+    const view = page.getByRole("link", { name: "See the work" });
     await expect(view).toHaveAttribute("href", "#projects");
     const resume = page.locator("main").getByRole("link", { name: /Download resume/ });
     await expect(resume).toHaveAttribute("href", site.resume!);
@@ -88,72 +86,98 @@ test.describe("home page", () => {
 test.describe("first screen", () => {
   test("nothing removed is left behind", async ({ page }) => {
     await page.goto("/");
-    for (const sel of ["[data-recording]", ".hero-frame", ".more-row", "[data-figure]", "video", ".role-grid"]) await expect(page.locator(sel), sel).toHaveCount(0);
+    for (const sel of ["[data-recording]", ".hero-frame", ".more-row", "[data-figure]", "video", ".role-grid", ".sketch"]) await expect(page.locator(sel), sel).toHaveCount(0);
   });
 
-  test("says who and what: name, headline, where and what for, two buttons and a sketch of what I do", async ({ page }) => {
+  test("says who and what: the status, the clock, the name, the headline, the intro, two buttons and the data check", async ({ page }) => {
     await page.goto("/");
     const hero = page.locator("section.hero");
+    await expect(hero.locator(".now-pill")).toContainText(`Now: ${site.availability}`);
+    await expect(hero.locator("[data-clock]")).toHaveText(/^Fredericton, NB · \d{1,2}:\d{2} [ap]m A[DS]T$/);
     await expect(hero.locator("h1")).toHaveText(site.name);
-    await expect(hero).toContainText(site.headline);
-    await expect(hero).toContainText(`Based in Fredericton, New Brunswick. ${site.availability}`);
-    await expect(hero.getByRole("link", { name: "See the projects" })).toHaveAttribute("href", "#projects");
+    await expect(hero.getByText(site.headline)).toBeVisible();
+    await expect(hero.getByText(site.intro)).toBeVisible();
+    await expect(hero.getByRole("link", { name: "See the work" })).toHaveAttribute("href", "#projects");
     await expect(hero.getByRole("link", { name: /Download resume/ })).toHaveAttribute("download", "");
-    await expect(hero.locator("[role=img]")).toHaveAttribute("aria-label", SKETCH_LABEL);
-    await expect(hero.getByText("what I do, roughly:")).toBeVisible();
-    const labels = (await hero.locator(".sketch-label").allTextContents()).map((t) => t.replace(/\s+/g, " ").trim());
-    expect(labels).toEqual(["front ends", "React + TypeScript", "SQL + Python", "reports, automated", "data, checked", "against its source"]);
+    await expect(hero.locator(".data-check")).toHaveAttribute("aria-hidden", "true");
     await expect(hero.locator("img, video, picture")).toHaveCount(0);
     for (const p of featured) await expect(hero).not.toContainText(p.title);
   });
 
-  test("the first screen fits: the words and the sketch on screen, clear of the bar", async ({ page }) => {
+  test("without JavaScript the clock shows the city", async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto("/");
+    await expect(page.locator("[data-clock]")).toHaveText("Fredericton, NB");
+    await context.close();
+  });
+
+  test("the first screen fits: the words and the data check on screen, clear of the bar", async ({ page }) => {
     for (const [w, h] of [[1440, 900], [1280, 720]] as const) {
       await page.setViewportSize({ width: w, height: h });
       await page.goto("/");
       const box = await page.locator("section.hero").evaluate((s) => {
-        const r = s.getBoundingClientRect();
         const c = s.querySelector(".hero-copy")!.getBoundingClientRect();
-        const k = s.querySelector(".sketch")!.getBoundingClientRect();
-        return { top: c.top, bottom: c.bottom, sTop: k.top, sBottom: k.bottom, mid: (c.top + c.bottom) / 2, sectionMid: (r.top + r.bottom) / 2, vh: innerHeight };
+        const d = s.querySelector(".data-check")!.getBoundingClientRect();
+        return { top: c.top, bottom: c.bottom, dTop: d.top, dBottom: d.bottom, dWidth: d.width, vh: innerHeight };
       });
       expect(box.top, `${w}x${h}`).toBeGreaterThanOrEqual(56);
       expect(box.bottom, `${w}x${h}`).toBeLessThanOrEqual(box.vh);
-      expect(box.sTop, `${w}x${h} sketch`).toBeGreaterThanOrEqual(56);
-      expect(box.sBottom, `${w}x${h} sketch`).toBeLessThanOrEqual(box.vh);
-      expect(Math.abs(box.mid - box.sectionMid), `${w}x${h} centred`).toBeLessThanOrEqual(24);
+      expect(box.dTop, `${w}x${h} data check`).toBeGreaterThanOrEqual(56);
+      expect(box.dBottom, `${w}x${h} data check`).toBeLessThanOrEqual(box.vh);
+      expect(box.dWidth, `${w}x${h} data check`).toBeGreaterThanOrEqual(360);
     }
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto("/");
-    const phone = await page.locator(".hero-copy").evaluate((c) => ({ top: c.getBoundingClientRect().top, bottom: c.getBoundingClientRect().bottom, vh: innerHeight }));
+    const phone = await page.locator("section.hero").evaluate((s) => ({
+      top: s.querySelector(".hero-copy")!.getBoundingClientRect().top,
+      buttons: Math.max(...[...s.querySelectorAll(".hero-copy a")].map((a) => a.getBoundingClientRect().bottom)),
+      vh: innerHeight,
+    }));
     expect(phone.top).toBeGreaterThanOrEqual(56);
-    expect(phone.bottom).toBeLessThanOrEqual(phone.vh);
+    expect(phone.buttons).toBeLessThanOrEqual(phone.vh);
   });
 
-  test("the sketch's labels are real text, one block each, sized with the sketch", async ({ page }) => {
+  test("with reduced motion the hero is still and complete", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
-    const labels = await page.locator(".sketch-label").evaluateAll((ls) =>
-      ls.map((l) => ({ tag: l.tagName.toLowerCase(), display: getComputedStyle(l).display, size: parseFloat(getComputedStyle(l).fontSize), rows: Math.round(l.getBoundingClientRect().height / parseFloat(getComputedStyle(l).lineHeight)) })),
-    );
-    for (const l of labels) {
-      expect(l.tag).not.toBe("text");
-      expect(l.display).toBe("block");
-      expect(l.rows).toBeLessThanOrEqual(2);
-    }
-    expect(new Set(labels.map((l) => Math.round(l.size))).size).toBe(1);
+    const state = await page.evaluate(() => ({
+      hero: document.querySelector(".hero")!.getAnimations({ subtree: true }).length,
+      marquee: document.querySelector(".marquee")!.getAnimations({ subtree: true }).length,
+      clip: getComputedStyle(document.querySelector(".dc-marks")!).clipPath,
+      marks: document.querySelectorAll(".dc-marks .dc-tick, .dc-marks .dc-defect").length,
+    }));
+    expect(state).toEqual({ hero: 0, marquee: 0, clip: "none", marks: 8 });
   });
 
-  test("the sketch is legible and inside a 320px screen", async ({ page }) => {
-    await page.setViewportSize({ width: 320, height: 700 });
+  test("the marks are revealed in step with the scan line: both measure the whole drawing", async ({ page }) => {
     await page.goto("/");
-    const labels = await page.locator(".sketch-label").evaluateAll((ls) =>
-      ls.map((l) => ({ h: l.getBoundingClientRect().height, right: l.getBoundingClientRect().right, vw: document.documentElement.clientWidth })),
+    // The clip on the marks resolves against the marks' own box; it keeps time with the line only
+    // if that box is the whole 600×525 drawing, the line's box.
+    const box = await page.locator(".dc-marks").evaluate((g) => {
+      const b = (g as SVGGraphicsElement).getBBox();
+      return [b.x, b.y, b.width, b.height].map(Math.round);
+    });
+    expect(box).toEqual([0, 0, 600, 525]);
+  });
+
+  test("with motion allowed the scan line and the marquee run", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    const names = await page.evaluate(() =>
+      [".dc-line", ".dc-marks", ".marquee-track"].map((sel) => (document.querySelector(sel)!.getAnimations()[0] as CSSAnimation | undefined)?.animationName ?? null),
     );
-    expect(labels.length).toBe(6);
-    for (const l of labels) {
-      expect(l.h).toBeGreaterThanOrEqual(14);
-      expect(l.right).toBeLessThanOrEqual(l.vw);
-    }
+    expect(names).toEqual(["dc-scan", "dc-reveal", "marquee"]);
+  });
+
+  test("the marquee lists the real skills, and is hidden from screen readers", async ({ page }) => {
+    await page.goto("/");
+    const marquee = page.locator(".marquee");
+    await expect(marquee).toHaveAttribute("aria-hidden", "true");
+    const items = await marquee.locator(".marquee-track > span").allTextContents();
+    const expected = [...skills.flatMap((g) => g.items), ...alsoUsed];
+    expect(items).toEqual([...expected, ...expected]);
+    expect(await marquee.evaluate((el) => getComputedStyle(el).overflow)).toBe("hidden");
   });
 });
 
@@ -180,7 +204,7 @@ test.describe("after the Apple audit", () => {
         await page.goto(path);
         const past = await page.evaluate(() => {
           const vw = document.documentElement.clientWidth;
-          return [...document.querySelectorAll("main p, main h1, main h2, main h3, main li, main a, main dt, main dd, footer p, footer a")]
+          return [...document.querySelectorAll("main p, main h1, main h2, main h3, main li, main a, main dt, main dd, main .marquee, footer p, footer a")]
             .filter((el) => !el.closest("pre, [data-code]") && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > vw + 1)
             .map((el) => el.textContent!.trim().slice(0, 40));
         });
@@ -391,7 +415,7 @@ test.describe("after the Apple audit", () => {
 
   test("buttons respond the moment they're pressed", async ({ page }) => {
     await page.goto("/");
-    const button = page.getByRole("link", { name: "See the projects" });
+    const button = page.getByRole("link", { name: "See the work" });
     const box = (await button.boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
@@ -1078,7 +1102,7 @@ test.describe("motion", () => {
     expect(await page.locator("[data-reveal]").count()).toBe(0);
     await expect(page.locator("#contact").getByText(site.availability!)).toBeVisible();
     await expect(page.getByText(site.headline)).toBeVisible();
-    await expect(page.locator("section.hero").getByText(heroLine())).toBeVisible();
+    await expect(page.locator("section.hero .now-pill")).toContainText(`Now: ${site.availability}`);
     await expect(page.locator("#skills p.type-statement")).toHaveText(site.intro);
     await context.close();
   });

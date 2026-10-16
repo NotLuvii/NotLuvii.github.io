@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { featured, more, projectHref, type Screenshot } from "@/content/projects";
 import { alsoUsed, background, education, roles, skills, timeline } from "@/content/experience";
-import { heroLine, nav, sections, site } from "@/content/site";
+import { nav, sections, site } from "@/content/site";
 import { emphasize } from "@/lib/emphasize";
 
 const PUBLIC = join(process.cwd(), "public");
@@ -294,10 +294,6 @@ describe("first screen", () => {
 
   it("no longer ships the opening recording", () => {
     expect(existsSync(join(PUBLIC, "images/scam-detection/recording-desktop.webm"))).toBe(false);
-  });
-
-  it("says where and what for, from the site's own location and availability", () => {
-    expect(heroLine()).toBe(`Based in Fredericton, New Brunswick. ${site.availability}`);
   });
 });
 

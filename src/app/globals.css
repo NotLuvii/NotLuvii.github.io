@@ -25,6 +25,8 @@
   --color-amber: #ffb000;
   --color-amber-hover: #ffc53d;
   --color-on-amber: #0a0a0b;
+  /* The one flagged bar in the first screen's data check, and nowhere else. */
+  --color-defect: #ff5a4e;
 
   --font-sans: var(--font-plex-sans), "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, Menlo, Consolas, monospace;
@@ -229,49 +231,127 @@ svg[data-ink] {
 }
 
 /* ── First screen (components/sections/Hero.tsx) ───────────────
-   Who and what, left-aligned and centred in a screen of its own;
-   the sketch of what I do beside the words from 1024px, under them
-   below that. */
+   A status line, then the name set huge with the headline, intro and
+   buttons under it; the data check beside them from 1024px, a band
+   under them below that. One soft amber glow sits behind the data
+   check: the page's one gradient. */
 .hero {
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   justify-content: center;
   min-height: calc(100svh - 56px);
-  padding-block: 40px 64px;
+  padding-block: 12px 56px;
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .hero {
+    padding-top: 20px;
+  }
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(1100px 680px at 77% 52%, rgb(255 176 0 / 0.1), transparent 60%);
+  pointer-events: none;
+}
+.hero-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  margin-bottom: 20px;
+}
+@media (min-width: 768px) {
+  .hero-status {
+    margin-bottom: 28px;
+  }
+}
+.now-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px 6px 12px;
+  border-radius: 999px;
+  background: var(--color-panel);
+  color: var(--color-text-2);
+}
+.now-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-amber);
+}
+.hero-name {
+  font-size: clamp(4rem, 13vw, 11.75rem);
 }
 .hero-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 56px;
-  align-items: center;
+  gap: 40px;
 }
 @media (min-width: 1024px) {
+  /* The words take the width they need (the name's); the data check
+     takes the rest, up to 600px, and sits level with them. */
   .hero-grid {
-    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-    gap: 48px;
+    grid-template-columns: max-content minmax(0, 600px);
+    justify-content: space-between;
+    align-items: center;
   }
 }
-.sketch {
-  max-width: 520px;
-  margin: 0;
+
+/* The data check (components/sections/DataCheck.tsx): 600 by 525 from
+   1024px; a 220px band, showing its top rows, below that. */
+.data-check {
+  width: 100%;
+  height: 220px;
 }
-/* The drawing keeps its 600×440 proportions; its labels are text laid
-   over it, sized in its own width (30 of 600 = 5cqw). */
-.sketch-board {
-  position: relative;
-  aspect-ratio: 600 / 440;
-  container-type: inline-size;
+@media (min-width: 1024px) {
+  .data-check {
+    height: auto;
+    aspect-ratio: 600 / 525;
+  }
 }
-.sketch-label {
-  position: absolute;
-  font-family: var(--font-hand);
-  font-size: 5cqw;
-  line-height: 1.05;
-  white-space: nowrap;
-  color: var(--color-text);
+.data-check svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
-.sketch-label-quiet {
-  color: var(--color-text-2);
+.dc-bars rect {
+  fill: #2a2a2a;
+}
+.dc-marks,
+.dc-line {
+  color: var(--color-amber);
+}
+.dc-defect rect {
+  fill: var(--color-defect);
+}
+.dc-defect path {
+  stroke: var(--color-defect);
+}
+.dc-line rect {
+  fill: currentColor;
+}
+.dc-line .dc-glow {
+  opacity: 0.08;
+}
+/* At rest the line waits two-thirds down and every mark shows. With
+   motion allowed (below), the line sweeps down in 5.6s and holds, and
+   the marks appear as it passes them: the clip on the marks moves with
+   the line, on the same clock. Both measure the whole drawing: the line
+   by its view box, the clip by the marks' frame (DataCheck.tsx). */
+.dc-line {
+  transform-box: view-box;
+  transform: translateY(65%);
+}
+.dc-marks {
+  clip-path: none;
 }
 
 /* ── Opening (components/sections/Hero.tsx) and the scan line ──
@@ -325,6 +405,15 @@ svg[data-ink] {
   [data-scan="run"] .scan-beam {
     animation: scan-beam 1.6s var(--ease-scan) 0.15s both;
   }
+  .dc-line {
+    animation: dc-scan 7s linear infinite;
+  }
+  .dc-marks {
+    animation: dc-reveal 7s linear infinite;
+  }
+  .marquee-track {
+    animation: marquee 40s linear infinite;
+  }
   /* As you scroll: the first screen's words lift away. */
   @supports (animation-timeline: scroll()) {
     .hero-copy {
@@ -354,6 +443,29 @@ svg[data-ink] {
   to {
     transform: translateY(100%);
     opacity: 0;
+  }
+}
+@keyframes dc-scan {
+  from {
+    transform: translateY(0);
+  }
+  80%,
+  to {
+    transform: translateY(100%);
+  }
+}
+@keyframes dc-reveal {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  80%,
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
   }
 }
 @keyframes hero-copy-lift {
@@ -498,6 +610,31 @@ svg[data-ink] {
 .dot-link:hover .dot-label,
 .dot-link:focus-visible .dot-label {
   opacity: 1;
+}
+
+/* ── Marquee (components/sections/Marquee.tsx) ─────────────────
+   The tools I use in the display face, sliding left under the first
+   screen, with amber dots between them. Dim, at the statement size.
+   Still with reduced motion. */
+.marquee {
+  overflow: hidden;
+  padding-block: 20px;
+  background: var(--color-page);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  align-items: center;
+  gap: 0.45em;
+  padding-right: 0.45em;
+  font-size: clamp(1.5rem, 2.4vw, 2.25rem);
+  line-height: 1;
+  white-space: nowrap;
+  color: #5e5e62;
+}
+.marquee-track i {
+  font-style: normal;
+  color: var(--color-amber);
 }
 
 /* The footer closes on the name in the display face, across the whole
@@ -807,14 +944,6 @@ html:has(dialog.lightbox[open]) {
     animation: ink-draw 0.55s var(--ease-out-soft) both;
     animation-delay: calc(0.25s + var(--i, 0) * 0.14s);
   }
-  /* The sketch: each mark 0.3s after the last, its label just behind it. */
-  .sketch-marks path {
-    animation-delay: calc(0.25s + var(--i, 0) * 0.3s);
-  }
-  .sketch-label {
-    animation: sketch-label 0.45s var(--ease-out-soft) both;
-    animation-delay: calc(0.45s + var(--at, 0) * 0.3s);
-  }
   @supports (animation-timeline: view()) {
     svg[data-draw="view"] {
       view-timeline: --ink block;
@@ -828,8 +957,4 @@ html:has(dialog.lightbox[open]) {
     }
   }
 }
-@keyframes sketch-label {
-  from {
-    opacity: 0;
-  }
-}
+

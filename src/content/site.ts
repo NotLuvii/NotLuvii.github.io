@@ -26,12 +26,6 @@ export const site = {
   availability: "Open to software roles in quality, manufacturing and data." as string | null,
 } as const;
 
-/** The first screen's line under the headline: where I am, and what I'm looking for. */
-export function heroLine(): string {
-  const where = `Based in ${site.location.city}, ${site.location.region}.`;
-  return site.availability ? `${where} ${site.availability}` : where;
-}
-
 /**
  * Section links, in page order. Root-relative so they work from the case-study pages too; on the
  * home page the browser treats them as in-page jumps.

@@ -1,4 +1,5 @@
 import { Hero } from "@/components/sections/Hero";
+import { Marquee } from "@/components/sections/Marquee";
 import { Projects } from "@/components/sections/Projects";
 import { Experience } from "@/components/sections/Experience";
 import { About } from "@/components/sections/About";
@@ -9,6 +10,7 @@ export default function Home() {
   return (
     <main id="main" tabIndex={-1} className="outline-none">
       <Hero />
+      <Marquee />
       <Projects />
       <Experience />
       <About />

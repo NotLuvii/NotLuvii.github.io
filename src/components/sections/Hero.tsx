@@ -1,37 +1,51 @@
-import { heroLine, site } from "@/content/site";
+import { site } from "@/content/site";
 import { ButtonLink, pairedPill } from "@/components/ui/links";
-import { WhatIDoSketch } from "@/components/ink/Sketch";
+import { DataCheck } from "./DataCheck";
+import { LiveClock } from "./LiveClock";
 
 /**
- * The first screen: who I am and what I do, and no project. The name, set very large; the
- * headline; where I am and what I'm looking for; the two main actions; and beside them (below
- * them on a phone) a hand-drawn sketch of what I do, in the intro's own words.
+ * The first screen: who I am and what I do, and no project. A status line (what I'm looking for,
+ * and where I am with the time there); the name, set huge in the display face; the headline and
+ * the intro; the two main actions; and beside them (under them below 1024px) the data check, a
+ * scan line checking rows of data.
  *
- * Motion (CSS, globals.css "First screen" and "Opening"): the sketch draws itself on arrival, and
- * as you scroll the words lift away. With reduced motion, everything is simply there.
+ * Motion (CSS, globals.css "First screen"): the scan line runs and, as you scroll, the words lift
+ * away. With reduced motion, everything is simply there.
  */
 export function Hero() {
+  const [first, ...rest] = site.name.split(" ");
   return (
     <section id="intro" aria-labelledby="hero-title" className="hero">
-      <div className="hero-grid mx-auto w-full max-w-[1200px] px-gutter">
-        <div className="hero-copy">
-          <h1 id="hero-title" className="type-name text-text">
-            <span className="block">{site.name.split(" ")[0]}</span> <span className="block">{site.name.split(" ").slice(1).join(" ")}</span>
-          </h1>
-          <p className="type-statement mt-6 max-w-[21em] text-text">{site.headline}</p>
-          <p className="type-lede mt-4 max-w-[30em] font-normal text-text-3">{heroLine()}</p>
-          <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:gap-4">
-            <ButtonLink href="#projects" className={pairedPill}>
-              See the projects
-            </ButtonLink>
-            {site.resume && (
-              <ButtonLink href={site.resume} download variant="outline" className={pairedPill}>
-                Download resume
-              </ButtonLink>
-            )}
-          </div>
+      <div className="hero-wrap mx-auto w-full max-w-[1440px] px-gutter">
+        <div className="hero-status">
+          {site.availability && (
+            <p className="now-pill type-small">
+              <span data-signal="" className="now-dot" aria-hidden />
+              Now: {site.availability}
+            </p>
+          )}
+          <LiveClock city={`${site.location.city}, ${site.location.regionShort}`} />
         </div>
-        <WhatIDoSketch />
+        <div className="hero-grid">
+          <div className="hero-copy">
+            <h1 id="hero-title" className="type-display hero-name text-text">
+              <span className="block">{first}</span> <span className="block">{rest.join(" ")}</span>
+            </h1>
+            <p className="type-statement mt-7 max-w-[21em] text-text">{site.headline}</p>
+            <p className="type-lede mt-4 max-w-[26em] font-normal text-text-3">{site.intro}</p>
+            <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:gap-4">
+              <ButtonLink href="#projects" className={pairedPill}>
+                See the work
+              </ButtonLink>
+              {site.resume && (
+                <ButtonLink href={site.resume} download variant="outline" className={pairedPill}>
+                  Download resume
+                </ButtonLink>
+              )}
+            </div>
+          </div>
+          <DataCheck />
+        </div>
       </div>
     </section>
   );

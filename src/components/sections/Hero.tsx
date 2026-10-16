@@ -12,7 +12,7 @@ import { WhatIDoSketch } from "@/components/ink/Sketch";
  */
 export function Hero() {
   return (
-    <section aria-labelledby="hero-title" className="hero">
+    <section id="intro" aria-labelledby="hero-title" className="hero">
       <div className="hero-grid mx-auto w-full max-w-[1200px] px-gutter">
         <div className="hero-copy">
           <h1 id="hero-title" className="type-name text-text">

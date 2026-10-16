@@ -212,7 +212,10 @@ describe("shape and labels", () => {
     expect(offenders(/\p{Extended_Pictographic}/u)).toEqual([]);
   });
 
-  it("sets no labels in all caps", () => {
-    expect(offenders(/\buppercase\b|text-transform:\s*uppercase/)).toEqual([]);
+  it("sets no labels in all caps: capitals are for the display face only", () => {
+    expect(offenders(/\buppercase\b|text-transform:\s*uppercase/, (path) => path.endsWith("app/globals.css"))).toEqual([]);
+    // In globals.css, only the display utility (the name and section titles) is set in capitals.
+    const caps = [...css.matchAll(/([^{}]*)\{[^{}]*text-transform:\s*uppercase[^{}]*\}/g)].map((m) => m[1].replace(/\/\*[\s\S]*?\*\//g, "").trim());
+    expect(caps).toEqual(["@utility type-display"]);
   });
 });

@@ -167,6 +167,17 @@
   line-height: 1.5;
 }
 
+/* The display face: Plex Sans at its narrowest and boldest, in capitals.
+   For the name and the section titles only; each sets its own size. It
+   is the one place capitals are used (tests/design.test.ts). */
+@utility type-display {
+  font-weight: 700;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  line-height: 0.86;
+  letter-spacing: -0.01em;
+}
+
 /* ── Ink ───────────────────────────────────────────────────────
    The amber marker (src/lib/ink.ts, components/ink): hand-drawn
    marks that point at the page's real evidence, and notes written
@@ -389,6 +400,116 @@ svg[data-ink] {
       transform: translateY(-8px);
     }
   }
+}
+
+/* The section links sit in one pill; the link for the section in view
+   (aria-current, set by useActiveSection) is filled. Each link is 36px
+   tall to sit inside the 56px bar, with its hit area stretched to 44px
+   (::after), as the small buttons do. */
+.nav-pill {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--color-panel);
+}
+.nav-pill a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-2);
+  transition:
+    background-color 0.2s var(--ease-out-soft),
+    color 0.2s var(--ease-out-soft);
+}
+.nav-pill a::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+.nav-pill a:hover {
+  color: var(--color-text);
+}
+.nav-pill a[aria-current="true"] {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+/* ── Section dots (components/layout/SectionDots.tsx) ──────────
+   Down the right edge of the home page, from 1280px: a dot per
+   section, the one in view amber with its name beside it. Each link
+   is a 24px target. */
+.section-dots {
+  display: none;
+}
+@media (min-width: 1280px) {
+  .section-dots {
+    display: block;
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    z-index: 30;
+    transform: translateY(-50%);
+  }
+}
+.section-dots ul {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.dot-link {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-height: 24px;
+  min-width: 24px;
+}
+.dot-mark {
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #3a3a3c;
+  transition:
+    background-color 0.2s var(--ease-out-soft),
+    scale 0.2s var(--ease-out-soft);
+}
+.dot-link:hover .dot-mark {
+  background: var(--color-text-3);
+}
+.dot-mark[data-signal] {
+  background: var(--color-amber);
+  scale: 1.3;
+}
+.dot-label {
+  font-size: 0.875rem;
+  color: var(--color-text);
+  opacity: 0;
+  transition: opacity 0.2s var(--ease-out-soft);
+}
+.dot-link[aria-current="true"] .dot-label,
+.dot-link:hover .dot-label,
+.dot-link:focus-visible .dot-label {
+  opacity: 1;
+}
+
+/* The footer closes on the name in the display face, across the whole
+   screen (inside the gutters) on one line: "LUVNEET BAMRAH" is 7.9 times
+   its font size wide, so 12.5% of the width fills about 99% of it. */
+.footer-inner {
+  container-type: inline-size;
+}
+.footer-name {
+  width: fit-content;
+  font-size: 12.5cqw;
+  white-space: nowrap;
 }
 
 /* ── Scroll story (components/sections/ScanStory.tsx) ───────────

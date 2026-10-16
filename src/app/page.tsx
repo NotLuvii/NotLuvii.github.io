@@ -3,6 +3,7 @@ import { Projects } from "@/components/sections/Projects";
 import { Experience } from "@/components/sections/Experience";
 import { About } from "@/components/sections/About";
 import { Contact } from "@/components/sections/Contact";
+import { SectionDots } from "@/components/layout/SectionDots";
 
 export default function Home() {
   return (
@@ -12,6 +13,7 @@ export default function Home() {
       <Experience />
       <About />
       <Contact />
+      <SectionDots />
     </main>
   );
 }

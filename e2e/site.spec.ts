@@ -241,7 +241,7 @@ test.describe("after the Apple audit", () => {
     }
   });
 
-  test("amber is only the main action and the ink", async ({ page }) => {
+  test("amber is only the main action, the ink and the signals", async ({ page }) => {
     await page.goto("/");
     const stray = await page.evaluate(() =>
       [...document.querySelectorAll("main *")]
@@ -250,7 +250,7 @@ test.describe("after the Apple audit", () => {
           const amber = "rgb(255, 176, 0)";
           const visible = el.getBoundingClientRect().width > 0;
           const usesAmber = cs.color === amber || cs.backgroundColor === amber || (el instanceof SVGElement && cs.stroke === amber);
-          return visible && usesAmber && !el.closest('[data-ink], [data-variant="primary"]');
+          return visible && usesAmber && !el.closest('[data-ink], [data-variant="primary"], [data-signal]');
         })
         .map((el) => `${el.tagName}.${String(el.getAttribute("class")).slice(0, 40)}`),
     );
@@ -734,6 +734,59 @@ test.describe("links", () => {
 });
 
 test.describe("navigation", () => {
+  test("the bar shows the monogram, the section pills and the resume", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator('header a[aria-label="Luvneet Bamrah, home"]')).toHaveText("LB");
+    if (!isPhone(page)) await expect(page.locator("header nav[aria-label=Main] .nav-pill a")).toHaveText(["Projects", "Experience", "Skills", "Contact"]);
+    await expect(page.locator("header a[download]").first()).toHaveAttribute("href", site.resume!);
+    if (isPhone(page)) {
+      // On a phone the resume lives in the menu, and the bar keeps the monogram and Menu on one row.
+      await expect(page.locator("header > div a[download]")).toBeHidden();
+      const mono = (await page.locator('header a[aria-label="Luvneet Bamrah, home"]').boundingBox())!;
+      const menu = (await page.getByRole("button", { name: "Menu" }).boundingBox())!;
+      expect(Math.abs(mono.y + mono.height / 2 - (menu.y + menu.height / 2))).toBeLessThan(4);
+    }
+  });
+
+  test("the nav follows the section in view", async ({ page }) => {
+    test.skip(isPhone(page), "desktop nav");
+    await page.goto("/");
+    await page.locator("#experience").evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.3));
+    const nav = page.locator("header nav[aria-label=Main]");
+    await expect(nav.getByRole("link", { name: "Experience", exact: true })).toHaveAttribute("aria-current", "true");
+    await expect(nav.getByRole("link", { name: "Projects", exact: true })).not.toHaveAttribute("aria-current", "true");
+  });
+
+  test("on a case study the nav marks nothing current", async ({ page }) => {
+    await page.goto("/projects/scam-detection/");
+    await page.waitForTimeout(400);
+    await expect(page.locator("header [aria-current]")).toHaveCount(0);
+  });
+
+  test("section dots show on a wide screen and hide on a phone", async ({ page }) => {
+    await page.goto("/");
+    const dots = page.locator("nav[aria-label=Sections]");
+    if (isPhone(page)) {
+      await expect(dots).toBeHidden();
+      return;
+    }
+    await expect(dots.locator("a")).toHaveCount(5);
+    await expect(dots).toBeVisible();
+    await page.locator("#contact").scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expect(dots.getByRole("link", { name: "Contact" })).toHaveAttribute("aria-current", "true");
+  });
+
+  test("the footer closes with the name at full width", async ({ page }) => {
+    await page.goto("/");
+    const name = page.locator("footer .footer-name");
+    await expect(name).toHaveText(site.name);
+    if (!isPhone(page)) {
+      const ratio = await name.evaluate((el) => el.getBoundingClientRect().width / document.documentElement.clientWidth);
+      expect(ratio).toBeGreaterThanOrEqual(0.8);
+    }
+  });
+
   test("section links land below the sticky header", async ({ page }) => {
     await page.goto("/");
     for (const id of ["experience", "skills", "contact", "projects"]) {

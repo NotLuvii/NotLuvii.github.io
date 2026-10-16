@@ -3,19 +3,23 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { nav, site } from "@/content/site";
+import { useActiveSection } from "./useActiveSection";
 import { button } from "@/components/ui/links";
 import { cn } from "@/lib/cn";
 
+const navIds = nav.map((n) => n.id);
+
 /**
- * Sticky header: a see-through bar (CSS: .site-bar) with the name, the section links and the
- * resume, so the sections' tones show through it as they scroll under. Below 768px the links fold
- * into a menu button; the menu eases down when it opens (CSS: .menu-panel). Escape or choosing a
- * link closes it and returns focus to the button.
+ * Sticky header: a see-through bar (CSS: .site-bar) with the monogram, the section links in a pill
+ * that marks the section in view (on the home page; useActiveSection) and the resume. Below 768px
+ * the links fold into a menu button; the menu eases down when it opens (CSS: .menu-panel). Escape
+ * or choosing a link closes it and returns focus to the button.
  */
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const toggle = useRef<HTMLButtonElement>(null);
+  const active = useActiveSection(navIds);
 
   useEffect(() => {
     if (!open) return;
@@ -43,34 +47,35 @@ export function SiteHeader() {
       >
         Skip to content
       </a>
-      <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between gap-4 px-gutter">
-        <Link href="/" className="inline-flex min-h-11 items-center text-[17px] font-semibold text-text">
-          {site.name}
+      <div className="mx-auto grid h-14 max-w-[1200px] grid-cols-[1fr_auto] items-center gap-4 px-gutter md:grid-cols-[1fr_auto_1fr]">
+        <Link href="/" aria-label={`${site.name}, home`} className="inline-flex min-h-11 items-center justify-self-start text-[20px] font-bold text-text [font-stretch:75%]">
+          LB
         </Link>
 
         <nav aria-label="Main" className="hidden md:block">
-          <ul className="flex items-center gap-1">
+          <ul className="nav-pill">
             {nav.map((n) => (
               <li key={n.href}>
-                <a href={n.href} className="inline-flex min-h-11 items-center px-3 text-[14px] text-text-2 transition-colors hover:text-text">
+                <a href={n.href} aria-current={active === n.id ? "true" : undefined}>
                   {n.label}
                 </a>
               </li>
             ))}
-            {site.resume && (
-              <li className="ml-3">
-                <a href={site.resume} download className={button("secondary", "sm")}>
-                  Resume <span className="sr-only">(PDF)</span>
-                </a>
-              </li>
-            )}
           </ul>
         </nav>
+
+        {site.resume && (
+          <div className="hidden justify-self-end md:block">
+            <a href={site.resume} download className={button("outline", "sm")}>
+              Resume <span className="sr-only">(PDF)</span>
+            </a>
+          </div>
+        )}
 
         <button
           ref={toggle}
           type="button"
-          className="-mr-2 inline-flex min-h-11 min-w-11 items-center justify-center gap-2 px-3 text-[17px] font-medium text-text transition-opacity active:opacity-60 md:hidden"
+          className="-mr-2 inline-flex min-h-11 min-w-11 items-center justify-center gap-2 justify-self-end px-3 text-[17px] font-medium text-text transition-opacity active:opacity-60 md:hidden"
           aria-expanded={open}
           aria-controls={menuId}
           onClick={() => setOpen((o) => !o)}

@@ -42,3 +42,12 @@ export const nav = [
   { href: "/#skills", id: "skills", label: "Skills" },
   { href: "/#contact", id: "contact", label: "Contact" },
 ] as const;
+
+/** The home page's sections, for the dots down the right edge (components/layout/SectionDots.tsx). */
+export const sections = [
+  { id: "intro", label: "Intro" },
+  { id: "projects", label: "Projects" },
+  { id: "experience", label: "Experience" },
+  { id: "skills", label: "Skills" },
+  { id: "contact", label: "Contact" },
+] as const;

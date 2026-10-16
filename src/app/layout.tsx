@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { plexMono, plexSans } from "./fonts";
+import { gochiHand, plexMono, plexSans } from "./fonts";
 import { site } from "@/content/site";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Footer } from "@/components/layout/Footer";
@@ -31,7 +31,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en-CA" className={`${plexSans.variable} ${plexMono.variable}`}>
+    <html lang="en-CA" className={`${plexSans.variable} ${plexMono.variable} ${gochiHand.variable}`}>
       <body>
         <SiteHeader />
         {children}

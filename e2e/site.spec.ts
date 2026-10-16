@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { featured, more, projectHref } from "../src/content/projects";
 import { background, roles } from "../src/content/experience";
 import { heroLine, site } from "../src/content/site";
+import { checkSms } from "../src/lib/scam-sms";
 
 const PAGES = ["/", ...featured.map((p) => projectHref(p.slug))];
 const WIDTHS = [320, 375, 390, 768, 1024, 1440];
@@ -14,6 +15,8 @@ const EXTERNAL = [
   /^https:\/\/youtu\.be\/qHmMMeWLiNo$/,
   /^mailto:luvneetbamrah@gmail\.com$/,
 ];
+
+const SKETCH_LABEL = "A sketch of what I do: front ends in React and TypeScript; SQL and Python, for automated reports and for data checked against its source.";
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 0) < 768;
 
@@ -85,10 +88,10 @@ test.describe("home page", () => {
 test.describe("first screen", () => {
   test("nothing removed is left behind", async ({ page }) => {
     await page.goto("/");
-    for (const sel of ["[data-recording]", ".hero-frame", ".more-row", "[data-figure]", "video"]) await expect(page.locator(sel), sel).toHaveCount(0);
+    for (const sel of ["[data-recording]", ".hero-frame", ".more-row", "[data-figure]", "video", ".role-grid"]) await expect(page.locator(sel), sel).toHaveCount(0);
   });
 
-  test("says who and what: name, headline, where and what for, two buttons, and nothing else", async ({ page }) => {
+  test("says who and what: name, headline, where and what for, two buttons and a sketch of what I do", async ({ page }) => {
     await page.goto("/");
     const hero = page.locator("section.hero");
     await expect(hero.locator("h1")).toHaveText(site.name);
@@ -96,24 +99,60 @@ test.describe("first screen", () => {
     await expect(hero).toContainText(`Based in Fredericton, New Brunswick. ${site.availability}`);
     await expect(hero.getByRole("link", { name: "See the projects" })).toHaveAttribute("href", "#projects");
     await expect(hero.getByRole("link", { name: /Download resume/ })).toHaveAttribute("download", "");
-    await expect(hero.locator("img, video, picture, figure")).toHaveCount(0);
+    await expect(hero.locator("[role=img]")).toHaveAttribute("aria-label", SKETCH_LABEL);
+    await expect(hero.getByText("what I do, roughly:")).toBeVisible();
+    const labels = (await hero.locator(".sketch-label").allTextContents()).map((t) => t.replace(/\s+/g, " ").trim());
+    expect(labels).toEqual(["front ends", "React + TypeScript", "SQL + Python", "reports, automated", "data, checked", "against its source"]);
+    await expect(hero.locator("img, video, picture")).toHaveCount(0);
     for (const p of featured) await expect(hero).not.toContainText(p.title);
   });
 
-  test("the first screen fits: at least the screen's height, its content centred and clear of the bar", async ({ page }) => {
-    for (const [w, h] of [[1440, 900], [1280, 720], [375, 667]] as const) {
+  test("the first screen fits: the words and the sketch on screen, clear of the bar", async ({ page }) => {
+    for (const [w, h] of [[1440, 900], [1280, 720]] as const) {
       await page.setViewportSize({ width: w, height: h });
       await page.goto("/");
       const box = await page.locator("section.hero").evaluate((s) => {
         const r = s.getBoundingClientRect();
         const c = s.querySelector(".hero-copy")!.getBoundingClientRect();
-        return { h: r.height, top: c.top, bottom: c.bottom, above: c.top - r.top, below: r.bottom - c.bottom, vh: innerHeight };
+        const k = s.querySelector(".sketch")!.getBoundingClientRect();
+        return { top: c.top, bottom: c.bottom, sTop: k.top, sBottom: k.bottom, mid: (c.top + c.bottom) / 2, sectionMid: (r.top + r.bottom) / 2, vh: innerHeight };
       });
-      expect(box.h, `${w}x${h}`).toBeGreaterThanOrEqual(box.vh - 56 - 1);
       expect(box.top, `${w}x${h}`).toBeGreaterThanOrEqual(56);
-      // All of it on the first screen, and centred: as much room above the words as below.
       expect(box.bottom, `${w}x${h}`).toBeLessThanOrEqual(box.vh);
-      expect(Math.abs(box.above - box.below), `${w}x${h} centred`).toBeLessThanOrEqual(2);
+      expect(box.sTop, `${w}x${h} sketch`).toBeGreaterThanOrEqual(56);
+      expect(box.sBottom, `${w}x${h} sketch`).toBeLessThanOrEqual(box.vh);
+      expect(Math.abs(box.mid - box.sectionMid), `${w}x${h} centred`).toBeLessThanOrEqual(24);
+    }
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto("/");
+    const phone = await page.locator(".hero-copy").evaluate((c) => ({ top: c.getBoundingClientRect().top, bottom: c.getBoundingClientRect().bottom, vh: innerHeight }));
+    expect(phone.top).toBeGreaterThanOrEqual(56);
+    expect(phone.bottom).toBeLessThanOrEqual(phone.vh);
+  });
+
+  test("the sketch's labels are real text, one block each, sized with the sketch", async ({ page }) => {
+    await page.goto("/");
+    const labels = await page.locator(".sketch-label").evaluateAll((ls) =>
+      ls.map((l) => ({ tag: l.tagName.toLowerCase(), display: getComputedStyle(l).display, size: parseFloat(getComputedStyle(l).fontSize), rows: Math.round(l.getBoundingClientRect().height / parseFloat(getComputedStyle(l).lineHeight)) })),
+    );
+    for (const l of labels) {
+      expect(l.tag).not.toBe("text");
+      expect(l.display).toBe("block");
+      expect(l.rows).toBeLessThanOrEqual(2);
+    }
+    expect(new Set(labels.map((l) => Math.round(l.size))).size).toBe(1);
+  });
+
+  test("the sketch is legible and inside a 320px screen", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 700 });
+    await page.goto("/");
+    const labels = await page.locator(".sketch-label").evaluateAll((ls) =>
+      ls.map((l) => ({ h: l.getBoundingClientRect().height, right: l.getBoundingClientRect().right, vw: document.documentElement.clientWidth })),
+    );
+    expect(labels.length).toBe(6);
+    for (const l of labels) {
+      expect(l.h).toBeGreaterThanOrEqual(14);
+      expect(l.right).toBeLessThanOrEqual(l.vw);
     }
   });
 });
@@ -192,15 +231,30 @@ test.describe("after the Apple audit", () => {
     expect(panels).toBeGreaterThanOrEqual(3);
   });
 
-  test("amber is kept for the main action", async ({ page }) => {
+  test("notes are 28px on a desktop and 24px on a phone, in blocks of their own", async ({ page }) => {
     await page.goto("/");
-    const amber = await page.evaluate(() =>
-      [...document.querySelectorAll("main *")].filter((el) => {
-        const cs = getComputedStyle(el);
-        return el.getBoundingClientRect().width > 0 && (cs.color === "rgb(255, 176, 0)" || cs.backgroundColor === "rgb(255, 176, 0)");
-      }).length,
+    const notes = await page.locator(".note").evaluateAll((ns) => ns.map((n) => ({ size: getComputedStyle(n).fontSize, display: getComputedStyle(n).display })));
+    expect(notes.length).toBeGreaterThanOrEqual(4);
+    for (const n of notes) {
+      expect(n.size).toBe(isPhone(page) ? "24px" : "28px");
+      expect(n.display).toBe("block");
+    }
+  });
+
+  test("amber is only the main action and the ink", async ({ page }) => {
+    await page.goto("/");
+    const stray = await page.evaluate(() =>
+      [...document.querySelectorAll("main *")]
+        .filter((el) => {
+          const cs = getComputedStyle(el);
+          const amber = "rgb(255, 176, 0)";
+          const visible = el.getBoundingClientRect().width > 0;
+          const usesAmber = cs.color === amber || cs.backgroundColor === amber || (el instanceof SVGElement && cs.stroke === amber);
+          return visible && usesAmber && !el.closest('[data-ink], [data-variant="primary"]');
+        })
+        .map((el) => `${el.tagName}.${String(el.getAttribute("class")).slice(0, 40)}`),
     );
-    expect(amber).toBeLessThanOrEqual(2);
+    expect(stray).toEqual([]);
   });
 
   test("the headline fits on two lines on a desktop screen", async ({ page }) => {
@@ -232,6 +286,55 @@ test.describe("after the Apple audit", () => {
     expect(new Set(boxes.map((b) => b.x)).size).toBe(1);
     expect(new Set(boxes.map((b) => b.w)).size).toBe(1);
     for (let i = 1; i < boxes.length; i++) expect(boxes[i].y).toBeCloseTo(boxes[i - 1].y + boxes[i - 1].h + 12, 0);
+  });
+
+  test("project tiles annotate their evidence", async ({ page }) => {
+    await page.goto("/");
+    const [, resume, immensa] = await page.locator("#projects article").all();
+    await expect(resume.locator(".note")).toHaveText("my own resume against a sample posting");
+    await expect(resume.getByText("my own resume against a sample posting")).toBeVisible();
+    await resume.scrollIntoViewIfNeeded();
+    const inside = await resume.locator("figure img").evaluate((img) => {
+      const ring = img.parentElement!.querySelector("svg[data-ink]")!.getBoundingClientRect();
+      const box = img.getBoundingClientRect();
+      const cx = ring.left + ring.width / 2;
+      const cy = ring.top + ring.height / 2;
+      return cx > box.left && cx < box.right && cy > box.top && cy < box.bottom;
+    });
+    expect(inside).toBe(true);
+    await expect(immensa.locator(".note")).toHaveText("the whole form goes out as one email, photos attached");
+    await expect(immensa.locator("[data-code] svg[data-ink]")).toHaveCount(1);
+  });
+
+  test("the evidence each note points at is inside its picture window, phone to desktop", async ({ page }) => {
+    for (const width of [390, 768, 1000, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
+      const [, resume, immensa] = await page.locator("#projects article").all();
+      for (const [tile, mark] of [[resume, "figure svg[data-ink]"], [immensa, "[data-code] svg[data-ink]"]] as const) {
+        const box = await tile.evaluate((t, sel) => {
+          const w = t.querySelector(".tile-picture")!.getBoundingClientRect();
+          const m = t.querySelector(sel)!.getBoundingClientRect();
+          return { w: { top: w.top, bottom: w.bottom, left: w.left, right: w.right }, m: { top: m.top, bottom: m.bottom, left: m.left, right: m.right } };
+        }, mark);
+        expect(box.m.top, `${width}px ${mark}`).toBeGreaterThanOrEqual(box.w.top - 1);
+        expect(box.m.bottom, `${width}px ${mark}`).toBeLessThanOrEqual(box.w.bottom + 1);
+        expect(box.m.left, `${width}px ${mark}`).toBeGreaterThanOrEqual(box.w.left - 1);
+        expect(box.m.right, `${width}px ${mark}`).toBeLessThanOrEqual(box.w.right + 1);
+      }
+    }
+  });
+
+  test("tiles read left to right on a desktop", async ({ page }) => {
+    test.skip(isPhone(page), "desktop only");
+    await page.goto("/");
+    for (const i of [1, 2]) {
+      const tile = page.locator("#projects article").nth(i);
+      const h3 = await tile.locator("h3").boundingBox();
+      const pic = await tile.locator(".tile-picture").boundingBox();
+      expect(h3!.x).toBeLessThan(pic!.x);
+      expect(Math.abs(h3!.y - pic!.y)).toBeLessThan(200);
+    }
   });
 
   test("more projects: a plain list, two columns on desktop and one on a phone, no boxes", async ({ page }) => {
@@ -347,25 +450,51 @@ test.describe("after the Apple audit", () => {
     }
   });
 
-  test("experience is the three roles, every bullet word for word, figures white inside their sentences", async ({ page }) => {
+  test("experience is a drawn timeline: three roles and the degree, newest first, every bullet word for word", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("#experience [data-figure]")).toHaveCount(0);
-    await expect(page.locator("#experience h3")).toHaveCount(roles.length);
+    await expect(page.locator("#experience h3")).toHaveText(["Developer, AiKnod", "BSc, Software Engineering", "Front end developer, SafeTrack", "Developer, Immensa Tech"]);
     for (const r of roles) for (const point of r.points) await expect(page.locator("#experience")).toContainText(point);
-    await expect(page.locator("#experience strong")).toHaveText(["75%", "50%"]);
+    const years = await page.locator("#experience .timeline-year").evaluateAll((ys) => ys.map((y) => y.textContent!.trim()).filter(Boolean));
+    expect(years).toEqual(["2026", "2025", "2024"]);
+    // The spine sits beside the list, not in it: an <ol> may only hold list items.
+    const spine = await page.locator("#experience .timeline").evaluate((t) => {
+      const svg = t.querySelector(":scope > svg[data-ink]");
+      return svg ? svg.getBoundingClientRect().height / t.querySelector(":scope > ol")!.getBoundingClientRect().height : 0;
+    });
+    expect(spine).toBeGreaterThanOrEqual(0.9);
   });
 
-  test("the roles are separate tiles: three across on desktop, stacked 12px apart on a phone", async ({ page }) => {
+  test("figures are ringed by hand and stay white", async ({ page }) => {
     await page.goto("/");
-    const boxes = await page.locator("#experience .role-grid > li").evaluateAll((ls) =>
-      ls.map((l) => { const r = l.getBoundingClientRect(); return { x: Math.round(r.x), y: r.y + scrollY, w: r.width, h: r.height }; }),
+    const strong = page.locator("#experience strong");
+    await expect(strong).toHaveText(["75%", "50%"]);
+    const rings = await strong.evaluateAll((els) => els.map((e) => ({ ring: !!e.closest(".ink-ring")?.querySelector("svg[data-ink]"), colour: getComputedStyle(e).color })));
+    for (const r of rings) {
+      expect(r.ring).toBe(true);
+      expect(r.colour).toBe("rgb(245, 245, 247)");
+    }
+  });
+
+  test("education lives in the timeline, not in About", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("#experience")).toContainText("University of New Brunswick");
+    expect(await page.locator("#skills").innerText()).not.toContain("University of New Brunswick");
+  });
+
+  test("key phrases are underlined in ink, line by line", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.goto("/");
+    const phrases = await page.locator("#skills p.type-statement strong").evaluateAll((els) =>
+      els.map((e) => {
+        const cs = getComputedStyle(e);
+        return { bg: cs.backgroundImage, clone: cs.getPropertyValue("box-decoration-break") || cs.getPropertyValue("-webkit-box-decoration-break"), lines: e.getClientRects().length };
+      }),
     );
-    expect(boxes).toHaveLength(roles.length);
-    if (isPhone(page)) {
-      for (let i = 1; i < boxes.length; i++) expect(boxes[i].y).toBeCloseTo(boxes[i - 1].y + boxes[i - 1].h + 12, 0);
-    } else {
-      expect(new Set(boxes.map((b) => b.x)).size).toBe(3);
-      expect(new Set(boxes.map((b) => Math.round(b.y))).size).toBe(1);
+    expect(phrases).toHaveLength(2);
+    for (const p of phrases) {
+      expect(p.bg).toContain("underline.svg");
+      expect(p.clone).toBe("clone");
+      expect(p.lines).toBeGreaterThanOrEqual(1);
     }
   });
 
@@ -423,6 +552,21 @@ test.describe("scam detection story", () => {
     }
   });
 
+  test("the story underlines each matched phrase in ink", async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await page.goto("/");
+    const marks = await page.locator(".story-mark[data-on]").evaluateAll((ms) =>
+      ms.map((m) => ({ bg: getComputedStyle(m).backgroundImage, line: getComputedStyle(m).textDecorationLine })),
+    );
+    expect(marks.length).toBeGreaterThan(0);
+    for (const m of marks) {
+      expect(m.bg).toContain("underline.svg");
+      expect(m.line).toBe("none");
+    }
+    await context.close();
+  });
+
   test("screen readers get the message, every rule and the final score as text", async ({ page }) => {
     await page.goto("/");
     const root = page.locator("[data-story]");
@@ -438,6 +582,89 @@ test.describe("scam detection story", () => {
     await through(page, 0.5);
     const fits = await page.locator("[data-story-stage]").evaluate((el) => el.scrollHeight <= innerHeight - 56 + 1);
     expect(fits).toBe(true);
+  });
+});
+
+test.describe("try the rules", () => {
+  const field = (page: Page) => page.getByLabel("Paste a text message");
+
+  test("scores your own text with the tool's rules", async ({ page }) => {
+    await page.goto("/");
+    const text = "Congratulations you have won a free gift! Claim now at bit.ly/abc";
+    const expected = checkSms(text);
+    await expect(field(page)).toBeEditable();
+    await field(page).fill(text);
+    await expect(page.locator("[data-try-score]")).toHaveText(String(expected.risk));
+    await expect(page.locator("[data-try-level]")).toHaveText("High");
+    for (const issue of expected.issues) await expect(page.locator("[data-try-issues]")).toContainText(issue.msg);
+    const marked = await page.locator("[data-try-marked] mark").allTextContents();
+    expect(marked.length).toBeGreaterThan(0);
+    for (const m of marked) expect(text.toLowerCase()).toContain(m.toLowerCase());
+  });
+
+  test("the result says its level in words, with no label over the score, and repeats the text in reading grey", async ({ page }) => {
+    await page.goto("/");
+    const result = page.locator("[aria-live=polite]").filter({ has: page.locator("[data-try-score]") });
+    await expect(result).not.toContainText("Risk score");
+    await expect(result).toContainText("94 High risk");
+    expect(await page.locator("[data-try-marked]").evaluate((el) => getComputedStyle(el).color)).toBe("rgb(199, 199, 204)");
+  });
+
+  test("only the result is announced, not the text being typed", async ({ page }) => {
+    await page.goto("/");
+    const live = page.locator("[aria-live]").filter({ has: page.locator("[data-try-score]") });
+    await expect(live).toHaveCount(1);
+    await expect(live.locator("[data-try-issues]")).toHaveCount(1);
+    await expect(live.locator("[data-try-marked]")).toHaveCount(0);
+    await expect(live.locator("a")).toHaveCount(0);
+  });
+
+  test("an empty field scores 0 and flags nothing", async ({ page }) => {
+    await page.goto("/");
+    await expect(field(page)).toBeEditable();
+    await field(page).fill("");
+    await expect(page.locator("[data-try-score]")).toHaveText("0");
+    await expect(page.locator("[data-try-level]")).toHaveText("Low");
+    await expect(page.locator("[data-try-issues]")).toHaveText("Nothing flagged.");
+  });
+
+  test("without JavaScript it shows the sample's result", async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto("/");
+    await expect(page.locator("[data-try-score]")).toHaveText("94");
+    await expect(page.locator("[data-try-level]")).toHaveText("High");
+    await expect(field(page)).toHaveAttribute("readonly", "");
+    await context.close();
+  });
+
+  test("odd input stays text and inside the page", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 700 });
+    await page.goto("/");
+    await expect(field(page)).toBeEditable();
+    const text = `<b>hi</b> 🎉\n${"x".repeat(200)} urgent`;
+    await field(page).fill(text);
+    await expect(page.locator("[data-try-score]")).toHaveText(String(checkSms(text).risk));
+    await expect(page.locator("[data-try-score]")).toHaveText("18");
+    await expect(page.locator("[data-try-marked] b")).toHaveCount(0);
+    await expect(page.locator("[data-try-marked]")).toContainText("<b>hi</b>");
+    const past = await page.evaluate(() => {
+      const vw = document.documentElement.clientWidth;
+      return [...document.querySelectorAll("#projects *")].filter((el) => el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > vw + 1 && !el.closest("pre, [data-code], .tile-picture")).map((el) => el.tagName);
+    });
+    expect(past).toEqual([]);
+  });
+
+  test("the field is labelled, focusable and read-only until ready", async ({ page }) => {
+    await page.goto("/");
+    const f = field(page);
+    await expect(f).toBeEditable();
+    await f.focus();
+    await expect(f).toBeFocused();
+    const outline = await f.evaluate((el) => getComputedStyle(el).outlineStyle);
+    expect(outline).not.toBe("none");
+    await expect(page.locator("#try-text")).toHaveAttribute("maxlength", "1000");
+    await expect(page.getByText(/^the tool[’']s own rules, running in your browser\. Nothing is sent anywhere\.$/)).toBeVisible();
   });
 });
 
@@ -581,6 +808,13 @@ test.describe("contact", () => {
     await expect(tile.getByRole("link", { name: "Write an email" })).toHaveAttribute("href", `mailto:${site.email}`);
     await expect(tile.getByRole("button", { name: "Copy email address" })).toBeVisible();
     expect(await tile.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(22, 22, 23)");
+  });
+
+  test("contact says where the email goes", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("#contact .note")).toHaveText("goes straight to my inbox");
+    await expect(page.locator("#contact .note")).toBeVisible();
+    expect(await page.locator("#contact svg[data-ink]").count()).toBeGreaterThan(0);
   });
 
   test("copies the email address and confirms it", async ({ page, context, browserName }) => {
@@ -752,6 +986,36 @@ test.describe("motion", () => {
     await page.evaluate(() => window.scrollTo(0, 0));
     expect(await page.locator(".hero").evaluate((el) => el.getAnimations({ subtree: true }).length)).toBe(0);
     await context.close();
+  });
+
+  test("with reduced motion every mark is drawn", async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await page.goto("/");
+    await scrollThrough(page);
+    const marks = await page.locator("[data-ink] path").evaluateAll((ps) => ps.map((p) => getComputedStyle(p).strokeDashoffset));
+    expect(marks.length).toBeGreaterThan(0);
+    for (const offset of marks) expect(["0", "0px"]).toContain(offset);
+    const drawing = await page.evaluate(() => document.getAnimations().filter((a) => ((a.effect as KeyframeEffect | null)?.target as Element | null)?.closest?.("[data-ink]")).length);
+    expect(drawing).toBe(0);
+    await context.close();
+  });
+
+  test("with motion allowed, every mark ends fully drawn once scrolled past", async ({ page }) => {
+    for (const [w, h] of [[1440, 900], [1920, 1200]] as const) {
+      await page.setViewportSize({ width: w, height: h });
+      await page.goto("/");
+      await scrollThrough(page);
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.waitForTimeout(800);
+      const undrawn = await page.locator("[data-ink] path").evaluateAll((ps) =>
+        ps
+          .filter((p) => p.getBoundingClientRect().width > 0 || p.getBoundingClientRect().height > 0)
+          .map((p) => ({ at: (p.closest("[data-ink]") as Element).getAttribute("class") ?? p.closest("section")?.id, offset: parseFloat(getComputedStyle(p).strokeDashoffset) }))
+          .filter((m) => m.offset > 0.01),
+      );
+      expect(undrawn, `${w}x${h}`).toEqual([]);
+    }
   });
 
   test("without JavaScript, all content is visible", async ({ browser }) => {

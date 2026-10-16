@@ -19,7 +19,7 @@ function Message({ story, shown }: { story: Story; shown: number }) {
     const start = story.text.indexOf(step.phrase, at);
     parts.push(<Fragment key={`t${i}`}>{story.text.slice(at, start)}</Fragment>);
     parts.push(
-      <mark key={`m${i}`} className="story-mark" data-on={i < shown ? "" : undefined}>
+      <mark key={`m${i}`} className="story-mark ink-underline" data-on={i < shown ? "" : undefined}>
         {step.phrase}
       </mark>,
     );

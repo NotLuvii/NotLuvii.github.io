@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import type { Screenshot as Shot } from "@/content/projects";
 import { cn } from "@/lib/cn";
 
@@ -36,6 +36,7 @@ export function Screenshot({
   sizes,
   scan = false,
   captionHidden = false,
+  annotation,
 }: {
   shot: Shot;
   priority?: boolean;
@@ -46,6 +47,8 @@ export function Screenshot({
   scan?: boolean;
   /** For a picture cut off by its tile: the caption is read out, not shown (it would be clipped). */
   captionHidden?: boolean;
+  /** Drawn over the image, in the image's own box (so percentages place it on the picture): an ink mark. */
+  annotation?: ReactNode;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   // The full-size image loads the first time the viewer opens, then stays, so it can fade out.
@@ -83,6 +86,7 @@ export function Screenshot({
               <div aria-hidden className="scan-beam" />
             </>
           )}
+          {annotation}
         </div>
         <button
           type="button"

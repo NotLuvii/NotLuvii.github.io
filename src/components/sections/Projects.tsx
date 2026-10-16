@@ -4,26 +4,32 @@ import { featured, projectHref, type FeaturedProject } from "@/content/projects"
 import { ScanOnView } from "@/components/motion/ScanOnView";
 import { MoreProjects } from "@/components/sections/MoreProjects";
 import { ScanStory } from "@/components/sections/ScanStory";
+import { TryScamRules } from "@/components/sections/TryScamRules";
+import { checkSms } from "@/lib/scam-sms";
 import { CodeBlock } from "@/components/ui/CodeBlock";
 import { ButtonLink, pairedPill } from "@/components/ui/links";
 import { Screenshot } from "@/components/ui/Screenshot";
+import { Ink } from "@/components/ink/Ink";
+import { Note } from "@/components/ink/Note";
+import { arrow, ring } from "@/lib/ink";
 
 /**
- * One project as a tile, as on apple.com: the name (a link to the case study), one line, and two
- * pill buttons, centred at the top; then what the project shows: the story, or a picture that sits
- * at the bottom of the tile and runs past its edge (CSS: .tile, .tile-picture).
+ * One project as a tile: the name (a link to the case study), one line and two pill buttons, on
+ * the left; then what the project shows. A picture sits beside the words from 1024px (under them
+ * below that), cut off by the tile's bottom edge, with a note in ink pointing at it; the story runs
+ * the full width under the words (CSS: .tile, .tile-split, .tile-picture).
  */
 function ProjectTile({ p, children }: { p: FeaturedProject; children: ReactNode }) {
   return (
-    <article className={`tile flex flex-col pt-11 text-center min-[834px]:pt-14 ${p.story ? "pb-12 md:pb-16" : ""}`}>
+    <article className={`tile pt-11 min-[834px]:pt-14 ${p.story ? "pb-12 md:pb-16" : "tile-split"}`}>
       <div className="px-gutter">
         <h3 className="type-section text-text">
           <Link href={projectHref(p.slug)} className="decoration-2 underline-offset-[8px] hover:underline">
             {p.title}
           </Link>
         </h3>
-        <p className="type-lede mx-auto mt-2 max-w-[48ch] text-text-2">{p.tileLine}</p>
-        <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
+        <p className="type-lede mt-2 max-w-[40ch] text-text-2">{p.tileLine}</p>
+        <div className="mt-6 flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href={projectHref(p.slug)} variant="light" className={pairedPill}>
             Read the case study<span className="sr-only">: {p.title}</span>
           </ButtonLink>
@@ -32,6 +38,14 @@ function ProjectTile({ p, children }: { p: FeaturedProject; children: ReactNode 
             <span className="sr-only">: {p.title}</span>
           </ButtonLink>
         </div>
+        {p.note && (
+          <div className="tile-note mt-10 lg:mt-16">
+            <Note>{p.note}</Note>
+            {/* Towards the picture: to the right beside it, down above it. */}
+            <Ink paths={arrow([[4, 34], [52, 14], [112, 28]], 41)} w={120} h={44} className="ml-2 hidden h-[44px] w-[120px] lg:inline-block" />
+            <Ink paths={arrow([[18, 2], [8, 26], [20, 50]], 43)} w={32} h={56} className="mt-1 block h-[56px] w-[32px] lg:hidden" />
+          </div>
+        )}
       </div>
       {children}
     </article>
@@ -40,18 +54,42 @@ function ProjectTile({ p, children }: { p: FeaturedProject; children: ReactNode 
 
 /** What each project's tile shows: the story, a screenshot, or (for Immensa, which has none) its code. */
 function TileContent({ p }: { p: FeaturedProject }) {
-  if (p.story) return <ScanStory story={p.story} />;
+  if (p.story)
+    return (
+      <>
+        <ScanStory story={p.story} />
+        <TryScamRules sample={p.story.text} initial={checkSms(p.story.text)} source={p.story.source} />
+      </>
+    );
   const code = p.caseStudy.decision.code;
   return (
     <>
-      <div className="tile-picture">
+      <div className={p.homeShot ? "tile-picture" : "tile-picture tile-picture-code"}>
         {p.homeShot ? (
           <ScanOnView>
-            <Screenshot shot={p.homeShot} scan captionHidden sizes="(min-width: 870px) 760px, 88vw" />
+            <Screenshot
+              shot={p.homeShot}
+              scan
+              captionHidden
+              sizes="(min-width: 1024px) 760px, 92vw"
+              annotation={
+                p.ring && (
+                  // Drawn at rest: inside the image's clipped box, a scroll timeline would never finish.
+                  <Ink
+                    paths={ring(120, 64, 11)}
+                    w={120}
+                    h={64}
+                    draw="none"
+                    className="absolute"
+                    style={{ left: `${p.ring.x}%`, top: `${p.ring.y}%`, width: `${p.ring.w}%`, height: `${p.ring.h}%` }}
+                  />
+                )
+              }
+            />
           </ScanOnView>
         ) : code ? (
           <div className="text-left">
-            <CodeBlock excerpt={code} teaser />
+            <CodeBlock excerpt={code} teaser mark />
           </div>
         ) : null}
       </div>

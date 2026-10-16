@@ -141,6 +141,41 @@ describe("colour", () => {
   });
 });
 
+describe("ink", () => {
+  it("the resting state is drawn; drawing in is guarded", () => {
+    expect(css).toContain("@keyframes ink-draw");
+    expect(css).toMatch(/\n\[data-ink\] path\s*\{[^}]*stroke-dashoffset:\s*0[;\s]/);
+    // pathLength dashes are measured in the SVG's own units; a non-scaling stroke measures them on
+    // screen instead, so a stretched mark would rest half-drawn.
+    expect(css.match(/\n\[data-ink\] path\s*\{[^}]*\}/)![0]).not.toContain("non-scaling-stroke");
+    // Drawing in only ever happens inside the reduced-motion guard, and drawing on view only
+    // where scroll timelines exist: elsewhere the marks rest fully drawn.
+    const motion = css.indexOf("prefers-reduced-motion: no-preference) {\n  /* Ink");
+    expect(motion).toBeGreaterThan(-1);
+    const guarded = css.slice(motion);
+    const supports = guarded.indexOf("@supports (animation-timeline: view())");
+    expect(supports).toBeGreaterThan(-1);
+    const uses = [...css.matchAll(/animation-timeline:\s*--ink/g)].map((m) => m.index!);
+    expect(uses.length).toBeGreaterThan(0);
+    for (const at of uses) expect(at).toBeGreaterThan(motion + supports);
+    expect([...css.matchAll(/animation:\s*ink-draw/g)].every((m) => m.index! > motion)).toBe(true);
+  });
+
+  it("no client component imports the ink library", () => {
+    const client = sources.filter(({ text }) => /^["']use client["']/m.test(text));
+    expect(client.length).toBeGreaterThan(0);
+    for (const { path, text } of client) expect(/@\/lib\/ink|roughjs/.test(text), path).toBe(false);
+  });
+
+  it("writes notes in Gochi Hand, self-hosted with its licence, and nowhere but the ink", () => {
+    expect(existsSync(join(SRC, "fonts/gochi-hand-latin-400.woff2"))).toBe(true);
+    expect(readFileSync(join(SRC, "fonts/Gochi-Hand-LICENSE.txt"), "utf8")).toContain("SIL Open Font License");
+    const uses = offenders(/--font-hand|font-hand\b/, (path) => /app\/(fonts\.ts|layout\.tsx)$/.test(path));
+    expect(uses.length).toBeGreaterThan(0);
+    for (const line of uses) expect(line.startsWith("src/app/globals.css"), line).toBe(true);
+  });
+});
+
 describe("type, continued", () => {
   it("sets monospace only for code", () => {
     const mono = offenders(/font-mono|--font-mono|type-label/, (path) => /(ui\/CodeBlock\.tsx|app\/fonts\.ts|app\/layout\.tsx)$/.test(path));

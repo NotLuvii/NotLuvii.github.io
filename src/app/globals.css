@@ -28,6 +28,7 @@
 
   --font-sans: var(--font-plex-sans), "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, Menlo, Consolas, monospace;
+  --font-hand: var(--font-gochi), "Comic Sans MS", cursive;
 
   --spacing-gutter: clamp(16px, 5vw, 64px);
 
@@ -95,11 +96,12 @@
 }
 
 /* ── Type ─────────────────────────────────────────────────────
-   Eight sizes at desktop width, in one family: 144 (the story's
-   score), 63 (headline), 56 (section and project titles), 35
-   (statements and figures), 28 (titles), 21 (lede), 17 (body),
-   14 (small print). Most reading happens at 17–21px; IBM Plex Mono
-   is for code only. */
+   Eight sizes at desktop width: 144 (the name, and the story's
+   score), 63 (case-study headlines), 56 (section and project titles),
+   35 (statements, figures, the timeline's years), 28 (titles and
+   notes), 21 (lede), 17 (body), 14 (small print). Most reading happens
+   at 17–21px in IBM Plex Sans; Plex Mono is for code only, and Gochi
+   Hand for the ink only (see "Ink"). */
 @utility type-hero {
   font-size: clamp(2.25rem, min(4.4vw, 8svh), 4rem);
   line-height: 1.05;
@@ -127,14 +129,6 @@
   text-wrap: pretty;
 }
 
-@utility type-stat {
-  font-size: clamp(2rem, 2.4vw, 2.25rem);
-  line-height: 1.1;
-  font-weight: 600;
-  font-stretch: 90%;
-  font-variant-numeric: tabular-nums;
-}
-
 /* The largest figure: the scroll story's risk score. */
 @utility type-figure {
   font-size: clamp(5rem, 10vw, 9.5rem);
@@ -143,6 +137,15 @@
   font-stretch: 85%;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
+}
+
+/* The name on the first screen: as large as the story's score. */
+@utility type-name {
+  font-size: clamp(5rem, 10vw, 9rem);
+  line-height: 0.88;
+  font-weight: 600;
+  font-stretch: 88%;
+  letter-spacing: -0.045em;
 }
 
 @utility type-title {
@@ -164,8 +167,104 @@
   line-height: 1.5;
 }
 
+/* ── Ink ───────────────────────────────────────────────────────
+   The amber marker (src/lib/ink.ts, components/ink): hand-drawn
+   marks that point at the page's real evidence, and notes written
+   in the margin. Amber means ink: apart from the main action, only
+   [data-ink] is amber. At rest every mark is fully drawn; it is
+   only drawn in when motion is allowed (see the end of this block).
+   Gochi Hand is for the ink only. */
+[data-ink] {
+  color: var(--color-amber);
+}
+svg[data-ink] {
+  overflow: visible;
+  pointer-events: none;
+}
+[data-ink] path {
+  stroke-width: 2.4px;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.note {
+  display: block;
+  width: fit-content;
+  font-family: var(--font-hand);
+  font-size: 1.5rem;
+  line-height: 1.15;
+  font-weight: 400;
+  rotate: -2deg;
+  text-wrap: balance;
+}
+@media (min-width: 834px) {
+  .note {
+    font-size: 1.75rem;
+  }
+}
+/* An underline drawn by hand, under each line of a phrase that wraps. */
+.ink-underline {
+  background: url(/ink/underline.svg) left bottom / 100% 0.42em no-repeat;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  padding-bottom: 0.12em;
+}
+@keyframes ink-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ── First screen (components/sections/Hero.tsx) ───────────────
+   Who and what, left-aligned and centred in a screen of its own;
+   the sketch of what I do beside the words from 1024px, under them
+   below that. */
+.hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: calc(100svh - 56px);
+  padding-block: 40px 64px;
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 56px;
+  align-items: center;
+}
+@media (min-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 48px;
+  }
+}
+.sketch {
+  max-width: 520px;
+  margin: 0;
+}
+/* The drawing keeps its 600×440 proportions; its labels are text laid
+   over it, sized in its own width (30 of 600 = 5cqw). */
+.sketch-board {
+  position: relative;
+  aspect-ratio: 600 / 440;
+  container-type: inline-size;
+}
+.sketch-label {
+  position: absolute;
+  font-family: var(--font-hand);
+  font-size: 5cqw;
+  line-height: 1.05;
+  white-space: nowrap;
+  color: var(--color-text);
+}
+.sketch-label-quiet {
+  color: var(--color-text-2);
+}
+
 /* ── Opening (components/sections/Hero.tsx) and the scan line ──
-   The first screen is words only; as you scroll they lift away.
+   As you scroll, the first screen's words lift away.
    The scan line passes once over a project's picture as it arrives
    (components/motion/ScanOnView.tsx). Everything rests finished;
    motion is only added when the visitor allows it. */
@@ -307,17 +406,18 @@
   display: block;
   height: 100%;
   border-radius: 3px;
-  background: var(--color-amber);
+  background: var(--color-text);
   transform-origin: left;
 }
+/* A phrase a rule fired on: underlined in ink (.ink-underline) once the
+   scan line has reached it. */
 .story-mark {
-  background: none;
   color: inherit;
+  background-size: 0 0.42em;
 }
 .story-mark[data-on] {
   color: var(--color-text);
-  text-decoration: underline 3px var(--color-amber);
-  text-underline-offset: 6px;
+  background-size: 100% 0.42em;
 }
 .story-rule {
   color: var(--color-text-3);
@@ -355,7 +455,8 @@
   .story-mark {
     transition:
       opacity 0.25s var(--ease-out-soft),
-      color 0.25s var(--ease-out-soft);
+      color 0.25s var(--ease-out-soft),
+      background-size 0.35s var(--ease-out-soft);
   }
   .story-beam {
     transition: opacity 0.3s ease-out;
@@ -394,30 +495,134 @@
   gap: 12px;
   padding: 12px;
 }
-/* Experience: the roles as tiles, three across from 1024px. */
-.role-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
-  padding: 0 12px 12px;
+/* A tile's picture: at the bottom, cut off by the tile's edge. Under the
+   words below 1024px; beside them from 1024px (.tile-split), with the
+   note in ink pointing at it. */
+.tile-picture {
+  /* Tall enough, at every width, to show what the note points at:
+     Resume Analyzer's relevance score, Immensa's bracketed lines. The
+     window grows with a phone's width, and the picture is capped at
+     760px wide, so it never outgrows the window's 530px. */
+  height: clamp(300px, 64vw, 530px);
+  max-width: 760px;
+  margin: 2.5rem var(--spacing-gutter) 0;
+  overflow: clip;
+}
+.tile-picture-code {
+  min-height: 420px;
+}
+@media (min-width: 834px) {
+  .tile-picture {
+    height: 530px;
+  }
 }
 @media (min-width: 1024px) {
-  .role-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .tile-split {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: start;
+  }
+  .tile-split .tile-picture {
+    margin: 0 var(--spacing-gutter) 0 0;
+  }
+}
+.tile-note {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+@media (min-width: 1024px) {
+  .tile-note {
+    flex-direction: row;
+    align-items: center;
   }
 }
 
-/* A tile's picture: at the bottom, cut off by the tile's edge. */
-.tile-picture {
-  width: min(88%, 760px);
-  height: 300px;
-  margin: 3rem auto 0;
-  overflow: clip;
+/* The live checker under the scam story (TryScamRules.tsx): the field
+   and its note, then the result beside them from 1024px. */
+.try-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+}
+@media (min-width: 1024px) {
+  .try-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 64px;
+  }
+}
+
+/* Experience (components/sections/Experience.tsx): a timeline drawn
+   by hand. The year in the margin, the spine between it and the
+   entry, the entries hanging off it. */
+.timeline {
+  --year: 56px;
+  --gap: 32px;
+  position: relative;
 }
 @media (min-width: 834px) {
-  /* Tall enough at 760px wide to show Resume Analyzer's relevance score. */
-  .tile-picture {
-    height: 530px;
+  .timeline {
+    --year: 96px;
+    --gap: 48px;
+  }
+}
+.timeline-spine {
+  position: absolute;
+  top: 6px;
+  left: calc(var(--year) + var(--gap) / 2 - 10px);
+  width: 20px;
+  height: calc(100% - 6px);
+}
+.timeline-entry {
+  display: grid;
+  grid-template-columns: var(--year) minmax(0, 1fr);
+  column-gap: var(--gap);
+}
+.timeline-year {
+  font-family: var(--font-hand);
+  font-size: 1.5rem;
+  line-height: 1.2;
+  text-align: right;
+}
+@media (min-width: 834px) {
+  .timeline-year {
+    font-size: 2.1875rem;
+    line-height: 1;
+  }
+}
+/* A figure circled by hand where it stands in its sentence. */
+.ink-ring {
+  position: relative;
+  display: inline-block;
+  padding-inline: 0.3em;
+}
+.ink-ring > svg {
+  position: absolute;
+  left: -0.12em;
+  top: -0.3em;
+  width: calc(100% + 0.24em);
+  height: calc(100% + 0.6em);
+}
+
+/* Contact: the note beside the email buttons, in the margin to their
+   left from 1360px (narrower, it would crowd the tile's edge), so the
+   column itself stays centred; above them below that. */
+.contact-note {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+@media (min-width: 1360px) {
+  .contact-note {
+    position: absolute;
+    right: 100%;
+    /* Level with the buttons, above the copy status line under them. */
+    bottom: 35px;
+    flex-direction: row;
+    margin-right: 8px;
+  }
+  .contact-note .note {
+    text-wrap: nowrap;
   }
 }
 
@@ -470,5 +675,40 @@ html:has(dialog.lightbox[open]) {
     dialog.lightbox[open] {
       transform: scale(0.98);
     }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Ink: a mark set to "load" draws itself once, stroke by stroke; a
+     mark set to "view" draws as it scrolls into view, where scroll
+     timelines exist. Anywhere else it simply rests drawn. */
+  [data-draw="load"] path {
+    animation: ink-draw 0.55s var(--ease-out-soft) both;
+    animation-delay: calc(0.25s + var(--i, 0) * 0.14s);
+  }
+  /* The sketch: each mark 0.3s after the last, its label just behind it. */
+  .sketch-marks path {
+    animation-delay: calc(0.25s + var(--i, 0) * 0.3s);
+  }
+  .sketch-label {
+    animation: sketch-label 0.45s var(--ease-out-soft) both;
+    animation-delay: calc(0.45s + var(--at, 0) * 0.3s);
+  }
+  @supports (animation-timeline: view()) {
+    svg[data-draw="view"] {
+      view-timeline: --ink block;
+    }
+    svg[data-draw="view"] path {
+      animation: ink-draw linear both;
+      animation-timeline: --ink;
+      /* Finished by the time the whole mark is on screen, so one at the
+         very bottom of the page still ends fully drawn. */
+      animation-range: entry 10% entry 100%;
+    }
+  }
+}
+@keyframes sketch-label {
+  from {
+    opacity: 0;
   }
 }

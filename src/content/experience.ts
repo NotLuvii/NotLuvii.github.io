@@ -58,6 +58,32 @@ export const education = {
   coursework: ["System analysis and project management", "statistics", "operating systems", "cybersecurity", "discrete mathematics"],
 };
 
+export type TimelineEntry = { year: string; showYear: boolean } & ({ kind: "role"; role: Role } | { kind: "education"; education: typeof education });
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "Feb 2026 – Aug 2026" or "May 2025" → its start, as a sortable number (2026.01). */
+function start(when: string): number {
+  const [month, year] = when.split(" ");
+  return Number(year) + MONTHS.indexOf(month) / 100;
+}
+
+/**
+ * Experience as a timeline: the roles and the degree, newest first by when each began. Each entry
+ * carries its start year; the year is shown once, on the first entry that has it.
+ */
+export function timeline(): TimelineEntry[] {
+  const entries = [
+    ...roles.map((role) => ({ kind: "role" as const, role, at: start(role.period) })),
+    { kind: "education" as const, education, at: start(education.date) },
+  ].sort((a, b) => b.at - a.at);
+  return entries.map(({ at, ...entry }, i) => {
+    const year = String(Math.floor(at));
+    const previous = i > 0 ? String(Math.floor(entries[i - 1].at)) : null;
+    return { ...entry, year, showYear: year !== previous };
+  });
+}
+
 /** A line on how I work, under the intro. It says what I do, not where: no company names. */
 export const background = [
   "Most of my work sits where software meets data: validating it, finding the defects that let it go wrong, and writing things down so a fix stays fixed. Outside work, I build my own tools.",

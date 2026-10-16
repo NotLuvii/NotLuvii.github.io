@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { featured, more, projectHref, type Screenshot } from "@/content/projects";
-import { alsoUsed, background, education, roles, skills } from "@/content/experience";
+import { alsoUsed, background, education, roles, skills, timeline } from "@/content/experience";
 import { heroLine, nav, site } from "@/content/site";
 import { emphasize } from "@/lib/emphasize";
 
@@ -114,6 +114,25 @@ describe("featured projects", () => {
     ]);
   });
 
+  it("annotations say what the picture shows, in the caption's own terms", () => {
+    const resume = featured.find((p) => p.slug === "resume-analyzer")!;
+    expect(resume.note).toBe("my own resume against a sample posting");
+    // The caption it paraphrases: the result for my resume against a sample posting.
+    expect(resume.homeShot!.caption).toContain("my resume against a sample posting");
+    const r = resume.ring!;
+    expect(r.x).toBeGreaterThan(0);
+    expect(r.y).toBeGreaterThan(0);
+    expect(r.x + r.w).toBeLessThanOrEqual(100);
+    expect(r.y + r.h).toBeLessThanOrEqual(100);
+    const immensa = featured.find((p) => p.slug === "immensa-inquiry-app")!;
+    expect(immensa.note).toBe("the whole form goes out as one email, photos attached");
+    const code = immensa.caseStudy.decision.code!;
+    const marked = code.code.split("\n").slice(code.mark!.from - 1, code.mark!.to).join("\n");
+    expect(marked).toContain("Intent.ACTION_SEND_MULTIPLE");
+    expect(marked).toContain("EXTRA_STREAM");
+    expect(featured.find((p) => p.slug === "scam-detection")!.note).toBeUndefined();
+  });
+
   it("builds case-study paths with a trailing slash, for the static export", () => {
     expect(projectHref("scam-detection")).toBe("/projects/scam-detection/");
   });
@@ -193,6 +212,14 @@ describe("experience and skills", () => {
       expect(r.points.length).toBeLessThanOrEqual(3);
       expect(new Set(r.points).size).toBe(r.points.length);
     }
+  });
+
+  it("orders the timeline newest first, education between the roles, each year once", () => {
+    const t = timeline();
+    expect(t.map((e) => e.year)).toEqual(["2026", "2025", "2024", "2024"]);
+    expect(t.map((e) => e.showYear)).toEqual([true, true, true, false]);
+    expect(t.map((e) => e.kind)).toEqual(["role", "education", "role", "role"]);
+    expect(t.flatMap((e) => (e.kind === "role" ? [e.role.organization] : []))).toEqual(["AiKnod", "SafeTrack", "Immensa Tech"]);
   });
 
   it("groups skills under the four requested headings", () => {

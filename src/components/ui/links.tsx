@@ -106,7 +106,7 @@ export function ButtonLink({
   ...rest
 }: AnchorProps & { variant?: ButtonVariant; size?: "md" | "sm" }) {
   return (
-    <Anchor {...rest} {...(external ? externalProps : {})} className={cn(button(variant, size), className)}>
+    <Anchor {...rest} {...(external ? externalProps : {})} data-variant={variant} className={cn(button(variant, size), className)}>
       {children}
       {external && (
         <>

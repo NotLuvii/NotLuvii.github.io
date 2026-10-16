@@ -18,12 +18,24 @@ const EXTERNAL = [
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 0) < 768;
 
-/** Scroll through the page, then wait for lazy images to load and entrance animations to finish. */
+/**
+ * Scroll through the page, and each sideways row of cards to its end and back, then wait for lazy
+ * images to load and entrance animations to finish.
+ */
 async function scrollThrough(page: Page) {
   await page.evaluate(async () => {
+    const pause = () => new Promise((r) => setTimeout(r, 60));
+    for (const row of document.querySelectorAll<HTMLElement>(".carousel")) {
+      row.scrollIntoView({ block: "center", behavior: "instant" });
+      for (let x = 0; x < row.scrollWidth; x += 300) {
+        row.scrollTo({ left: x, behavior: "instant" });
+        await pause();
+      }
+      row.scrollTo({ left: 0, behavior: "instant" });
+    }
     for (let y = 0; y < document.documentElement.scrollHeight; y += 300) {
       window.scrollTo(0, y);
-      await new Promise((r) => setTimeout(r, 60));
+      await pause();
     }
   });
   await page.waitForFunction(() => [...document.images].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 10_000 });
@@ -45,15 +57,17 @@ test.describe("home page", () => {
   test("runs Hero, Projects, Experience, About and skills, Contact, in that order", async ({ page }) => {
     await page.goto("/");
     const headings = await page.locator("main h2").allTextContents();
-    expect(headings).toEqual(["Projects", "Experience", "About and skills", "Contact"]);
+    expect(headings).toEqual(["Selected work", "Experience", "About and skills", "Contact"]);
   });
 
-  test("features three projects, each linking to its case study and its own repository", async ({ page }) => {
+  test("selected work is a carousel of three cards, each linking to its case study and code", async ({ page }) => {
     await page.goto("/");
-    const articles = page.locator("#projects article");
-    await expect(articles).toHaveCount(3);
-    // All three tiles share one set of buttons.
-    const caseStudyClasses = await page.locator("#projects article").evaluateAll((as) =>
+    const carousel = page.locator("#projects ul.carousel");
+    await expect(carousel.locator("> li")).toHaveCount(3);
+    expect(await carousel.evaluate((el) => getComputedStyle(el).scrollSnapType)).toContain("x");
+    const articles = carousel.locator("> li > article");
+    // All three cards share one set of buttons.
+    const caseStudyClasses = await articles.evaluateAll((as) =>
       as.map((a) => [...a.querySelectorAll("a")].find((l) => l.textContent?.startsWith("Read the case study"))?.className),
     );
     expect(new Set(caseStudyClasses).size).toBe(1);
@@ -62,13 +76,9 @@ test.describe("home page", () => {
       await expect(a.getByRole("heading", { level: 3 })).toHaveText(p.title);
       await expect(a.getByRole("link", { name: new RegExp(`^Read the case study\\s*: ${p.title}$`) })).toHaveAttribute("href", projectHref(p.slug));
       await expect(a.getByRole("link", { name: new RegExp(`^Code on GitHub\\s*: ${p.title}`) })).toHaveAttribute("href", p.repo.href);
+      await expect(a).toContainText(p.tileLine);
+      expect(await a.locator(".card-tags li").allTextContents()).toEqual(p.stack.slice(0, 3));
     }
-  });
-
-  test("the first project tells its story", async ({ page }) => {
-    await page.goto("/");
-    const first = page.locator("#projects article").first();
-    await expect(first.locator("[data-story]")).toHaveCount(1);
   });
 
   test("the intro is one paragraph with its key phrases in white and the rest in grey", async ({ page }) => {
@@ -205,7 +215,8 @@ test.describe("after the Apple audit", () => {
         const past = await page.evaluate(() => {
           const vw = document.documentElement.clientWidth;
           return [...document.querySelectorAll("main p, main h1, main h2, main h3, main li, main a, main dt, main dd, main .marquee, footer p, footer a")]
-            .filter((el) => !el.closest("pre, [data-code]") && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > vw + 1)
+            // A card in the carousel scrolls sideways by design: its text must stay inside its own card.
+            .filter((el) => !el.closest("pre, [data-code]") && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > (el.closest(".carousel > li")?.getBoundingClientRect().right ?? vw) + 1)
             .map((el) => el.textContent!.trim().slice(0, 40));
         });
         expect(past, `${path} at ${width}px`).toEqual([]);
@@ -258,7 +269,7 @@ test.describe("after the Apple audit", () => {
   test("notes are 28px on a desktop and 24px on a phone, in blocks of their own", async ({ page }) => {
     await page.goto("/");
     const notes = await page.locator(".note").evaluateAll((ns) => ns.map((n) => ({ size: getComputedStyle(n).fontSize, display: getComputedStyle(n).display })));
-    expect(notes.length).toBeGreaterThanOrEqual(4);
+    expect(notes.length).toBeGreaterThanOrEqual(1);
     for (const n of notes) {
       expect(n.size).toBe(isPhone(page) ? "24px" : "28px");
       expect(n.display).toBe("block");
@@ -289,76 +300,12 @@ test.describe("after the Apple audit", () => {
   });
 
 
-  test("Immensa's code is cut off by its tile like a picture: not a scroll region, caption read out", async ({ page }) => {
+  test("Immensa's code is cut off by its card like a picture: not a scroll region, caption read out", async ({ page }) => {
     await page.goto("/");
     const code = page.locator("#projects article").nth(2).locator("[data-code]");
     await expect(code.locator("pre")).not.toHaveAttribute("tabindex", /.*/);
     expect(await code.locator("pre").evaluate((el) => getComputedStyle(el).overflowY)).not.toMatch(/auto|scroll/);
     await expect(code.locator("figcaption")).toHaveClass(/sr-only/);
-  });
-
-  test("projects stack one tile per row, 12px apart, all the same width", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.locator("#projects h2")).toHaveText("Projects");
-    await expect(page.locator("#projects h2 + p")).toHaveText("Three with public code and a case study each, then the rest.");
-    const boxes = await page.locator("#projects article").evaluateAll((as) =>
-      as.map((a) => {
-        const r = a.getBoundingClientRect();
-        return { x: Math.round(r.x), y: r.y + scrollY, w: Math.round(r.width), h: r.height };
-      }),
-    );
-    expect(new Set(boxes.map((b) => b.x)).size).toBe(1);
-    expect(new Set(boxes.map((b) => b.w)).size).toBe(1);
-    for (let i = 1; i < boxes.length; i++) expect(boxes[i].y).toBeCloseTo(boxes[i - 1].y + boxes[i - 1].h + 12, 0);
-  });
-
-  test("project tiles annotate their evidence", async ({ page }) => {
-    await page.goto("/");
-    const [, resume, immensa] = await page.locator("#projects article").all();
-    await expect(resume.locator(".note")).toHaveText("my own resume against a sample posting");
-    await expect(resume.getByText("my own resume against a sample posting")).toBeVisible();
-    await resume.scrollIntoViewIfNeeded();
-    const inside = await resume.locator("figure img").evaluate((img) => {
-      const ring = img.parentElement!.querySelector("svg[data-ink]")!.getBoundingClientRect();
-      const box = img.getBoundingClientRect();
-      const cx = ring.left + ring.width / 2;
-      const cy = ring.top + ring.height / 2;
-      return cx > box.left && cx < box.right && cy > box.top && cy < box.bottom;
-    });
-    expect(inside).toBe(true);
-    await expect(immensa.locator(".note")).toHaveText("the whole form goes out as one email, photos attached");
-    await expect(immensa.locator("[data-code] svg[data-ink]")).toHaveCount(1);
-  });
-
-  test("the evidence each note points at is inside its picture window, phone to desktop", async ({ page }) => {
-    for (const width of [390, 768, 1000, 1440]) {
-      await page.setViewportSize({ width, height: 900 });
-      await page.goto("/");
-      const [, resume, immensa] = await page.locator("#projects article").all();
-      for (const [tile, mark] of [[resume, "figure svg[data-ink]"], [immensa, "[data-code] svg[data-ink]"]] as const) {
-        const box = await tile.evaluate((t, sel) => {
-          const w = t.querySelector(".tile-picture")!.getBoundingClientRect();
-          const m = t.querySelector(sel)!.getBoundingClientRect();
-          return { w: { top: w.top, bottom: w.bottom, left: w.left, right: w.right }, m: { top: m.top, bottom: m.bottom, left: m.left, right: m.right } };
-        }, mark);
-        expect(box.m.top, `${width}px ${mark}`).toBeGreaterThanOrEqual(box.w.top - 1);
-        expect(box.m.bottom, `${width}px ${mark}`).toBeLessThanOrEqual(box.w.bottom + 1);
-        expect(box.m.left, `${width}px ${mark}`).toBeGreaterThanOrEqual(box.w.left - 1);
-        expect(box.m.right, `${width}px ${mark}`).toBeLessThanOrEqual(box.w.right + 1);
-      }
-    }
-  });
-
-  test("tiles read left to right on a desktop", async ({ page }) => {
-    test.skip(isPhone(page), "desktop only");
-    await page.goto("/");
-    for (const i of [1, 2]) {
-      const tile = page.locator("#projects article").nth(i);
-      const h3 = await tile.locator("h3").boundingBox();
-      const pic = await tile.locator(".tile-picture").boundingBox();
-      expect(h3!.x).toBeLessThan(pic!.x);
-      expect(Math.abs(h3!.y - pic!.y)).toBeLessThan(200);
-    }
   });
 
   test("more projects: a plain list, two columns on desktop and one on a phone, no boxes", async ({ page }) => {
@@ -447,33 +394,6 @@ test.describe("after the Apple audit", () => {
     await expect(dialog).toBeHidden();
   });
 
-  test("each project's picture is scanned once as it arrives, and ends fully revealed", async ({ page }) => {
-    await page.goto("/");
-    // The scam detection tile tells its story and Immensa's shows code; Resume Analyzer's picture is scanned.
-    for (const i of [1]) {
-      const frame = page.locator("#projects article").nth(i).locator("[data-scan]");
-      // Waiting, dimmed, before it's on screen; then scanned once it arrives.
-      await expect(frame).toHaveAttribute("data-scan", "wait");
-      await frame.scrollIntoViewIfNeeded();
-      await expect(frame).toHaveAttribute("data-scan", "run");
-      const cover = frame.locator(".scan-cover");
-      await expect.poll(() => cover.evaluate((el) => el.getAnimations().every((a) => a.playState === "finished")), { timeout: 6000 }).toBe(true);
-      expect(await cover.evaluate((el) => el.getBoundingClientRect().height)).toBe(0);
-    }
-  });
-
-  test("with reduced motion or no JavaScript, project pictures are never covered", async ({ browser }) => {
-    for (const options of [{ reducedMotion: "reduce" as const }, { javaScriptEnabled: false }]) {
-      const context = await browser.newContext(options);
-      const page = await context.newPage();
-      await page.goto("/");
-      const heights = await page.locator("#projects .scan-cover").evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
-      expect(heights.length).toBe(1);
-      for (const h of heights) expect(h).toBe(0);
-      await context.close();
-    }
-  });
-
   test("experience is a drawn timeline: three roles and the degree, newest first, every bullet word for word", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("#experience h3")).toHaveText(["Developer, AiKnod", "BSc, Software Engineering", "Front end developer, SafeTrack", "Developer, Immensa Tech"]);
@@ -530,82 +450,64 @@ test.describe("after the Apple audit", () => {
   });
 });
 
-test.describe("scam detection story", () => {
-  const story = featured[0].story!;
-
-  /** Scroll so the held stretch is a given fraction of the way through (0 = it has just reached the header). */
-  const through = (page: Page, f: number) =>
-    page.locator("[data-story-pin]").evaluate((el: HTMLElement, f) => {
-      const top = el.getBoundingClientRect().top + scrollY - 56;
-      const distance = el.offsetHeight - (innerHeight - 56);
-      window.scrollTo({ top: top + Math.max(0, distance) * f, behavior: "instant" });
-    }, f);
-
-  test("holds on screen while the score climbs to 94 through the detector's real steps", async ({ page }) => {
+test.describe("selected work", () => {
+  test("the next button scrolls and the ends disable their button", async ({ page }) => {
+    test.skip(isPhone(page), "the buttons show from 768px");
     await page.goto("/");
-    const score = page.locator("[data-story-score]");
-    const level = page.locator("[data-story-level]");
-    await through(page, 0);
-    await expect(score).toHaveText("0");
-    await expect(level).toHaveText("Low");
-    await through(page, 0.45);
-    await expect(level).toHaveText("Medium");
-    // The number counts quickly to each new score; once settled it's one of the real totals.
-    await expect.poll(() => score.textContent()).toMatch(/^(36|54)$/);
-    // Held: the stage stays just under the bar while the page scrolls on.
-    expect(await page.locator("[data-story-stage]").evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(56);
-    await through(page, 1);
-    await expect(score).toHaveText(String(story.steps.reduce((sum, st) => sum + st.add, 0)));
-    await expect(level).toHaveText("High");
-    await expect(page.locator("[data-story-rule][data-on]")).toHaveCount(story.steps.length);
-    await expect(page.locator("mark[data-on]")).toHaveCount(story.steps.length);
+    const carousel = page.locator("#projects ul.carousel");
+    const prev = page.getByRole("button", { name: "Previous project" });
+    const next = page.getByRole("button", { name: "Next project" });
+    await expect(prev).toBeDisabled();
+    await expect(next).toBeEnabled();
+    await next.click();
+    await expect.poll(() => carousel.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+    await expect(prev).toBeEnabled();
+    await carousel.evaluate((el) => el.scrollTo({ left: el.scrollWidth, behavior: "instant" }));
+    await expect(next).toBeDisabled();
   });
 
-  test("with reduced motion or no JavaScript, shows the result at once and holds nothing", async ({ browser }) => {
-    for (const options of [{ reducedMotion: "reduce" as const }, { javaScriptEnabled: false }]) {
-      const context = await browser.newContext(options);
-      const page = await context.newPage();
-      await page.goto("/");
-      await expect(page.locator("[data-story-score]")).toHaveText("94");
-      await expect(page.locator("[data-story-level]")).toHaveText("High");
-      await expect(page.locator("[data-story-rule][data-on]")).toHaveCount(story.steps.length);
-      const held = await page.locator("[data-story-pin]").evaluate((el: HTMLElement) => el.offsetHeight - (el.querySelector("[data-story-stage]") as HTMLElement).offsetHeight);
-      expect(held).toBeLessThanOrEqual(2);
-      expect(await page.locator("[data-story-stage]").evaluate((el) => getComputedStyle(el).position)).not.toBe("sticky");
-      await context.close();
+  test("keyboard reaches every card and the focused one is in view", async ({ page }) => {
+    await page.goto("/");
+    const carousel = page.locator("#projects ul.carousel");
+    for (const p of featured) {
+      await page.getByRole("link", { name: new RegExp(`^Read the case study\\s*: ${p.title}$`) }).focus();
+      await expect
+        .poll(() =>
+          carousel.evaluate((ul, title) => {
+            const li = [...ul.children].find((c) => c.querySelector("h3")?.textContent === title)!;
+            const a = ul.getBoundingClientRect();
+            const b = li.getBoundingClientRect();
+            return b.left >= a.left - 2 && b.right <= a.right + 2;
+          }, p.title),
+        )
+        .toBe(true);
     }
   });
 
-  test("the story underlines each matched phrase in ink", async ({ browser }) => {
-    const context = await browser.newContext({ reducedMotion: "reduce" });
-    const page = await context.newPage();
+  test("the ring sits on Resume Analyzer's score", async ({ page }) => {
     await page.goto("/");
-    const marks = await page.locator(".story-mark[data-on]").evaluateAll((ms) =>
-      ms.map((m) => ({ bg: getComputedStyle(m).backgroundImage, line: getComputedStyle(m).textDecorationLine })),
-    );
-    expect(marks.length).toBeGreaterThan(0);
-    for (const m of marks) {
-      expect(m.bg).toContain("underline.svg");
-      expect(m.line).toBe("none");
-    }
-    await context.close();
+    const card = page.locator("#projects article").filter({ has: page.getByRole("heading", { name: "Resume Analyzer" }) });
+    const ink = (await card.locator("svg[data-ink]").boundingBox())!;
+    const img = (await card.locator("img").boundingBox())!;
+    const cx = ink.x + ink.width / 2;
+    const cy = ink.y + ink.height / 2;
+    expect(cx).toBeGreaterThan(img.x);
+    expect(cx).toBeLessThan(img.x + img.width);
+    expect(cy).toBeGreaterThan(img.y);
+    expect(cy).toBeLessThan(img.y + img.height);
   });
 
-  test("screen readers get the message, every rule and the final score as text", async ({ page }) => {
+  test("no scroll story is left", async ({ page }) => {
     await page.goto("/");
-    const root = page.locator("[data-story]");
-    await expect(root).toContainText("Reply YES to secure your account.");
-    for (const st of story.steps) await expect(root).toContainText(st.rule);
-    await expect(root.locator(".sr-only", { hasText: "94, High" })).toHaveCount(1);
-    await expect(root.getByRole("link", { name: /rules on GitHub/ })).toHaveAttribute("href", story.source.href);
+    for (const sel of ["[data-story]", ".scan-beam", ".scan-cover", ".tile-picture", "[data-scan]"]) await expect(page.locator(sel), sel).toHaveCount(0);
   });
 
-  test("on a phone the held stage fits on one screen", async ({ page }) => {
-    test.skip(!isPhone(page), "phone only");
+  test("the checker follows the carousel under its own heading, with a plain note", async ({ page }) => {
     await page.goto("/");
-    await through(page, 0.5);
-    const fits = await page.locator("[data-story-stage]").evaluate((el) => el.scrollHeight <= innerHeight - 56 + 1);
-    expect(fits).toBe(true);
+    const heading = page.locator("#projects h3", { hasText: "Try the scam checker on your own text" });
+    await expect(heading).toHaveCount(1);
+    await expect(page.locator("#projects .note")).toHaveCount(0);
+    await expect(page.locator("#projects")).toContainText("The tool’s own rules, running in your browser. Nothing is sent anywhere.");
   });
 });
 
@@ -674,7 +576,7 @@ test.describe("try the rules", () => {
     await expect(page.locator("[data-try-marked]")).toContainText("<b>hi</b>");
     const past = await page.evaluate(() => {
       const vw = document.documentElement.clientWidth;
-      return [...document.querySelectorAll("#projects *")].filter((el) => el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > vw + 1 && !el.closest("pre, [data-code], .tile-picture")).map((el) => el.tagName);
+      return [...document.querySelectorAll("#projects *")].filter((el) => el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > vw + 1 && !el.closest("pre, [data-code], .carousel > li")).map((el) => el.tagName);
     });
     expect(past).toEqual([]);
   });
@@ -688,7 +590,7 @@ test.describe("try the rules", () => {
     const outline = await f.evaluate((el) => getComputedStyle(el).outlineStyle);
     expect(outline).not.toBe("none");
     await expect(page.locator("#try-text")).toHaveAttribute("maxlength", "1000");
-    await expect(page.getByText(/^the tool[’']s own rules, running in your browser\. Nothing is sent anywhere\.$/)).toBeVisible();
+    await expect(page.getByText(/^The tool[’']s own rules, running in your browser\. Nothing is sent anywhere\.$/)).toBeVisible();
   });
 });
 
@@ -799,6 +701,16 @@ test.describe("navigation", () => {
     await page.locator("#contact").scrollIntoViewIfNeeded();
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await expect(dots.getByRole("link", { name: "Contact" })).toHaveAttribute("aria-current", "true");
+  });
+
+  test("the section dots stay readable over the cards: the label sits on its own dark ground", async ({ page }) => {
+    test.skip(isPhone(page), "dots show from 1280px");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    await page.locator("#projects").evaluate((el) => window.scrollTo({ top: el.getBoundingClientRect().top + scrollY + 300, behavior: "instant" }));
+    const label = page.locator('.dot-link[aria-current="true"] .dot-label');
+    await expect(label).toBeVisible();
+    expect(await label.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
   });
 
   test("the footer closes with the name at full width", async ({ page }) => {
@@ -986,8 +898,8 @@ test.describe("screenshots", () => {
     await page.goto("/");
     await page.getByRole("button", { name: /^View screenshot full screen/ }).first().click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    // The first screenshot on the page that opens full screen is the Resume Analyzer's score.
-    await expect(page.getByRole("dialog").locator("img")).toHaveAttribute("src", /score@2x\.webp$/);
+    // The first screenshot on the page that opens full screen is the scam tool's result.
+    await expect(page.getByRole("dialog").locator("img")).toHaveAttribute("src", /app@2x\.webp$/);
   });
 });
 
@@ -1000,9 +912,10 @@ test.describe("layout", () => {
         await scrollThrough(page);
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
         expect(overflow, `${width}px`).toBe(0);
-        // Images never spill out of their frames.
+        // Images never spill out of their frames. (A card's picture further along the row of cards is
+        // off to the side by design; the row itself is checked by the overflow above.)
         const spill = await page.evaluate(() =>
-          [...document.images].filter((i) => i.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).map((i) => i.src),
+          [...document.images].filter((i) => !i.closest(".carousel > li") && i.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).map((i) => i.src),
         );
         expect(spill, `${width}px`).toEqual([]);
       }

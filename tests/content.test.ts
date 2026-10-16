@@ -39,7 +39,7 @@ const VERIFIED_LINKS = new Set([
 describe("featured projects", () => {
   it("features exactly three, scam detection first", () => {
     expect(featured).toHaveLength(3);
-    // In the order of the approved home-page design: the story, then Resume Analyzer, then Immensa.
+    // In the order of the approved home-page design: the scam tool, then Resume Analyzer, then Immensa.
     expect(featured.map((p) => p.slug)).toEqual(["scam-detection", "resume-analyzer", "immensa-inquiry-app"]);
   });
 
@@ -106,31 +106,23 @@ describe("featured projects", () => {
     expect(story.source.href.startsWith(`${lead.repo.href}/blob/`)).toBe(true);
   });
 
-  it("gives each tile its one line", () => {
+  it("gives each card its one line, true of what its picture shows", () => {
+    // The scam card shows the tool itself, whose tabs are email, text, listing and link.
     expect(featured.map((p) => p.tileLine)).toEqual([
-      "Watch it score a scam text, one rule at a time.",
+      "Checks emails, texts, listings and links for common scam patterns.",
       "Scores a resume against a job posting.",
       "An Android form, sent as one structured email.",
     ]);
   });
 
-  it("annotations say what the picture shows, in the caption's own terms", () => {
+  it("rings Resume Analyzer's score inside its picture", () => {
     const resume = featured.find((p) => p.slug === "resume-analyzer")!;
-    expect(resume.note).toBe("my own resume against a sample posting");
-    // The caption it paraphrases: the result for my resume against a sample posting.
-    expect(resume.homeShot!.caption).toContain("my resume against a sample posting");
+    expect(resume.homeShot!.caption).toContain("relevance score 55.6%");
     const r = resume.ring!;
     expect(r.x).toBeGreaterThan(0);
     expect(r.y).toBeGreaterThan(0);
     expect(r.x + r.w).toBeLessThanOrEqual(100);
     expect(r.y + r.h).toBeLessThanOrEqual(100);
-    const immensa = featured.find((p) => p.slug === "immensa-inquiry-app")!;
-    expect(immensa.note).toBe("the whole form goes out as one email, photos attached");
-    const code = immensa.caseStudy.decision.code!;
-    const marked = code.code.split("\n").slice(code.mark!.from - 1, code.mark!.to).join("\n");
-    expect(marked).toContain("Intent.ACTION_SEND_MULTIPLE");
-    expect(marked).toContain("EXTRA_STREAM");
-    expect(featured.find((p) => p.slug === "scam-detection")!.note).toBeUndefined();
   });
 
   it("builds case-study paths with a trailing slash, for the static export", () => {
@@ -286,7 +278,7 @@ describe("intro", () => {
 });
 
 describe("first screen", () => {
-  it("isn't repeated by the lead project's tile, which tells the text-message story instead", () => {
+  it("the checker's sample is a text message, not the email in the scam card's picture", () => {
     const lead = featured[0];
     expect(lead.story?.text).not.toMatch(/Dear Customer/);
     expect(lead.homeShot).toBeUndefined();

@@ -34,7 +34,6 @@ export function Screenshot({
   priority = false,
   className,
   sizes,
-  scan = false,
   captionHidden = false,
   annotation,
 }: {
@@ -43,9 +42,7 @@ export function Screenshot({
   className?: string;
   /** Rendered width, for picking 1x or 2x. Defaults to the image's own width. */
   sizes?: string;
-  /** Carries the scan overlay, run by a surrounding ScanOnView. */
-  scan?: boolean;
-  /** For a picture cut off by its tile: the caption is read out, not shown (it would be clipped). */
+  /** For a picture cut off by its card: the caption is read out, not shown (it would be clipped). */
   captionHidden?: boolean;
   /** Drawn over the image, in the image's own box (so percentages place it on the picture): an ink mark. */
   annotation?: ReactNode;
@@ -80,12 +77,6 @@ export function Screenshot({
             decoding="async"
             className="block h-auto w-full"
           />
-          {scan && (
-            <>
-              <div aria-hidden className="scan-cover" />
-              <div aria-hidden className="scan-beam" />
-            </>
-          )}
           {annotation}
         </div>
         <button

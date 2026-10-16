@@ -99,11 +99,11 @@ describe("colour", () => {
     expect(readFileSync(join(SRC, "components/layout/SiteHeader.tsx"), "utf8")).toContain("site-bar");
   });
 
-  it("keeps gradients to amber glows, the first screen's and the scan line's: never blue or purple", () => {
+  it("keeps gradients to the first screen's amber glow: never blue or purple", () => {
     const gradients = sources.flatMap(({ path, text }) =>
       [...text.matchAll(/(?:linear|radial|conic)-gradient\(([^;]*?)\)\s*;|bg-gradient-to-\w+|bg-linear-\w+|bg-radial/g)].map((m) => ({ path, body: m[0] })),
     );
-    expect(gradients.length).toBeLessThanOrEqual(2);
+    expect(gradients.length).toBeLessThanOrEqual(1);
     for (const { path, body } of gradients) {
       const colours = [...body.matchAll(/rgba?\((\d+)\s*,?\s*(\d+)\s*,?\s*(\d+)/g)].map(
         (m) => "#" + [m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, "0")).join(""),

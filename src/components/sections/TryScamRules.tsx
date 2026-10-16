@@ -3,7 +3,6 @@
 import { Fragment, useMemo, useState, useSyncExternalStore } from "react";
 import type { Link } from "@/content/projects";
 import { checkSms, markRanges, type SmsResult } from "@/lib/scam-sms";
-import { Note } from "@/components/ink/Note";
 import { TextLink } from "@/components/ui/links";
 
 const LEVEL = { low: "Low", medium: "Medium", high: "High" } as const;
@@ -50,7 +49,7 @@ export function TryScamRules({ sample, initial, source }: { sample: string; init
 
   return (
     <div className="mx-auto mt-16 max-w-[1200px] px-gutter text-left md:mt-24">
-      <h4 className="type-title text-text">Try it on your own text</h4>
+      <h3 className="type-title text-text">Try the scam checker on your own text</h3>
       <div className="try-grid mt-6">
         <div className="min-w-0">
           <label htmlFor="try-text" className="block text-[17px] text-text-2">
@@ -66,7 +65,7 @@ export function TryScamRules({ sample, initial, source }: { sample: string; init
             onChange={(e) => setText(e.target.value)}
             className="mt-2 block w-full resize-y rounded-xl border-0 bg-raised p-4 text-[17px] leading-relaxed text-text"
           />
-          <Note className="mt-6">the tool&rsquo;s own rules, running in your browser. Nothing is sent anywhere.</Note>
+          <p className="mt-6 text-[17px] text-text-3">The tool&rsquo;s own rules, running in your browser. Nothing is sent anywhere.</p>
         </div>
         <div className="min-w-0">
           {/* Only the result is announced as it changes, not the text being typed read back. */}

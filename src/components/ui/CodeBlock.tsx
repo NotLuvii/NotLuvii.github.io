@@ -1,22 +1,15 @@
 import type { CodeExcerpt } from "@/content/projects";
 import { cn } from "@/lib/cn";
-import { bracket } from "@/lib/ink";
-import { Ink } from "@/components/ink/Ink";
 import { ExternalIcon } from "./links";
 
 /**
  * A verbatim excerpt from a repository, with the file it came from and a link to it. It's an
  * interface fragment (data-code, data-ui): the only place the site uses monospace type or
- * outlines. `teaser`, for a home-page tile that cuts it off like a picture: it doesn't scroll and
+ * outlines. `teaser`, for a home-page card that cuts it off like a picture: it doesn't scroll and
  * isn't a stop for Tab (the whole excerpt is on the case study), and its caption is read out, not
- * shown. `scan` carries the scan overlay, run by a surrounding ScanOnView. `mark` brackets the
- * excerpt's `mark` lines in ink, in the left margin of the code.
+ * shown.
  */
-export function CodeBlock({ excerpt, teaser = false, scan = false, mark = false }: { excerpt: CodeExcerpt; teaser?: boolean; scan?: boolean; mark?: boolean }) {
-  // 13px type at 1.65 line height, under 16px of padding.
-  const line = 13 * 1.65;
-  const lines = excerpt.mark && mark ? excerpt.mark : null;
-  const height = lines ? (lines.to - lines.from + 1) * line : 0;
+export function CodeBlock({ excerpt, teaser = false }: { excerpt: CodeExcerpt; teaser?: boolean }) {
   return (
     <figure className="min-w-0" data-code data-ui>
       <div className="overflow-hidden rounded-lg border border-line bg-raised">
@@ -40,23 +33,6 @@ export function CodeBlock({ excerpt, teaser = false, scan = false, mark = false 
           >
             <code>{excerpt.code}</code>
           </pre>
-          {lines && (
-            <Ink
-              paths={bracket(Math.round(height), 8)}
-              w={12}
-              h={Math.round(height)}
-              // Drawn at rest: inside the code's clipped box, a scroll timeline would never finish.
-              draw="none"
-              className="absolute"
-              style={{ left: 3, top: 16 + (lines.from - 1) * line, width: 10, height }}
-            />
-          )}
-          {scan && (
-            <>
-              <div aria-hidden className="scan-cover" />
-              <div aria-hidden className="scan-beam" />
-            </>
-          )}
         </div>
       </div>
       <figcaption className={teaser ? "sr-only" : "type-small mt-3 text-text-3"}>{excerpt.caption}</figcaption>

@@ -1,122 +1,111 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
 import { featured, projectHref, type FeaturedProject } from "@/content/projects";
-import { ScanOnView } from "@/components/motion/ScanOnView";
 import { MoreProjects } from "@/components/sections/MoreProjects";
-import { ScanStory } from "@/components/sections/ScanStory";
 import { TryScamRules } from "@/components/sections/TryScamRules";
+import { WorkCarousel } from "@/components/sections/WorkCarousel";
 import { checkSms } from "@/lib/scam-sms";
 import { CodeBlock } from "@/components/ui/CodeBlock";
-import { ButtonLink, pairedPill } from "@/components/ui/links";
+import { ButtonLink } from "@/components/ui/links";
 import { Screenshot } from "@/components/ui/Screenshot";
 import { Ink } from "@/components/ink/Ink";
-import { Note } from "@/components/ink/Note";
-import { arrow, ring } from "@/lib/ink";
+import { ring } from "@/lib/ink";
 
 /**
- * One project as a tile: the name (a link to the case study), one line and two pill buttons, on
- * the left; then what the project shows. A picture sits beside the words from 1024px (under them
- * below that), cut off by the tile's bottom edge, with a note in ink pointing at it; the story runs
- * the full width under the words (CSS: .tile, .tile-split, .tile-picture).
+ * A card's picture: a real screenshot, held at its foot, where the evidence is (the scam tool's
+ * result, Resume Analyzer's score, ringed by hand); or, for Immensa, which has no screenshots, the
+ * top of its code. The window is 16:10 and cuts the rest off (CSS: .card-picture).
  */
-function ProjectTile({ p, children }: { p: FeaturedProject; children: ReactNode }) {
+function CardPicture({ p }: { p: FeaturedProject }) {
+  const shot = p.slug === "scam-detection" ? p.caseStudy.figures[0] : p.homeShot;
+  if (shot)
+    return (
+      <div className="card-picture card-picture-foot">
+        <Screenshot
+          shot={shot}
+          captionHidden
+          sizes="(min-width: 768px) 620px, 85vw"
+          annotation={
+            p.ring && (
+              // Drawn at rest: inside the picture's clipped window, a scroll timeline would never finish.
+              <Ink
+                paths={ring(120, 64, 11)}
+                w={120}
+                h={64}
+                draw="none"
+                className="absolute"
+                style={{ left: `${p.ring.x}%`, top: `${p.ring.y}%`, width: `${p.ring.w}%`, height: `${p.ring.h}%` }}
+              />
+            )
+          }
+        />
+      </div>
+    );
+  const code = p.caseStudy.decision.code;
+  return code ? (
+    <div className="card-picture">
+      <CodeBlock excerpt={code} teaser />
+    </div>
+  ) : null;
+}
+
+/** One project: its picture, its name (a link to the case study), one line, three tools and the two links. */
+function WorkCard({ p }: { p: FeaturedProject }) {
   return (
-    <article className={`tile pt-11 min-[834px]:pt-14 ${p.story ? "pb-12 md:pb-16" : "tile-split"}`}>
-      <div className="px-gutter">
-        <h3 className="type-section text-text">
-          <Link href={projectHref(p.slug)} className="decoration-2 underline-offset-[8px] hover:underline">
+    <article className="work-card">
+      <CardPicture p={p} />
+      <div className="card-body">
+        <h3 className="type-title text-text">
+          <Link href={projectHref(p.slug)} className="decoration-2 underline-offset-[6px] hover:underline">
             {p.title}
           </Link>
         </h3>
-        <p className="type-lede mt-2 max-w-[40ch] text-text-2">{p.tileLine}</p>
-        <div className="mt-6 flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap">
-          <ButtonLink href={projectHref(p.slug)} variant="light" className={pairedPill}>
+        <p className="mt-2 text-[17px] text-text-2">{p.tileLine}</p>
+        <ul aria-label="Built with" className="card-tags">
+          {p.stack.slice(0, 3).map((t) => (
+            <li key={t}>{t}</li>
+          ))}
+        </ul>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <ButtonLink href={projectHref(p.slug)} variant="light">
             Read the case study<span className="sr-only">: {p.title}</span>
           </ButtonLink>
-          <ButtonLink href={p.repo.href} external variant="outline" className={pairedPill}>
+          <ButtonLink href={p.repo.href} external variant="outline">
             {p.repo.label}
             <span className="sr-only">: {p.title}</span>
           </ButtonLink>
         </div>
-        {p.note && (
-          <div className="tile-note mt-10 lg:mt-16">
-            <Note>{p.note}</Note>
-            {/* Towards the picture: to the right beside it, down above it. */}
-            <Ink paths={arrow([[4, 34], [52, 14], [112, 28]], 41)} w={120} h={44} className="ml-2 hidden h-[44px] w-[120px] lg:inline-block" />
-            <Ink paths={arrow([[18, 2], [8, 26], [20, 50]], 43)} w={32} h={56} className="mt-1 block h-[56px] w-[32px] lg:hidden" />
-          </div>
-        )}
       </div>
-      {children}
     </article>
   );
 }
 
-/** What each project's tile shows: the story, a screenshot, or (for Immensa, which has none) its code. */
-function TileContent({ p }: { p: FeaturedProject }) {
-  if (p.story)
-    return (
-      <>
-        <ScanStory story={p.story} />
-        <TryScamRules sample={p.story.text} initial={checkSms(p.story.text)} source={p.story.source} />
-      </>
-    );
-  const code = p.caseStudy.decision.code;
-  return (
-    <>
-      <div className={p.homeShot ? "tile-picture" : "tile-picture tile-picture-code"}>
-        {p.homeShot ? (
-          <ScanOnView>
-            <Screenshot
-              shot={p.homeShot}
-              scan
-              captionHidden
-              sizes="(min-width: 1024px) 760px, 92vw"
-              annotation={
-                p.ring && (
-                  // Drawn at rest: inside the image's clipped box, a scroll timeline would never finish.
-                  <Ink
-                    paths={ring(120, 64, 11)}
-                    w={120}
-                    h={64}
-                    draw="none"
-                    className="absolute"
-                    style={{ left: `${p.ring.x}%`, top: `${p.ring.y}%`, width: `${p.ring.w}%`, height: `${p.ring.h}%` }}
-                  />
-                )
-              }
-            />
-          </ScanOnView>
-        ) : code ? (
-          <div className="text-left">
-            <CodeBlock excerpt={code} teaser mark />
-          </div>
-        ) : null}
-      </div>
-    </>
-  );
-}
-
 /**
- * The projects: a heading, then one full-width tile per project, stacked (CSS: .tile-stack), the
- * scam detection tool first, telling its story as you scroll; then the rest as a plain list.
+ * The selected work: a heading, then the three projects with public code and a case study as a
+ * row of cards (WorkCarousel); then the scam checker to try; then the rest as a plain list.
  */
 export function Projects() {
+  const scam = featured.find((p) => p.story)!;
   return (
-    <section id="projects" aria-labelledby="projects-title">
-      <div className="mx-auto max-w-[1200px] px-gutter pb-8 pt-24 md:pb-10 md:pt-32">
-        <h2 id="projects-title" className="type-section text-text">
-          Projects
-        </h2>
-        <p className="type-lede mt-3 text-text-3">Three with public code and a case study each, then the rest.</p>
-      </div>
-      <div className="tile-stack">
+    <section id="projects" aria-labelledby="projects-title" className="pb-8 pt-24 md:pb-10 md:pt-32">
+      <WorkCarousel
+        label="Selected work"
+        header={
+          <>
+            <h2 id="projects-title" className="type-display section-title text-text">
+              Selected work
+            </h2>
+            <p className="type-lede mt-4 text-text-3">Three with public code and a case study each, then the rest.</p>
+          </>
+        }
+      >
         {featured.map((p) => (
-          <ProjectTile key={p.slug} p={p}>
-            <TileContent p={p} />
-          </ProjectTile>
+          <li key={p.slug}>
+            <WorkCard p={p} />
+          </li>
         ))}
-      </div>
+      </WorkCarousel>
+
+      <TryScamRules sample={scam.story!.text} initial={checkSms(scam.story!.text)} source={scam.story!.source} />
 
       <MoreProjects />
     </section>

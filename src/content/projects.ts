@@ -50,8 +50,6 @@ export type CodeExcerpt = {
   language: string;
   code: string;
   caption: string;
-  /** Lines (1-based, inclusive) the home page's tile marks with a bracket. */
-  mark?: { from: number; to: number };
 };
 
 export type FeaturedProject = {
@@ -72,8 +70,6 @@ export type FeaturedProject = {
   homeShot?: Screenshot;
   /** Told as you scroll on the home page, in place of a screenshot. */
   story?: ScanStory;
-  /** A note in the tile's margin, in ink, saying what its picture shows. */
-  note?: string;
   /** Where the home screenshot's evidence is, ringed in ink: percent of the image, from its top left. */
   ring?: { x: number; y: number; w: number; h: number };
   stack: string[];
@@ -116,7 +112,7 @@ const scam: FeaturedProject = {
   summary:
     "A browser tool that checks a suspicious email, text message, listing or link, scores it from 0 to 100 and lists the red flags behind the score.",
   summaryKeyPhrase: "scores it from 0 to 100 and lists the red flags behind the score",
-  tileLine: "Watch it score a scam text, one rule at a time.",
+  tileLine: "Checks emails, texts, listings and links for common scam patterns.",
   // From the outcome below: the README's sample inputs, scored by the tool.
   stats: [
     { value: "100", label: "The README’s sample phishing email, flagged High" },
@@ -232,8 +228,6 @@ const immensa: FeaturedProject = {
     "An Android app for sales inquiries about 3D-printed industrial parts: one form for the part, material, files, criticality and testing, sent as one structured email.",
   summaryKeyPhrase: "sent as one structured email",
   tileLine: "An Android form, sent as one structured email.",
-  // The excerpt attaches the photos' URIs (EXTRA_STREAM) to one email.
-  note: "the whole form goes out as one email, photos attached",
   // From the case study: the required fields, and the tools screen's currencies and alloys.
   stats: [
     { value: "3", label: "Fields required before an inquiry can be sent: client, part and material" },
@@ -263,7 +257,6 @@ const immensa: FeaturedProject = {
       ],
       code: {
         // The Intent block: type, address, subject, body, attachments.
-        mark: { from: 6, to: 12 },
         file: "app/src/main/java/com/example/app/MainActivity.kt, lines 477–511",
         href: `${GH}/Mobile-app/blob/master/app/src/main/java/com/example/app/MainActivity.kt#L477-L511`,
         language: "kotlin",
@@ -345,8 +338,6 @@ const resume: FeaturedProject = {
     alt: "The Resume Analyzer web page with a sample job description entered and Luvneet_Bamrah_Resume.pdf chosen. Under Analysis Results, the relevance score is 55.6 percent, shown with a bar and a note that it is the weighted share of the posting’s skills the resume mentions.",
     caption: "The top of the result for my resume against a sample posting: relevance score 55.6%.",
   },
-  // The caption's own terms: the result for my resume against a sample posting.
-  note: "my own resume against a sample posting",
   // Around "55.6%" in the screenshot (872×625): x 72–165, y 495–530.
   ring: { x: 6, y: 76.5, w: 15, h: 11 },
   stack: ["Python", "Flask", "PyMuPDF", "python-docx", "Tkinter", "Matplotlib", "pytest", "JavaScript"],
@@ -418,7 +409,7 @@ const resume: FeaturedProject = {
   },
 };
 
-/** In display order: one tile each on the home page, the scam detection tool (with its story) first. */
+/** In display order: one card each on the home page, the scam detection tool first. */
 export const featured: FeaturedProject[] = [scam, resume, immensa];
 
 export const more: MoreProject[] = [

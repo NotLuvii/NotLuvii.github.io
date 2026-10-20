@@ -5,6 +5,7 @@ import { site } from "@/content/site";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Footer } from "@/components/layout/Footer";
 import { ScrollScenes } from "@/components/motion/ScrollScenes";
+import { MOTION_SCRIPT } from "@/lib/motion";
 import "./globals.css";
 
 const title = `${site.name}, ${site.role.toLowerCase()}`;
@@ -31,7 +32,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en-CA" className={`${plexSans.variable} ${plexMono.variable} ${gochiHand.variable}`}>
+    // suppressHydrationWarning: MOTION_SCRIPT may set data-motion on <html> before React hydrates.
+    <html lang="en-CA" className={`${plexSans.variable} ${plexMono.variable} ${gochiHand.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: MOTION_SCRIPT }} />
+      </head>
       <body>
         <SiteHeader />
         {children}

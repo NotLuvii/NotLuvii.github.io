@@ -32,6 +32,8 @@ export type FieldHandle = {
   start(): void;
   stop(): void;
   renderOnce(): void;
+  /** Switch to (or out of) the still frame: the loop stops and the scan rests with every mark lit. */
+  setStill(on: boolean): void;
   /** Pointer position across the window, each from −1 to 1. */
   setPointer(x: number, y: number): void;
   /** How far the first screen has scrolled away, 0 to 1. */
@@ -62,7 +64,9 @@ const SCROLL_PITCH = 12 * DEG;
 const EASE = 0.08;
 
 /** Throws when WebGL isn't available (three's renderer can't get a context). */
-export function createField(canvas: HTMLCanvasElement, { still, onLost, onFrame }: FieldOptions): FieldHandle {
+export function createField(canvas: HTMLCanvasElement, options: FieldOptions): FieldHandle {
+  const { onLost, onFrame } = options;
+  let still = options.still;
   const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "default" });
   renderer.setClearColor(0x000000, 0);
 
@@ -185,6 +189,16 @@ export function createField(canvas: HTMLCanvasElement, { still, onLost, onFrame 
     },
     renderOnce() {
       draw();
+    },
+    setStill(on) {
+      still = on;
+      if (on) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+        aimYaw = 0;
+        aimPitch = 0;
+        draw();
+      }
     },
     setPointer(x, y) {
       if (still) return;

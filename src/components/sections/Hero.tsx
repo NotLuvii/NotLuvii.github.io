@@ -3,6 +3,7 @@ import { ButtonLink, pairedPill } from "@/components/ui/links";
 import { DataCheck } from "./DataCheck";
 import { DataField } from "./DataField";
 import { LiveClock } from "./LiveClock";
+import { MotionToggle } from "@/components/motion/MotionToggle";
 
 /**
  * The first screen: who I am and what I do, and no project. A status line (what I'm looking for,
@@ -26,7 +27,10 @@ export function Hero() {
               Now: {site.availability}
             </p>
           )}
-          <LiveClock city={`${site.location.city}, ${site.location.regionShort}`} />
+          <div className="hero-meta">
+            <LiveClock city={`${site.location.city}, ${site.location.regionShort}`} />
+            <MotionToggle />
+          </div>
         </div>
         <div className="hero-grid">
           <div className="hero-copy">

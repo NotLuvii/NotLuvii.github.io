@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ROT, glowAlpha, project, tilesNear } from "@/lib/grid3d";
+import { ROT, alphaBucket, glowAlpha, project, tilesNear } from "@/lib/grid3d";
 
 describe("the 3D grid behind the sections", () => {
   it("is turned by the reference's angles", () => {
@@ -38,5 +38,13 @@ describe("the 3D grid behind the sections", () => {
     expect(glowAlpha(0, 1.5)).toBe(0);
     expect(glowAlpha(0, 3)).toBe(0);
     expect(glowAlpha(1, 0)).toBe(0);
+  });
+
+  it("glows are drawn in eight shades, one fill each", () => {
+    expect(alphaBucket(0)).toBe(0);
+    expect(alphaBucket(0.001)).toBeCloseTo(0.02);
+    expect(alphaBucket(0.079)).toBeCloseTo(0.08);
+    expect(alphaBucket(0.157)).toBeCloseTo(0.16);
+    expect(alphaBucket(0.16)).toBeCloseTo(0.16);
   });
 });

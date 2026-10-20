@@ -346,6 +346,40 @@ svg[data-ink] {
   .field-canvas {
     transition: opacity 0.6s var(--ease-out-soft);
   }
+  /* The drawing stays until the canvas has faded in over it. */
+  [data-field="running"] .data-check,
+  [data-field="paused"] .data-check {
+    transition: visibility 0s linear 0.6s;
+  }
+}
+
+/* The visitor paused motion on the page (components/motion/MotionToggle.tsx): the loops and the
+   turning stop, as with reduced motion. The 3D field goes still in DataField. */
+[data-motion="paused"] .marquee-track,
+[data-motion="paused"] .dc-line,
+[data-motion="paused"] .dc-marks,
+[data-motion="paused"] .section-title,
+[data-motion="paused"] .timeline-body,
+[data-motion="paused"] .hero-copy {
+  animation: none;
+}
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 13px;
+}
+.motion-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 44px;
+  font-size: 13.36px;
+  color: var(--color-text-3);
+  transition: color 0.2s var(--ease-out-soft);
+}
+.motion-toggle:hover {
+  color: var(--color-text);
 }
 .dc-bars rect {
   fill: #2a2a2a;
@@ -681,7 +715,7 @@ svg[data-ink] {
     .timeline-body {
       animation: fold-in linear both;
       animation-timeline: view();
-      animation-range: entry 0% cover 30%;
+      animation-range: entry 0% entry 100%;
     }
   }
 }

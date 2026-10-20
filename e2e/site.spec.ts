@@ -708,6 +708,21 @@ test.describe("navigation", () => {
     await expect(nav.getByRole("link", { name: "Projects", exact: true })).not.toHaveAttribute("aria-current", "true");
   });
 
+  test("the nav keeps up across client-side navigation", async ({ page }) => {
+    test.skip(isPhone(page), "desktop nav");
+    await page.goto("/");
+    await page.getByRole("link", { name: new RegExp(`^Read the case study\\s*: ${featured[0].title}$`) }).click();
+    await expect(page).toHaveURL(new RegExp(projectHref(featured[0].slug)));
+    await expect(page.locator("header nav[aria-label=Main] .nav-pill a[aria-current]")).toHaveCount(0);
+    await page.locator('header a[aria-label="Luvneet Bamrah, home"]').click();
+    await expect(page.locator("#experience")).toHaveCount(1);
+    await page.evaluate(() => {
+      const el = document.getElementById("experience")!;
+      window.scrollTo({ top: el.getBoundingClientRect().top + scrollY - innerHeight * 0.3, behavior: "instant" });
+    });
+    await expect(page.locator("header nav[aria-label=Main] .nav-pill a", { hasText: "Experience" })).toHaveAttribute("aria-current", "true");
+  });
+
   test("on a case study the nav marks nothing current", async ({ page }) => {
     await page.goto("/projects/scam-detection/");
     await page.waitForTimeout(400);
@@ -1136,6 +1151,59 @@ test.describe("3D data field", () => {
     await expect(page.locator(".data-check")).toBeHidden();
   });
 
+  test("follows a change to reduced motion while the page is open", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    const field = page.locator("[data-field]");
+    await expect(field).toHaveAttribute("data-field", "running", { timeout: 15_000 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(field).toHaveAttribute("data-field", "still");
+    const first = await frames(page);
+    await page.waitForTimeout(1000);
+    expect(await frames(page)).toBe(first);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await expect(field).toHaveAttribute("data-field", "running");
+  });
+
+  test("a Pause motion button stops the looping motion, and the page remembers it", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    const field = page.locator("[data-field]");
+    await expect(field).toHaveAttribute("data-field", "running", { timeout: 15_000 });
+    const toggle = page.getByRole("button", { name: "Pause motion" });
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
+    await expect(field).toHaveAttribute("data-field", "still");
+    expect(await page.locator(".marquee-track").evaluate((el) => el.getAnimations().length)).toBe(0);
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Pause motion" })).toHaveAttribute("aria-pressed", "true");
+    await expect(field).toHaveAttribute("data-field", "still", { timeout: 15_000 });
+    await page.getByRole("button", { name: "Pause motion" }).click();
+    await expect(field).toHaveAttribute("data-field", "running");
+    expect(await page.locator(".marquee-track").evaluate((el) => el.getAnimations().length)).toBeGreaterThan(0);
+  });
+
+  test("the drawing stays visible while the 3D fades in over it", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.addInitScript(() => {
+      const w = window as unknown as { atFlip?: string };
+      new MutationObserver((records, observer) => {
+        for (const r of records) {
+          const el = r.target as HTMLElement;
+          if (el.getAttribute?.("data-field") === "running") {
+            requestAnimationFrame(() => (w.atFlip = getComputedStyle(el.querySelector(".data-check")!).visibility));
+            observer.disconnect();
+          }
+        }
+      }).observe(document, { attributes: true, subtree: true, attributeFilter: ["data-field"] });
+    });
+    await page.goto("/");
+    await expect(page.locator("[data-field]")).toHaveAttribute("data-field", "running", { timeout: 15_000 });
+    await expect.poll(() => page.evaluate(() => (window as unknown as { atFlip?: string }).atFlip)).toBe("visible");
+    await expect(page.locator(".data-check")).toBeHidden({ timeout: 3000 });
+  });
+
   test("pauses off screen and runs again on return", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/");
@@ -1273,7 +1341,8 @@ test.describe("3D motion", () => {
     await at(0.97);
     await page.waitForTimeout(150);
     expect(Math.abs((await rotation(body)).y)).toBeGreaterThan(10);
-    await at(0.3);
+    // Flat by the time the whole entry is on screen (its bottom just inside the screen's).
+    await body.evaluate((el) => window.scrollTo({ top: el.getBoundingClientRect().bottom + scrollY - innerHeight * 0.98, behavior: "instant" }));
     await page.waitForTimeout(150);
     expect(await rotation(body)).toEqual({ x: 0, y: 0 });
   });
@@ -1334,6 +1403,17 @@ test.describe("3D grid", () => {
     await page.mouse.move(1260, 540, { steps: 4 });
     await expect.poll(() => lit(page), { timeout: 2000 }).toBeGreaterThan(0);
     await expect.poll(() => lit(page), { timeout: 4000 }).toBe(0);
+  });
+
+  test("the grid ignores the pointer over the parts that hide it", async ({ page }) => {
+    test.skip(isPhone(page), "a mouse is needed");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    // Over the first screen (opaque), the grid underneath can't be seen: nothing should light or draw.
+    await page.mouse.move(700, 400);
+    await page.mouse.move(760, 460, { steps: 6 });
+    await page.waitForTimeout(150);
+    expect(await lit(page)).toBe(0);
   });
 
   test("the grid is still on a phone and with reduced motion", async ({ page }) => {

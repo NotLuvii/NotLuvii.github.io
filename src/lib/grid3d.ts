@@ -43,3 +43,10 @@ export function glowAlpha(d: number, age: number): number {
   if (d >= 1 || age >= 1.5) return 0;
   return 0.16 * (1 - d) * (1 - age / 1.5);
 }
+
+/** Glow alphas rounded up to one of eight shades (0.02 to 0.16), so each frame needs at most eight fills. */
+export function alphaBucket(a: number): number {
+  if (a <= 0) return 0;
+  const step = 0.16 / 8;
+  return Math.min(8, Math.ceil(a / step - 1e-9)) * step;
+}

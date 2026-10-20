@@ -28,7 +28,7 @@ export function Tilt({ children, className, max = 8 }: { children: ReactNode; cl
       el.style.setProperty("--gy", gy.toFixed(1));
     };
     const move = (e: PointerEvent) => {
-      if (!media.matches || e.pointerType === "touch") return;
+      if (!media.matches || e.pointerType === "touch" || document.documentElement.dataset.motion === "paused") return;
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const t = tiltFor(e.clientX, e.clientY, el.getBoundingClientRect(), max);

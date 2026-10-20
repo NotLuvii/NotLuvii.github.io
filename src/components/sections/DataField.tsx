@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { FieldHandle } from "@/components/three/fieldScene";
+import { motionPaused, subscribeMotion } from "@/lib/motion";
 
 /**
  * - drawing: the server's state, and without JavaScript — the SVG data check shows.
  * - running: the 3D field animates.
  * - paused: the field is off screen or the tab is hidden; nothing is drawn.
- * - still: reduced motion — one frame, the scan at rest, every mark lit.
+ * - still: reduced motion, or motion paused on the page — one frame, the scan at rest, every mark lit.
  * - off: no WebGL, or the GPU dropped the context — the SVG shows again.
  */
 export type FieldState = "drawing" | "running" | "paused" | "still" | "off";
@@ -49,12 +50,14 @@ export function DataField({ children }: { children: ReactNode }) {
       }
       if (cancelled) return;
 
-      const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      // Still when the system asks for less motion, or the visitor paused it on the page.
+      const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+      const isStill = () => reduce.matches || motionPaused();
       canvas = document.createElement("canvas");
       canvas.className = "field-canvas";
       try {
         handle = scene.createField(canvas, {
-          still,
+          still: isStill(),
           onLost: () => {
             teardown();
             setState("off");
@@ -80,32 +83,35 @@ export function DataField({ children }: { children: ReactNode }) {
       undo.push(() => resizes.disconnect());
       size();
 
-      if (still) {
-        h.renderOnce();
-        setState("still");
-        return;
-      }
-
-      // Draw only while the field is on screen and the tab is visible.
+      // Still: one frame, drawn when entering the still mode. Otherwise draw only while the field
+      // is on screen and the tab is visible. Re-decided whenever any of those changes.
       let onScreen = true;
+      let mode: FieldState = "drawing";
       const run = () => {
-        if (onScreen && !document.hidden) {
-          h.start();
-          setState("running");
-        } else {
-          h.stop();
-          setState("paused");
+        const next: FieldState = isStill() ? "still" : onScreen && !document.hidden ? "running" : "paused";
+        if (next === mode) return;
+        mode = next;
+        if (next === "still") h.setStill(true);
+        else {
+          h.setStill(false);
+          if (next === "running") h.start();
+          else h.stop();
         }
+        setState(next);
       };
-      const view = new IntersectionObserver(([entry]) => {
-        onScreen = entry.isIntersecting;
+      const view = new IntersectionObserver((entries) => {
+        onScreen = entries[entries.length - 1].isIntersecting;
         run();
       });
       view.observe(el);
       document.addEventListener("visibilitychange", run);
+      reduce.addEventListener("change", run);
+      const unsubscribe = subscribeMotion(run);
       undo.push(() => {
         view.disconnect();
         document.removeEventListener("visibilitychange", run);
+        reduce.removeEventListener("change", run);
+        unsubscribe();
       });
 
       // The field turns toward a mouse (not a finger), and tilts back as the first screen scrolls away.

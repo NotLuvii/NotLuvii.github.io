@@ -321,8 +321,8 @@ test.describe("after the Apple audit", () => {
     expect(stray).toEqual([]);
   });
 
-  test("the headline fits on two lines on a desktop screen", async ({ page }) => {
-    test.skip(isPhone(page), "desktop only");
+  test("the headline fits on two lines, on a desktop and on a 390px phone", async ({ page }) => {
+    await page.setViewportSize(isPhone(page) ? { width: 390, height: 844 } : { width: 1440, height: 900 });
     await page.goto("/");
     const lines = await page.getByText(site.headline).evaluate((el) => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)));
     expect(lines).toBeLessThanOrEqual(2);

@@ -135,7 +135,7 @@
 }
 
 @utility type-statement {
-  font-size: clamp(27.51px, 2.43vw, 34.99px);
+  font-size: clamp(21.62px, 2.43vw, 34.99px);
   line-height: 1.272;
   font-weight: 600;
   font-stretch: 95%;

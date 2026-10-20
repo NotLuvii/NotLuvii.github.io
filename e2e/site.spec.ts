@@ -1309,3 +1309,46 @@ test.describe("3D motion", () => {
     }
   });
 });
+
+test.describe("3D grid", () => {
+  const lit = (page: Page) => page.locator("canvas.grid-backdrop").evaluate((c) => Number(c.getAttribute("data-lit") ?? 0));
+
+  test("draws behind the content and stays out of the way", async ({ page }) => {
+    await page.goto("/");
+    const grid = page.locator("canvas.grid-backdrop");
+    await expect(grid).toHaveCount(1);
+    await expect(grid).toHaveAttribute("aria-hidden", "true");
+    const style = await grid.evaluate((c) => ({ pe: getComputedStyle(c).pointerEvents, pos: getComputedStyle(c).position, z: getComputedStyle(c).zIndex }));
+    expect(style).toEqual({ pe: "none", pos: "fixed", z: "-1" });
+    await page.evaluate(() => document.getElementById("experience")!.scrollIntoView({ behavior: "instant" }));
+    const hit = await page.evaluate(() => document.elementFromPoint(innerWidth / 2, innerHeight / 2)?.tagName);
+    expect(hit).not.toBe("CANVAS");
+  });
+
+  test("tiles near the pointer glow on a desktop, then the drawing stops", async ({ page }) => {
+    test.skip(isPhone(page), "a mouse is needed");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    await page.evaluate(() => document.getElementById("experience")!.scrollIntoView({ behavior: "instant" }));
+    await page.mouse.move(1200, 500);
+    await page.mouse.move(1260, 540, { steps: 4 });
+    await expect.poll(() => lit(page), { timeout: 2000 }).toBeGreaterThan(0);
+    await expect.poll(() => lit(page), { timeout: 4000 }).toBe(0);
+  });
+
+  test("the grid is still on a phone and with reduced motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: isPhone(page) ? "no-preference" : "reduce" });
+    await page.goto("/");
+    await page.evaluate(() => document.getElementById("experience")!.scrollIntoView({ behavior: "instant" }));
+    await page.mouse.move(200, 400);
+    await page.mouse.move(260, 440, { steps: 4 });
+    await page.waitForTimeout(300);
+    expect(await lit(page)).toBe(0);
+  });
+
+  test("the opaque parts cover it", async ({ page }) => {
+    await page.goto("/");
+    const backgrounds = await page.evaluate(() => [".hero", ".marquee", ".tile"].map((sel) => getComputedStyle(document.querySelector(sel)!).backgroundColor));
+    for (const bg of backgrounds) expect(bg).not.toBe("rgba(0, 0, 0, 0)");
+  });
+});

@@ -174,7 +174,9 @@ apple.com/ca. The hand-drawn ink stays where it marks real evidence.
   words lift away as you scroll; the case studies' pictures tilt flat as they arrive
   (`ScrollScenes.tsx` writes `--p`, 0 to 1, and the CSS reads it, falling back to the finished
   state). With reduced motion nothing moves and the field shows every mark; without JavaScript
-  everything is readable. Text may move, but never fades.
+  everything is readable. Text may move, but never fades (the hero's words lifting away as you
+  scroll is the one fade). A "Pause motion" button beside the clock (`MotionToggle.tsx`,
+  `src/lib/motion.ts`) stops all of it on the page and is remembered, as WCAG 2.2.2 asks.
 - **Feel**: buttons shrink slightly the moment they're pressed; taps don't flash the browser's
   grey highlight or wait for a double-tap; the phone menu eases down; a full-screen screenshot
   fades in and out.

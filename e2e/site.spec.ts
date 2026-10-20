@@ -19,6 +19,19 @@ const EXTERNAL = [
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 0) < 768;
 
+/** An init script that makes the browser report no WebGL, as an old or blocked GPU does. */
+const noWebGL = () => {
+  const original = HTMLCanvasElement.prototype.getContext as (this: HTMLCanvasElement, kind: string, ...rest: unknown[]) => RenderingContext | null;
+  // @ts-expect-error -- the overloads are narrowed; the test only needs the WebGL kinds to fail.
+  HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, kind: string, ...rest: unknown[]) {
+    if (/webgl/.test(kind)) return null;
+    return original.call(this, kind, ...rest);
+  };
+};
+
+/** The data field's frame count, as the page reports it. */
+const frames = (page: Page) => page.locator("[data-field]").evaluate((el) => Number(el.getAttribute("data-frames") ?? 0));
+
 /**
  * Scroll through the page, and each sideways row of cards to its end and back, then wait for lazy
  * images to load and entrance animations to finish.
@@ -182,9 +195,11 @@ test.describe("first screen", () => {
     expect(box).toEqual([0, 0, 600, 525]);
   });
 
-  test("with motion allowed the scan line and the marquee run", async ({ page }) => {
+  test("with motion allowed the scan line and the marquee run (the drawing's line when there is no WebGL)", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.addInitScript(noWebGL);
     await page.goto("/");
+    await expect(page.locator("[data-field]")).toHaveAttribute("data-field", "off");
     const names = await page.evaluate(() =>
       [".dc-line", ".dc-marks", ".marquee-track"].map((sel) => (document.querySelector(sel)!.getAnimations()[0] as CSSAnimation | undefined)?.animationName ?? null),
     );
@@ -393,8 +408,14 @@ test.describe("after the Apple audit", () => {
   test("the phone menu eases in", async ({ page }) => {
     test.skip(!isPhone(page), "phone layout only");
     await page.goto("/");
+    // Listen for the transition starting, rather than catching it mid-way: on a busy machine the
+    // 0.2s ease can be over before a second round trip reads it.
+    await page.locator("header nav.menu-panel").evaluate((el) => {
+      (window as unknown as { eased: boolean }).eased = false;
+      el.addEventListener("transitionrun", () => ((window as unknown as { eased: boolean }).eased = true));
+    });
     await page.getByRole("button", { name: "Menu" }).click();
-    expect(await page.locator("header nav.menu-panel").evaluate((el) => el.getAnimations().length)).toBeGreaterThan(0);
+    await expect.poll(() => page.evaluate(() => (window as unknown as { eased: boolean }).eased)).toBe(true);
   });
 
   test("a full-screen screenshot fades out when closed, rather than vanishing", async ({ page }) => {
@@ -1085,5 +1106,95 @@ test.describe("golden ratio", () => {
     const ratios = await page.locator(".card-picture").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().width / e.getBoundingClientRect().height));
     expect(ratios).toHaveLength(3);
     for (const r of ratios) expect(r).toBeCloseTo(PHI, 2);
+  });
+});
+
+test.describe("3D data field", () => {
+  test("runs with motion allowed, and its frames advance", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    const field = page.locator("[data-field]");
+    await expect(field).toHaveAttribute("data-field", "running", { timeout: 15_000 });
+    await expect(field).toHaveAttribute("aria-hidden", "true");
+    const first = await frames(page);
+    await page.waitForTimeout(1500);
+    expect(await frames(page)).toBeGreaterThan(first);
+    const ratio = await field.locator("canvas").evaluate((c: HTMLCanvasElement) => c.width / c.clientWidth);
+    expect(ratio).toBeLessThanOrEqual(2);
+    await expect(page.locator(".data-check")).toBeHidden();
+  });
+
+  test("with reduced motion it renders one still frame", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    const field = page.locator("[data-field]");
+    await expect(field).toHaveAttribute("data-field", "still", { timeout: 15_000 });
+    const first = await frames(page);
+    await page.waitForTimeout(1000);
+    expect(await frames(page)).toBe(first);
+    await expect(field.locator("canvas")).toBeVisible();
+    await expect(page.locator(".data-check")).toBeHidden();
+  });
+
+  test("pauses off screen and runs again on return", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    const field = page.locator("[data-field]");
+    await expect(field).toHaveAttribute("data-field", "running", { timeout: 15_000 });
+    await page.evaluate(() => document.getElementById("contact")!.scrollIntoView({ behavior: "instant" }));
+    await expect(field).toHaveAttribute("data-field", "paused");
+    const parked = await frames(page);
+    await page.waitForTimeout(1000);
+    expect(await frames(page)).toBeLessThanOrEqual(parked + 30);
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    await expect(field).toHaveAttribute("data-field", "running");
+  });
+
+  test("without WebGL the drawing stays", async ({ page }) => {
+    await page.addInitScript(noWebGL);
+    await page.goto("/");
+    await expect(page.locator("[data-field]")).toHaveAttribute("data-field", "off", { timeout: 15_000 });
+    await expect(page.locator(".data-check")).toBeVisible();
+    await expect(page.locator("[data-field] canvas")).toHaveCount(0);
+  });
+
+  test("a lost WebGL context brings the drawing back", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    const field = page.locator("[data-field]");
+    await expect(field).toHaveAttribute("data-field", "running", { timeout: 15_000 });
+    await field.locator("canvas").evaluate((c: HTMLCanvasElement) => {
+      const gl = (c.getContext("webgl2") ?? c.getContext("webgl")) as WebGLRenderingContext;
+      gl.getExtension("WEBGL_lose_context")!.loseContext();
+    });
+    await expect(field).toHaveAttribute("data-field", "off");
+    await expect(page.locator(".data-check")).toBeVisible();
+  });
+
+  test("without JavaScript it is the drawing", async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto("/");
+    await expect(page.locator("[data-field]")).toHaveAttribute("data-field", "drawing");
+    await expect(page.locator(".data-check")).toBeVisible();
+    await context.close();
+  });
+
+  test("the field never takes the pointer", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("[data-field]")).toHaveAttribute("data-field", /running|still/, { timeout: 15_000 });
+    expect(await page.locator("[data-field] canvas").evaluate((c) => getComputedStyle(c).pointerEvents)).toBe("none");
+    expect(await page.locator("[data-field]").evaluate((c) => getComputedStyle(c).pointerEvents)).toBe("none");
+    await page.getByRole("link", { name: "See the work" }).click();
+    await expect(page).toHaveURL(/#projects$/);
+  });
+
+  test("three is not in the first-load scripts", async ({ page, request }) => {
+    await page.goto("/");
+    const srcs = await page.evaluate(() => [...document.querySelectorAll<HTMLScriptElement>("script[src]")].map((s) => s.src));
+    const html = await (await request.get("/")).text();
+    const initial = srcs.filter((src) => html.includes(new URL(src).pathname));
+    expect(initial.length).toBeGreaterThan(0);
+    for (const src of initial) expect(await (await request.get(src)).text(), src).not.toContain("isWebGLRenderer");
   });
 });

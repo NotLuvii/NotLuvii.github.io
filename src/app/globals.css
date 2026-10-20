@@ -297,6 +297,54 @@ svg[data-ink] {
   width: 100%;
   height: 100%;
 }
+
+/* The 3D data field (components/sections/DataField.tsx) over the drawing:
+   the canvas fills the field's box; from 1024px the box is the whole
+   height of its column, with the drawing centred in it. The drawing is
+   hidden, and its animation stopped, while the 3D runs. Neither takes
+   the pointer. */
+.data-field {
+  position: relative;
+  pointer-events: none;
+}
+.field-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+}
+[data-field="running"] .field-canvas,
+[data-field="paused"] .field-canvas,
+[data-field="still"] .field-canvas {
+  opacity: 1;
+}
+[data-field="running"] .data-check,
+[data-field="paused"] .data-check,
+[data-field="still"] .data-check {
+  visibility: hidden;
+}
+[data-field="running"] .data-check *,
+[data-field="paused"] .data-check *,
+[data-field="still"] .data-check * {
+  animation: none !important;
+}
+@media (min-width: 1024px) {
+  .hero-visual {
+    align-self: stretch;
+  }
+  .data-field {
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .field-canvas {
+    transition: opacity 0.6s var(--ease-out-soft);
+  }
+}
 .dc-bars rect {
   fill: #2a2a2a;
 }

@@ -11,19 +11,19 @@ import { Screenshot } from "@/components/ui/Screenshot";
  */
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
-    <section aria-labelledby={id} className="py-12 md:grid md:grid-cols-[240px_minmax(0,1fr)] md:gap-12 md:py-16">
+    <section aria-labelledby={id} className="py-f55 md:grid md:grid-cols-[240px_minmax(0,1fr)] md:gap-f55 md:py-f55">
       <h2 id={id} className="type-title text-text md:sticky md:top-24 md:self-start">
         {title}
       </h2>
       {/* Text keeps a readable measure; screenshots may use the column's full width. */}
-      <div className="mt-4 min-w-0 space-y-5 text-[17px] leading-[1.7] text-text-2 md:mt-0 [&>*:not(.figures)]:max-w-[68ch]">{children}</div>
+      <div className="mt-f13 min-w-0 space-y-f21 text-[17px] leading-[1.618] text-text-2 md:mt-0 [&>*:not(.figures)]:max-w-[68ch]">{children}</div>
     </section>
   );
 }
 
 function Bullets({ items }: { items: string[] }) {
   return (
-    <ul className="space-y-4">
+    <ul className="space-y-f13">
       {items.map((item) => (
         <li key={item} className="grid grid-cols-[20px_minmax(0,1fr)]">
           <span aria-hidden className="mt-[0.7em] size-1.5 rounded-full bg-text-3" />
@@ -43,34 +43,34 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
     <main id="main" tabIndex={-1} className="outline-none">
       <article>
         <header>
-          <div className="mx-auto max-w-[1200px] px-gutter pb-16 pt-8 md:pb-24">
-            <Link href="/#projects" className="type-small inline-flex min-h-11 items-center gap-2 text-text-2 underline-offset-4 hover:underline">
+          <div className="mx-auto max-w-[1200px] px-gutter pb-f55 pt-f34 md:pb-f89">
+            <Link href="/#projects" className="type-small inline-flex min-h-11 items-center gap-f8 text-text-2 underline-offset-4 hover:underline">
               <Chevron left className="translate-y-px" />
               All projects
             </Link>
-            <h1 className="type-hero mt-10 max-w-[16ch] text-text">{p.title}</h1>
-            <p className="type-lede mt-6 max-w-[52ch] text-text-2">{p.summary}</p>
-            <dl className="mt-12 grid max-w-[1000px] gap-x-10 gap-y-6 rounded-xl bg-panel p-6 sm:grid-cols-2 md:p-8 lg:grid-cols-4">
+            <h1 className="type-hero mt-f34 max-w-[16ch] text-text">{p.title}</h1>
+            <p className="type-lede mt-f21 max-w-[52ch] text-text-2">{p.summary}</p>
+            <dl className="mt-f55 grid max-w-[1000px] gap-x-f34 gap-y-f21 rounded-xl bg-panel p-f21 sm:grid-cols-2 md:p-f34 lg:grid-cols-4">
               <div>
                 <dt className="type-small text-text-3">Project</dt>
-                <dd className="mt-1 text-[17px] text-text">
+                <dd className="mt-f5 text-[17px] text-text">
                   {p.kind}, {p.year}
                 </dd>
               </div>
               <div>
                 <dt className="type-small text-text-3">Role</dt>
-                <dd className="mt-1 text-[17px] text-text">{c.role}</dd>
+                <dd className="mt-f5 text-[17px] text-text">{c.role}</dd>
               </div>
               <div>
                 <dt className="type-small text-text-3">Stack</dt>
-                <dd className="mt-1 text-[17px] text-text">{p.stack.join(", ")}</dd>
+                <dd className="mt-f5 text-[17px] text-text">{p.stack.join(", ")}</dd>
               </div>
               <div>
                 <dt className="type-small text-text-3">Availability</dt>
-                <dd className="mt-1 text-[17px] text-text">{p.availability}</dd>
+                <dd className="mt-f5 text-[17px] text-text">{p.availability}</dd>
               </div>
             </dl>
-            <div className="mt-10">
+            <div className="mt-f34">
               <ButtonLink href={p.repo.href} external>
                 {p.repo.label}
               </ButtonLink>
@@ -78,7 +78,7 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
           </div>
         </header>
 
-        <div className="mx-auto max-w-[1200px] px-gutter pb-12">
+        <div className="mx-auto max-w-[1200px] px-gutter pb-f55">
           <Section id="context" title="Context">
             {c.context.map((t) => (
               <p key={t}>{t}</p>
@@ -95,7 +95,7 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
               <p key={t}>{t}</p>
             ))}
             {c.decision.code && (
-              <div className="pt-2">
+              <div className="pt-f8">
                 <CodeBlock excerpt={c.decision.code} />
               </div>
             )}
@@ -106,9 +106,9 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
               <p key={t}>{t}</p>
             ))}
             {c.figures.length > 0 && (
-              <div className="figures space-y-5 pt-4">
+              <div className="figures space-y-f21 pt-f13">
                 {c.figuresNote && <p className="type-small text-text-3">{c.figuresNote}</p>}
-                <div className={c.figures.length > 1 ? "grid items-start gap-10 sm:grid-cols-2" : "max-w-[560px]"}>
+                <div className={c.figures.length > 1 ? "grid items-start gap-f34 sm:grid-cols-2" : "max-w-[560px]"}>
                   {c.figures.map((f) => (
                     <div key={f.src} data-scene="pass" className="frame">
                       <Screenshot shot={f} sizes="(min-width: 1200px) 420px, (min-width: 640px) 45vw, 100vw" />
@@ -137,11 +137,11 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
         </div>
 
         <nav aria-label="Next project" className="bg-panel">
-          <div className="mx-auto max-w-[1200px] px-gutter py-16 md:py-20">
+          <div className="mx-auto max-w-[1200px] px-gutter py-f55 md:py-f89">
             <p className="type-small text-text-3">Next project</p>
             <Link
               href={projectHref(next.slug)}
-              className="type-section group mt-2 inline-flex min-h-11 items-center gap-3 text-text decoration-2 underline-offset-[8px] hover:underline"
+              className="type-section group mt-f8 inline-flex min-h-11 items-center gap-f13 text-text decoration-2 underline-offset-[8px] hover:underline"
             >
               {next.title}
               <Chevron className="translate-y-px transition-transform duration-200 group-hover:translate-x-1" />

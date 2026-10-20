@@ -53,7 +53,7 @@ export function TextLink({ children, className, external, ...rest }: AnchorProps
       {...rest}
       {...(external ? externalProps : {})}
       className={cn(
-        "group inline-flex min-h-11 items-center gap-1.5 text-text underline-offset-4 hover:underline active:opacity-70",
+        "group inline-flex min-h-11 items-center gap-f5 text-text underline-offset-4 hover:underline active:opacity-70",
         className,
       )}
     >
@@ -87,9 +87,9 @@ const variants: Record<ButtonVariant, string> = {
  */
 export const button = (variant: ButtonVariant = "primary", size: "md" | "sm" = "md") =>
   cn(
-    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium",
+    "inline-flex items-center justify-center gap-f8 whitespace-nowrap rounded-full font-medium",
     "transition-[scale,background-color] duration-150 ease-out active:scale-[0.97]",
-    size === "md" ? "min-h-11 px-[22px] text-[17px]" : "relative min-h-9 px-4 text-[14px] after:absolute after:inset-x-0 after:-inset-y-1 after:content-['']",
+    size === "md" ? "min-h-11 px-f21 text-[17px]" : "relative min-h-9 px-f13 text-[13.36px] after:absolute after:inset-x-0 after:-inset-y-1 after:content-['']",
     variants[variant],
   );
 

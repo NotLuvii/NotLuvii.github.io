@@ -7,11 +7,11 @@ import { site } from "@/content/site";
 export function Footer() {
   return (
     <footer className="bg-page">
-      <div className="footer-inner px-gutter pb-10 pt-20">
+      <div className="footer-inner px-gutter pb-f34 pt-f89">
         <p aria-hidden className="type-display footer-name text-text">
           {site.name}
         </p>
-        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mt-f21 flex flex-col gap-f8 sm:flex-row sm:items-end sm:justify-between">
           <p className="type-small text-text-3">
             {site.role} in {site.location.city}, {site.location.region}
           </p>

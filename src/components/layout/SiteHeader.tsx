@@ -43,12 +43,12 @@ export function SiteHeader() {
     <header id="top" className="site-bar sticky top-0 z-40">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-2 focus:z-50 focus:inline-flex focus:min-h-11 focus:items-center focus:rounded-full focus:bg-amber focus:px-5 focus:text-[17px] focus:font-semibold focus:text-on-amber"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-2 focus:z-50 focus:inline-flex focus:min-h-11 focus:items-center focus:rounded-full focus:bg-amber focus:px-f21 focus:text-[17px] focus:font-semibold focus:text-on-amber"
       >
         Skip to content
       </a>
-      <div className="mx-auto grid h-14 max-w-[1440px] grid-cols-[1fr_auto] items-center gap-4 px-gutter md:grid-cols-[1fr_auto_1fr]">
-        <Link href="/" aria-label={`${site.name}, home`} className="inline-flex min-h-11 items-center justify-self-start text-[21px] font-bold text-text [font-stretch:75%]">
+      <div className="mx-auto grid h-14 max-w-[1440px] grid-cols-[1fr_auto] items-center gap-f13 px-gutter md:grid-cols-[1fr_auto_1fr]">
+        <Link href="/" aria-label={`${site.name}, home`} className="inline-flex min-h-11 items-center justify-self-start text-[21.62px] font-bold text-text [font-stretch:75%]">
           LB
         </Link>
 
@@ -75,7 +75,7 @@ export function SiteHeader() {
         <button
           ref={toggle}
           type="button"
-          className="-mr-2 inline-flex min-h-11 min-w-11 items-center justify-center gap-2 justify-self-end px-3 text-[17px] font-medium text-text transition-opacity active:opacity-60 md:hidden"
+          className="-mr-f8 inline-flex min-h-11 min-w-11 items-center justify-center gap-f8 justify-self-end px-f13 text-[17px] font-medium text-text transition-opacity active:opacity-60 md:hidden"
           aria-expanded={open}
           aria-controls={menuId}
           onClick={() => setOpen((o) => !o)}
@@ -88,18 +88,18 @@ export function SiteHeader() {
       </div>
 
       <nav id={menuId} aria-label="Main" hidden={!open} className="menu-panel md:hidden">
-        <div className="mx-auto max-w-[1440px] px-gutter pb-4 pt-1">
+        <div className="mx-auto max-w-[1440px] px-gutter pb-f13 pt-f5">
           <ul>
             {nav.map((n) => (
               <li key={n.href}>
-                <a href={n.href} onClick={() => setOpen(false)} className="flex min-h-12 items-center text-[21px] font-semibold text-text active:opacity-60">
+                <a href={n.href} onClick={() => setOpen(false)} className="flex min-h-12 items-center text-[21.62px] font-semibold text-text active:opacity-60">
                   {n.label}
                 </a>
               </li>
             ))}
           </ul>
           {site.resume && (
-            <a href={site.resume} download onClick={() => setOpen(false)} className={cn(button("primary"), "mt-3 w-full")}>
+            <a href={site.resume} download onClick={() => setOpen(false)} className={cn(button("primary"), "mt-f13 w-full")}>
               Download resume (PDF)
             </a>
           )}

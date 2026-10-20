@@ -62,7 +62,7 @@ export function Screenshot({
 
   return (
     <figure className={cn("min-w-0", className)}>
-      <div className="group relative rounded-xl bg-raised p-1.5">
+      <div className="group relative rounded-xl bg-raised p-f5">
         <div className="relative overflow-hidden rounded-md">
           {/* eslint-disable-next-line @next/next/no-img-element -- static export: pre-sized WebP files, no image optimizer */}
           <img
@@ -94,7 +94,7 @@ export function Screenshot({
           </span>
         </button>
       </div>
-      <figcaption className={captionHidden ? "sr-only" : "type-small mt-3 text-text-3"}>{shot.caption}</figcaption>
+      <figcaption className={captionHidden ? "sr-only" : "type-small mt-f13 text-text-3"}>{shot.caption}</figcaption>
 
       <dialog
         ref={dialog}
@@ -106,7 +106,7 @@ export function Screenshot({
         className="lightbox m-0 h-dvh max-h-none w-dvw max-w-none border-0 bg-transparent p-0 text-white backdrop:bg-black/95"
       >
         <div
-          className="flex h-full w-full flex-col items-center justify-center gap-4 px-4 pb-6 pt-16 sm:px-10"
+          className="flex h-full w-full flex-col items-center justify-center gap-f13 px-f13 pb-f21 pt-f55 sm:px-f34"
           onClick={(e) => {
             if (e.target === e.currentTarget) close();
           }}

@@ -59,13 +59,13 @@ function WorkCard({ p }: { p: FeaturedProject }) {
             {p.title}
           </Link>
         </h3>
-        <p className="mt-2 text-[17px] text-text-2">{p.tileLine}</p>
+        <p className="mt-f8 text-[17px] text-text-2">{p.tileLine}</p>
         <ul aria-label="Built with" className="card-tags">
           {p.stack.slice(0, 3).map((t) => (
             <li key={t}>{t}</li>
           ))}
         </ul>
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-f21 flex flex-wrap gap-f13">
           <ButtonLink href={projectHref(p.slug)} variant="light">
             Read the case study<span className="sr-only">: {p.title}</span>
           </ButtonLink>
@@ -86,7 +86,7 @@ function WorkCard({ p }: { p: FeaturedProject }) {
 export function Projects() {
   const scam = featured.find((p) => p.story)!;
   return (
-    <section id="projects" aria-labelledby="projects-title" className="pb-8 pt-24 md:pb-10 md:pt-32">
+    <section id="projects" aria-labelledby="projects-title" className="pb-f34 pt-f89 md:pb-f34 md:pt-f144">
       <WorkCarousel
         label="Selected work"
         header={
@@ -94,7 +94,7 @@ export function Projects() {
             <h2 id="projects-title" className="type-display section-title text-text">
               Selected work
             </h2>
-            <p className="type-lede mt-4 text-text-3">Three with public code and a case study each, then the rest.</p>
+            <p className="type-lede mt-f13 text-text-3">Three with public code and a case study each, then the rest.</p>
           </>
         }
       >

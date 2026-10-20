@@ -13,16 +13,16 @@ export function Contact() {
         Contact
       </h2>
       <div className="tile-grid">
-        <div className="tile tile-wide px-gutter py-16 text-center md:py-24">
+        <div className="tile tile-wide px-gutter py-f55 text-center md:py-f89">
           {site.availability && <p className="type-statement mx-auto max-w-[18em] text-text min-[834px]:type-section">{site.availability}</p>}
-          <div className="mt-8 flex justify-center">
+          <div className="mt-f34 flex justify-center">
             <CopyEmail email={site.email}>
               <ButtonLink href={`mailto:${site.email}`} variant="light" className={pairedPill}>
                 Write an email
               </ButtonLink>
             </CopyEmail>
           </div>
-          <ul className="mt-4 flex flex-wrap justify-center gap-x-8 gap-y-1 text-[17px]">
+          <ul className="mt-f13 flex flex-wrap justify-center gap-x-f34 gap-y-f5 text-[17px]">
             <li>
               <TextLink href={site.linkedin.url} external>
                 LinkedIn

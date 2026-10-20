@@ -9,15 +9,15 @@ import { emphasize } from "@/lib/emphasize";
  */
 export function About() {
   return (
-    <section id="skills" aria-labelledby="skills-title" className="pt-24 md:pt-32">
-      <div className="mx-auto max-w-[1200px] px-gutter pb-8 md:pb-10">
+    <section id="skills" aria-labelledby="skills-title" className="pt-f89 md:pt-f144">
+      <div className="mx-auto max-w-[1200px] px-gutter pb-f34 md:pb-f34">
         <h2 id="skills-title" className="type-display section-title text-text">
           About and skills
         </h2>
       </div>
 
       <div className="tile-grid">
-        <div className="tile tile-wide px-gutter py-14 text-center md:py-20">
+        <div className="tile tile-wide px-gutter py-f55 text-center md:py-f89">
           <p className="type-statement mx-auto max-w-[48ch] text-text-3">
             {emphasize(site.intro, site.introKeyPhrases).map((part, i) =>
               part.strong ? (
@@ -30,23 +30,23 @@ export function About() {
             )}
           </p>
           {background.map((p) => (
-            <p key={p} className="mx-auto mt-8 max-w-[62ch] text-[17px] leading-relaxed text-text-2">
+            <p key={p} className="mx-auto mt-f34 max-w-[62ch] text-[17px] leading-[1.618] text-text-2">
               {p}
             </p>
           ))}
         </div>
 
-        <div className="tile tile-wide p-6 md:p-12">
+        <div className="tile tile-wide p-f21 md:p-f55">
           <h3 className="type-lede text-text">Skills</h3>
-          <dl className="mt-4 grid gap-x-16 gap-y-7 min-[834px]:grid-cols-2">
+          <dl className="mt-f13 grid gap-x-f55 gap-y-f34 min-[834px]:grid-cols-2">
             {skills.map((s) => (
               <div key={s.group}>
                 <dt className="text-[17px] font-semibold text-text">{s.group}</dt>
-                <dd className="text-[17px] leading-relaxed text-text-2">{s.items.join(", ")}</dd>
+                <dd className="text-[17px] leading-[1.618] text-text-2">{s.items.join(", ")}</dd>
               </div>
             ))}
           </dl>
-          <p className="type-small mt-8 text-text-3">Also: {alsoUsed.join(", ")}.</p>
+          <p className="type-small mt-f34 text-text-3">Also: {alsoUsed.join(", ")}.</p>
         </div>
       </div>
     </section>

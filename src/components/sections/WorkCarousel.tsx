@@ -51,7 +51,7 @@ export function WorkCarousel({ children, label, header }: { children: ReactNode;
 
   return (
     <>
-      <div className="mx-auto flex max-w-[1200px] items-end justify-between gap-6 px-gutter">
+      <div className="mx-auto flex max-w-[1200px] items-end justify-between gap-f21 px-gutter">
         <div className="min-w-0">{header}</div>
         {ends !== "none" && (
           <div className="carousel-controls">

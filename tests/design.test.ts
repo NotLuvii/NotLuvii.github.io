@@ -7,6 +7,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { FIB, onScale } from "@/lib/golden";
 
 const SRC = join(process.cwd(), "src");
 
@@ -226,5 +227,28 @@ describe("shape and labels", () => {
     // In globals.css, only the display utility (the name and section titles) is set in capitals.
     const caps = [...css.matchAll(/([^{}]*)\{[^{}]*text-transform:\s*uppercase[^{}]*\}/g)].map((m) => m[1].replace(/\/\*[\s\S]*?\*\//g, "").trim());
     expect(caps).toEqual(["@utility type-display"]);
+  });
+});
+
+describe("the golden ratio, in the CSS", () => {
+  it("every font size the CSS declares sits on the φ scale", () => {
+    const sizes = [...css.matchAll(/font-size:\s*([^;]+);/g)].map((m) => m[1].trim()).filter((v) => !v.includes("cqw") && !/inherit|var\(/.test(v));
+    expect(sizes.length).toBeGreaterThan(5);
+    const px = (v: string) => {
+      const parts = v.startsWith("clamp(") ? v.slice(6, -1).split(/,(?![^(]*\))/) : [v];
+      const last = parts[parts.length - 1].trim();
+      const m = last.match(/^([\d.]+)(px|rem)$/);
+      if (!m) throw new Error(`Unreadable font-size: ${v}`);
+      return Number(m[1]) * (m[2] === "rem" ? 16 : 1);
+    };
+    const off = sizes.filter((v) => !onScale(px(v)));
+    expect(off).toEqual([]);
+  });
+
+  it("spacing tokens are Fibonacci", () => {
+    const tokens = [...css.matchAll(/--spacing-f(\d+):\s*([\d.]+)px;/g)].map((m) => [Number(m[1]), Number(m[2])]);
+    expect(tokens.map(([, v]) => v)).toEqual([...FIB]);
+    for (const [name, v] of tokens) expect(name).toBe(v);
+    expect(css).toMatch(/--spacing-gutter:\s*clamp\(21px, 5vw, 55px\);/);
   });
 });

@@ -48,9 +48,9 @@ export function TryScamRules({ sample, initial, source }: { sample: string; init
   const ranges = useMemo(() => markRanges(text, result), [text, result]);
 
   return (
-    <div className="mx-auto mt-16 max-w-[1200px] px-gutter text-left md:mt-24">
+    <div className="mx-auto mt-f55 max-w-[1200px] px-gutter text-left md:mt-f89">
       <h3 className="type-title text-text">Try the scam checker on your own text</h3>
-      <div className="try-grid mt-6">
+      <div className="try-grid mt-f21">
         <div className="min-w-0">
           <label htmlFor="try-text" className="block text-[17px] text-text-2">
             Paste a text message
@@ -63,14 +63,14 @@ export function TryScamRules({ sample, initial, source }: { sample: string; init
             rows={4}
             spellCheck={false}
             onChange={(e) => setText(e.target.value)}
-            className="mt-2 block w-full resize-y rounded-xl border-0 bg-raised p-4 text-[17px] leading-relaxed text-text"
+            className="mt-f8 block w-full resize-y rounded-xl border-0 bg-raised p-f13 text-[17px] leading-[1.618] text-text"
           />
-          <p className="mt-6 text-[17px] text-text-3">The tool&rsquo;s own rules, running in your browser. Nothing is sent anywhere.</p>
+          <p className="mt-f21 text-[17px] text-text-3">The tool&rsquo;s own rules, running in your browser. Nothing is sent anywhere.</p>
         </div>
         <div className="min-w-0">
           {/* Only the result is announced as it changes, not the text being typed read back. */}
           <div aria-live="polite">
-            <p className="flex items-baseline gap-3">
+            <p className="flex items-baseline gap-f13">
               <span data-try-score className="type-section text-text tabular-nums">
                 {result.risk}
               </span>{" "}
@@ -78,14 +78,14 @@ export function TryScamRules({ sample, initial, source }: { sample: string; init
                 <span data-try-level>{LEVEL[result.level]}</span> risk
               </span>
             </p>
-            <ul data-try-issues className="mt-4 space-y-1 text-[17px] leading-snug text-text-2">
+            <ul data-try-issues className="mt-f13 space-y-f5 text-[17px] leading-[1.618] text-text-2">
               {result.issues.length ? result.issues.map((issue) => <li key={issue.msg}>{issue.msg}</li>) : <li>Nothing flagged.</li>}
             </ul>
           </div>
-          <p data-try-marked className="mt-6 whitespace-pre-wrap text-[17px] leading-relaxed text-text-2 [overflow-wrap:anywhere]">
+          <p data-try-marked className="mt-f21 whitespace-pre-wrap text-[17px] leading-[1.618] text-text-2 [overflow-wrap:anywhere]">
             <Marked text={text} ranges={ranges} />
           </p>
-          <p className="mt-4 text-[17px]">
+          <p className="mt-f13 text-[17px]">
             <TextLink href={source.href} external>
               Rules from js/detectors.js
             </TextLink>

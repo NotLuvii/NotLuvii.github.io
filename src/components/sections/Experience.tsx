@@ -9,10 +9,10 @@ function Entry({ entry }: { entry: TimelineEntry }) {
     return (
       <>
         <h3 className="type-title text-text">{e.degree}</h3>
-        <p className="mt-1 text-[17px] text-text-2">
+        <p className="mt-f5 text-[17px] text-text-2">
           {e.school}, {e.date}
         </p>
-        <p className="type-small mt-3 text-text-3">Coursework: {e.coursework.join(", ")}.</p>
+        <p className="type-small mt-f13 text-text-3">Coursework: {e.coursework.join(", ")}.</p>
       </>
     );
   }
@@ -22,13 +22,13 @@ function Entry({ entry }: { entry: TimelineEntry }) {
       <h3 className="type-title text-text">
         {r.title}, {r.organization}
       </h3>
-      {r.about && <p className="mt-1 text-[17px] text-text-3">{r.about}</p>}
-      <p className="type-small mt-1 text-text-3">
+      {r.about && <p className="mt-f5 text-[17px] text-text-3">{r.about}</p>}
+      <p className="type-small mt-f5 text-text-3">
         {r.period} · {r.place}
       </p>
-      <ul className="mt-5 space-y-4">
+      <ul className="mt-f21 space-y-f13">
         {r.points.map((point) => (
-          <li key={point} className="text-[17px] leading-[1.55] text-text-2">
+          <li key={point} className="text-[17px] leading-[1.618] text-text-2">
             <Figures text={point} ring />
           </li>
         ))}
@@ -44,14 +44,14 @@ function Entry({ entry }: { entry: TimelineEntry }) {
  */
 export function Experience() {
   return (
-    <section id="experience" aria-labelledby="experience-title" className="pt-24 md:pt-32">
+    <section id="experience" aria-labelledby="experience-title" className="pt-f89 md:pt-f144">
       <div className="mx-auto max-w-[1200px] px-gutter">
         <h2 id="experience-title" className="type-display section-title text-text">
           Experience
         </h2>
-        <div className="timeline mt-10 md:mt-14">
+        <div className="timeline mt-f34 md:mt-f55">
           <Ink paths={spine(1000, 31)} w={20} h={1000} className="timeline-spine" />
-          <ol className="space-y-14">
+          <ol className="space-y-f55">
             {timeline().map((entry) => (
               <li key={entry.kind === "role" ? entry.role.organization : entry.education.degree} className="timeline-entry">
                 <p aria-hidden data-ink className="timeline-year">

@@ -13,13 +13,13 @@ export function CodeBlock({ excerpt, teaser = false }: { excerpt: CodeExcerpt; t
   return (
     <figure className="min-w-0" data-code data-ui>
       <div className="overflow-hidden rounded-lg border border-line bg-raised">
-        <div className="flex flex-wrap items-center justify-between gap-x-4 border-b border-line px-4 py-1">
-          <code className="min-w-0 text-[13px] text-text-3 [overflow-wrap:anywhere]">{excerpt.file}</code>
+        <div className="flex flex-wrap items-center justify-between gap-x-f13 border-b border-line px-f13 py-f5">
+          <code className="min-w-0 text-[13.36px] text-text-3 [overflow-wrap:anywhere]">{excerpt.file}</code>
           <a
             href={excerpt.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="type-small inline-flex min-h-11 items-center gap-1.5 text-text-2 underline-offset-4 hover:underline"
+            className="type-small inline-flex min-h-11 items-center gap-f5 text-text-2 underline-offset-4 hover:underline"
           >
             View on GitHub
             <ExternalIcon />
@@ -29,13 +29,13 @@ export function CodeBlock({ excerpt, teaser = false }: { excerpt: CodeExcerpt; t
         <div className="relative">
           <pre
             {...(teaser ? {} : { tabIndex: 0, role: "region", "aria-label": `Code from ${excerpt.file}` })}
-            className={cn("p-4 text-[13px] leading-[1.65] text-text-2 focus-visible:outline-offset-[-2px]", teaser ? "overflow-hidden" : "overflow-auto")}
+            className={cn("p-f13 text-[13.36px] leading-[1.618] text-text-2 focus-visible:outline-offset-[-2px]", teaser ? "overflow-hidden" : "overflow-auto")}
           >
             <code>{excerpt.code}</code>
           </pre>
         </div>
       </div>
-      <figcaption className={teaser ? "sr-only" : "type-small mt-3 text-text-3"}>{excerpt.caption}</figcaption>
+      <figcaption className={teaser ? "sr-only" : "type-small mt-f13 text-text-3"}>{excerpt.caption}</figcaption>
     </figure>
   );
 }

@@ -42,13 +42,13 @@ export function CopyEmail({ email, children }: { email: string; children?: React
       >
         {email}
       </span>
-      <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
+      <div className="mt-f21 flex flex-col items-center justify-center gap-f13 sm:flex-row sm:flex-wrap">
         {children}
         <button type="button" onClick={copy} className={cn(button("outline"), pairedPill)}>
           {state === "copied" ? "Copied" : "Copy email address"}
         </button>
       </div>
-      <p className="type-small mt-3 min-h-[1.5em] text-text-3" role="status" aria-live="polite">
+      <p className="type-small mt-f13 min-h-[1.5em] text-text-3" role="status" aria-live="polite">
         {state === "copied" ? "Email address copied to your clipboard." : state === "selected" ? "Couldn’t copy automatically. The address is selected: press Ctrl+C, or ⌘C on a Mac." : ""}
       </p>
     </div>

@@ -3,6 +3,7 @@ import { featured, more, projectHref } from "../src/content/projects";
 import { alsoUsed, background, roles, skills } from "../src/content/experience";
 import { site } from "../src/content/site";
 import { checkSms } from "../src/lib/scam-sms";
+import { isFib, onScale, PHI } from "../src/lib/golden";
 
 const PAGES = ["/", ...featured.map((p) => projectHref(p.slug))];
 const WIDTHS = [320, 375, 390, 768, 1024, 1440];
@@ -1020,5 +1021,69 @@ test.describe("motion", () => {
     await page.goto("/");
     await scrollThrough(page);
     expect(await page.locator("[data-reveal]").count()).toBe(0);
+  });
+});
+
+test.describe("golden ratio", () => {
+  test("every type size on the home page is on the φ scale at 1440", async ({ page }) => {
+    test.skip(isPhone(page), "measured on the desktop layout");
+    await page.goto("/");
+    const sizes = await page.evaluate(() => {
+      const out = new Set<number>();
+      for (const root of [document.querySelector("header")!, document.querySelector("main")!]) {
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) {
+          const el = walker.currentNode.parentElement!;
+          if (!walker.currentNode.textContent!.trim() || !el.getBoundingClientRect().width || el.closest(".sr-only, pre, [data-code], dialog")) continue;
+          out.add(Math.round(parseFloat(getComputedStyle(el).fontSize) * 100) / 100);
+        }
+      }
+      return [...out];
+    });
+    expect(sizes.filter((s) => !onScale(s))).toEqual([]);
+  });
+
+  for (const width of [1440, 390]) {
+    test(`margins, paddings and gaps in main are Fibonacci at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
+      const values = await page.evaluate(() => {
+        const out: { where: string; prop: string; v: number }[] = [];
+        for (const el of document.querySelectorAll("main *")) {
+          if (el.closest("pre, [data-code], .sr-only, svg, canvas, dialog") || !(el as HTMLElement).getClientRects().length) continue;
+          const cs = getComputedStyle(el);
+          for (const prop of ["marginTop", "marginBottom", "paddingTop", "paddingBottom", "rowGap", "columnGap"] as const) {
+            const v = parseFloat(cs[prop]);
+            if (v > 0) out.push({ where: `${el.tagName.toLowerCase()}.${String(el.getAttribute("class") ?? "").slice(0, 50)}`, prop, v });
+          }
+        }
+        return out;
+      });
+      expect(values.length).toBeGreaterThan(20);
+      expect(values.filter((x) => !isFib(x.v)).map((x) => `${x.where} ${x.prop}=${x.v}`)).toEqual([]);
+    });
+  }
+
+  test("the first screen splits 1.618 : 1", async ({ page }) => {
+    test.skip(isPhone(page), "the split is from 1024px");
+    await page.goto("/");
+    const ratio = await page.evaluate(() => document.querySelector(".hero-copy")!.getBoundingClientRect().width / document.querySelector(".hero-visual")!.getBoundingClientRect().width);
+    expect(Math.abs(ratio - PHI) / PHI).toBeLessThan(0.02);
+  });
+
+  test("reading text is set at line height φ", async ({ page }) => {
+    await page.goto("/");
+    const ratios = await page.locator("#experience li, .type-lede").evaluateAll((els) =>
+      els.filter((e) => e.getClientRects().length).map((e) => parseFloat(getComputedStyle(e).lineHeight) / parseFloat(getComputedStyle(e).fontSize)),
+    );
+    expect(ratios.length).toBeGreaterThan(3);
+    for (const r of ratios) expect(r).toBeCloseTo(PHI, 2);
+  });
+
+  test("card pictures are golden rectangles", async ({ page }) => {
+    await page.goto("/");
+    const ratios = await page.locator(".card-picture").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().width / e.getBoundingClientRect().height));
+    expect(ratios).toHaveLength(3);
+    for (const r of ratios) expect(r).toBeCloseTo(PHI, 2);
   });
 });

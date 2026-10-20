@@ -8,12 +8,12 @@ function MoreItem({ p }: { p: MoreProject }) {
   return (
     <li>
       <h4 className="type-lede text-text">{p.title}</h4>
-      <p className="mt-2 text-[17px] leading-relaxed break-words text-text-2">
+      <p className="mt-f8 text-[17px] leading-[1.618] break-words text-text-2">
         <Figures text={p.summary} />
       </p>
-      {meta && <p className="type-small mt-1 text-text-3">{meta}</p>}
+      {meta && <p className="type-small mt-f5 text-text-3">{meta}</p>}
       {p.links.length > 0 && (
-        <div className="flex flex-wrap items-center gap-x-6">
+        <div className="flex flex-wrap items-center gap-x-f21">
           {p.links.map((l) => (
             <TextLink key={l.href} href={l.href} external>
               {l.label}
@@ -33,11 +33,11 @@ function MoreItem({ p }: { p: MoreProject }) {
  */
 export function MoreProjects() {
   return (
-    <div className="mx-auto max-w-[1200px] px-gutter pt-24 md:pt-32">
+    <div className="mx-auto max-w-[1200px] px-gutter pt-f89 md:pt-f144">
       <h3 id="more-title" className="type-display more-title text-text">
         More projects
       </h3>
-      <ul aria-labelledby="more-title" className="mt-10 grid grid-cols-1 gap-x-16 gap-y-12 min-[834px]:grid-cols-2">
+      <ul aria-labelledby="more-title" className="mt-f34 grid grid-cols-1 gap-x-f55 gap-y-f55 min-[834px]:grid-cols-2">
         {more.map((p) => (
           <MoreItem key={p.title} p={p} />
         ))}

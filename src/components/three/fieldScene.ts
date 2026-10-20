@@ -3,36 +3,35 @@
  * (components/sections/DataField.tsx imports it dynamically), so three never weighs on the first
  * load. The layout and timing come from src/lib/field.ts.
  *
- * A field of matte bars on a dark floor, seen from above at an angle; an amber scan plane sweeps
- * from the back row to the front with an amber light riding on it, and the rows it has passed
- * show their marks: seven bars glow amber, one glows red. The camera eases toward the pointer and
- * tilts back as the page scrolls.
+ * A field of matte bars on a dark floor, seen from above at an angle, with its marks: seven bars
+ * glow amber, one glows red. Nothing loops. The camera eases toward the pointer and tilts back as
+ * the page scrolls, and a frame is drawn only while something is moving, so a field left alone
+ * costs nothing.
  */
 import {
   BoxGeometry,
   Color,
   DirectionalLight,
-  DoubleSide,
   HemisphereLight,
   InstancedMesh,
   Mesh,
-  MeshBasicMaterial,
   MeshStandardMaterial,
   Object3D,
   PerspectiveCamera,
   PlaneGeometry,
-  PointLight,
   Scene,
   Vector3,
   WebGLRenderer,
 } from "three";
-import { COLS, MARKS, REST, ROWS, barHeight, passed, scanAt } from "@/lib/field";
+import { COLS, MARKS, ROWS, barHeight } from "@/lib/field";
 
 export type FieldHandle = {
+  /** Follow the pointer and the scroll, drawing while the camera moves. */
   start(): void;
+  /** Draw nothing more until started again. */
   stop(): void;
   renderOnce(): void;
-  /** Switch to (or out of) the still frame: the loop stops and the scan rests with every mark lit. */
+  /** Switch to (or out of) the still frame: the camera rests and nothing follows the pointer or the scroll. */
   setStill(on: boolean): void;
   /** Pointer position across the window, each from −1 to 1. */
   setPointer(x: number, y: number): void;
@@ -44,7 +43,7 @@ export type FieldHandle = {
 };
 
 export type FieldOptions = {
-  /** Reduced motion: no loop; the scan rests at the golden section and every mark shows. */
+  /** Reduced motion, or motion paused: one frame, the camera at rest. */
   still: boolean;
   /** The GPU dropped the context: the caller shows the drawing again. */
   onLost?: () => void;
@@ -104,38 +103,18 @@ export function createField(canvas: HTMLCanvasElement, options: FieldOptions): F
     }
   scene.add(bars);
 
-  // The marks: a slightly larger glowing bar over each marked cell, shown once the scan has passed it.
+  // The marks: a slightly larger glowing bar over each marked cell.
   const markGeometry = new BoxGeometry(0.68, 1, 0.68);
   markGeometry.translate(0, 0.5, 0);
   const tickMaterial = new MeshStandardMaterial({ color: AMBER, emissive: AMBER, emissiveIntensity: 0.55, roughness: 0.5 });
   const defectMaterial = new MeshStandardMaterial({ color: DEFECT, emissive: DEFECT, emissiveIntensity: 0.65, roughness: 0.5 });
-  const marks = MARKS.map((m) => {
+  for (const m of MARKS) {
     const mesh = new Mesh(markGeometry, m.kind === "defect" ? defectMaterial : tickMaterial);
     const { x, z } = at(m.row, m.col);
     mesh.position.set(x, 0, z);
     mesh.scale.set(1, barHeight(m.row, m.col) + 0.04, 1);
     scene.add(mesh);
-    return { mesh, row: m.row };
-  });
-
-  // The scan: a thin amber plane across the field, bright edges top and bottom, and a light riding with it.
-  const width = COLS + 1.6;
-  const planeGeometry = new PlaneGeometry(width, 2.4);
-  planeGeometry.translate(0, 1.2, 0);
-  const planeMaterial = new MeshBasicMaterial({ color: AMBER, transparent: true, opacity: 0.14, side: DoubleSide, depthWrite: false });
-  const edgeGeometry = new BoxGeometry(width, 0.035, 0.035);
-  const edgeMaterial = new MeshBasicMaterial({ color: AMBER });
-  const scan = new Object3D();
-  scan.add(new Mesh(planeGeometry, planeMaterial));
-  const low = new Mesh(edgeGeometry, edgeMaterial);
-  low.position.y = 0.02;
-  const high = new Mesh(edgeGeometry, edgeMaterial);
-  high.position.y = 2.4;
-  scan.add(low, high);
-  const glow = new PointLight(AMBER, 14, 7, 2);
-  glow.position.y = 1.4;
-  scan.add(glow);
-  scene.add(scan);
+  }
 
   // Camera state: eased toward the pointer, tilted by scrolling.
   let yaw = 0;
@@ -144,7 +123,6 @@ export function createField(canvas: HTMLCanvasElement, options: FieldOptions): F
   let aimPitch = 0;
   let scroll = 0;
   let distance = 30;
-  const t0 = performance.now();
 
   const place = () => {
     const p = BASE_PITCH + pitch + scroll * SCROLL_PITCH;
@@ -153,26 +131,27 @@ export function createField(canvas: HTMLCanvasElement, options: FieldOptions): F
     camera.lookAt(target);
   };
 
-  const update = (scanPos: number) => {
-    scan.position.z = -(ROWS / 2 + 0.5) + scanPos * (ROWS + 1);
-    for (const m of marks) m.mesh.visible = passed(m.row, scanPos);
-  };
-
   let count = 0;
+  /** Draws one frame, easing the camera a step; true while it still has somewhere to go. */
   const draw = () => {
     yaw += (aimYaw - yaw) * EASE;
     pitch += (aimPitch - pitch) * EASE;
     place();
-    update(still ? REST : scanAt((performance.now() - t0) / 1000));
     renderer.render(scene, camera);
     count++;
     onFrame?.(count);
+    return Math.abs(aimYaw - yaw) > 1e-4 || Math.abs(aimPitch - pitch) > 1e-4;
   };
 
+  // Frames are drawn only while the camera is moving.
+  let active = false;
   let raf = 0;
-  const loop = () => {
-    draw();
-    raf = requestAnimationFrame(loop);
+  const tick = () => {
+    raf = 0;
+    if (draw()) raf = requestAnimationFrame(tick);
+  };
+  const kick = () => {
+    if (active && !still && !raf) raf = requestAnimationFrame(tick);
   };
 
   const lost = () => onLost?.();
@@ -180,10 +159,11 @@ export function createField(canvas: HTMLCanvasElement, options: FieldOptions): F
 
   return {
     start() {
-      if (still || raf) return;
-      raf = requestAnimationFrame(loop);
+      active = true;
+      kick();
     },
     stop() {
+      active = false;
       cancelAnimationFrame(raf);
       raf = 0;
     },
@@ -195,8 +175,9 @@ export function createField(canvas: HTMLCanvasElement, options: FieldOptions): F
       if (on) {
         cancelAnimationFrame(raf);
         raf = 0;
-        aimYaw = 0;
-        aimPitch = 0;
+        yaw = aimYaw = 0;
+        pitch = aimPitch = 0;
+        scroll = 0;
         draw();
       }
     },
@@ -204,9 +185,14 @@ export function createField(canvas: HTMLCanvasElement, options: FieldOptions): F
       if (still) return;
       aimYaw = Math.max(-1, Math.min(1, x)) * YAW_RANGE;
       aimPitch = -Math.max(-1, Math.min(1, y)) * PITCH_RANGE;
+      kick();
     },
     setScroll(p) {
-      scroll = Math.max(0, Math.min(1, p));
+      if (still) return;
+      const next = Math.max(0, Math.min(1, p));
+      if (next === scroll) return;
+      scroll = next;
+      if (active && !raf) draw();
     },
     resize(w, h, dpr) {
       if (w <= 0 || h <= 0) return;
@@ -215,7 +201,7 @@ export function createField(canvas: HTMLCanvasElement, options: FieldOptions): F
       camera.aspect = w / h;
       // Fit the field's footprint, as the camera sees it at rest, inside both fields of view.
       const across = (COLS + 2) * Math.cos(BASE_YAW) + (ROWS + 2) * Math.abs(Math.sin(BASE_YAW));
-      const deep = ((ROWS + 2) * Math.cos(BASE_YAW) + (COLS + 2) * Math.abs(Math.sin(BASE_YAW))) * Math.sin(BASE_PITCH) + 2.4 * Math.cos(BASE_PITCH);
+      const deep = ((ROWS + 2) * Math.cos(BASE_YAW) + (COLS + 2) * Math.abs(Math.sin(BASE_YAW))) * Math.sin(BASE_PITCH) + 1.5 * Math.cos(BASE_PITCH);
       const vfov = camera.fov * DEG;
       const hfov = 2 * Math.atan(Math.tan(vfov / 2) * camera.aspect);
       distance = Math.max(across / 2 / Math.tan(hfov / 2), deep / 2 / Math.tan(vfov / 2)) * 1.16;
@@ -227,8 +213,8 @@ export function createField(canvas: HTMLCanvasElement, options: FieldOptions): F
       cancelAnimationFrame(raf);
       raf = 0;
       canvas.removeEventListener("webglcontextlost", lost);
-      for (const g of [floorGeometry, barGeometry, markGeometry, planeGeometry, edgeGeometry]) g.dispose();
-      for (const m of [floorMaterial, barMaterial, tickMaterial, defectMaterial, planeMaterial, edgeMaterial]) m.dispose();
+      for (const g of [floorGeometry, barGeometry, markGeometry]) g.dispose();
+      for (const m of [floorMaterial, barMaterial, tickMaterial, defectMaterial]) m.dispose();
       bars.dispose();
       renderer.dispose();
     },

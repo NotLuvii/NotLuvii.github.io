@@ -123,10 +123,12 @@ test.describe("first screen", () => {
     for (const sel of ["[data-recording]", ".hero-frame", ".more-row", "[data-figure]", "video", ".role-grid", ".sketch"]) await expect(page.locator(sel), sel).toHaveCount(0);
   });
 
-  test("says who and what: the status, the clock, the name, the headline, the intro, two buttons and the data check", async ({ page }) => {
+  test("says who and what: the clock, the name, the headline, the intro, two buttons and the data field, with no status pill", async ({ page }) => {
     await page.goto("/");
     const hero = page.locator("section.hero");
-    await expect(hero.locator(".now-pill")).toContainText(`Now: ${site.availability}`);
+    // No status pill: the first screen opens on the clock line and the name.
+    await expect(hero.locator(".now-pill")).toHaveCount(0);
+    await expect(hero).not.toContainText("Now:");
     await expect(hero.locator("[data-clock]")).toHaveText(/^Fredericton, NB · \d{1,2}:\d{2} [ap]m A[DS]T$/);
     await expect(hero.locator("h1")).toHaveText(site.name);
     await expect(hero.getByText(site.headline)).toBeVisible();
@@ -184,26 +186,15 @@ test.describe("first screen", () => {
     expect(state).toEqual({ hero: 0, marquee: 0, clip: "none", marks: 8 });
   });
 
-  test("the marks are revealed in step with the scan line: both measure the whole drawing", async ({ page }) => {
-    await page.goto("/");
-    // The clip on the marks resolves against the marks' own box; it keeps time with the line only
-    // if that box is the whole 600×525 drawing, the line's box.
-    const box = await page.locator(".dc-marks").evaluate((g) => {
-      const b = (g as SVGGraphicsElement).getBBox();
-      return [b.x, b.y, b.width, b.height].map(Math.round);
-    });
-    expect(box).toEqual([0, 0, 600, 525]);
-  });
-
-  test("with motion allowed the scan line and the marquee run (the drawing's line when there is no WebGL)", async ({ page }) => {
+  test("no scan line anywhere: the drawing is still and only the marquee loops", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.addInitScript(noWebGL);
     await page.goto("/");
     await expect(page.locator("[data-field]")).toHaveAttribute("data-field", "off");
-    const names = await page.evaluate(() =>
-      [".dc-line", ".dc-marks", ".marquee-track"].map((sel) => (document.querySelector(sel)!.getAnimations()[0] as CSSAnimation | undefined)?.animationName ?? null),
-    );
-    expect(names).toEqual(["dc-scan", "dc-reveal", "marquee"]);
+    await expect(page.locator(".data-check .dc-line")).toHaveCount(0);
+    expect(await page.locator(".data-check").evaluate((el) => el.getAnimations({ subtree: true }).length)).toBe(0);
+    await expect(page.locator(".dc-marks .dc-tick, .dc-marks .dc-defect")).toHaveCount(8);
+    expect(await page.locator(".marquee-track").evaluate((el) => (el.getAnimations()[0] as CSSAnimation | undefined)?.animationName)).toBe("marquee");
   });
 
   test("the marquee lists the real skills, and is hidden from screen readers", async ({ page }) => {
@@ -1048,7 +1039,7 @@ test.describe("motion", () => {
     expect(await page.locator("[data-reveal]").count()).toBe(0);
     await expect(page.locator("#contact").getByText(site.availability!)).toBeVisible();
     await expect(page.getByText(site.headline)).toBeVisible();
-    await expect(page.locator("section.hero .now-pill")).toContainText(`Now: ${site.availability}`);
+    await expect(page.locator("section.hero [data-clock]")).toHaveText("Fredericton, NB");
     await expect(page.locator("#skills p.type-statement")).toHaveText(site.intro);
     await context.close();
   });
@@ -1125,15 +1116,21 @@ test.describe("golden ratio", () => {
 });
 
 test.describe("3D data field", () => {
-  test("runs with motion allowed, and its frames advance", async ({ page }) => {
+  test("stands still until the pointer or the page moves it, then draws", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/");
     const field = page.locator("[data-field]");
     await expect(field).toHaveAttribute("data-field", "running", { timeout: 15_000 });
     await expect(field).toHaveAttribute("aria-hidden", "true");
-    const first = await frames(page);
-    await page.waitForTimeout(1500);
-    expect(await frames(page)).toBeGreaterThan(first);
+    // Nothing loops: left alone, it draws nothing.
+    await page.waitForTimeout(800);
+    const idle = await frames(page);
+    await page.waitForTimeout(1000);
+    expect(await frames(page)).toBe(idle);
+    // A mouse turns it (a desktop); scrolling tilts it (any screen).
+    if (!isPhone(page)) await page.mouse.move(1300, 200, { steps: 6 });
+    await page.evaluate(() => window.scrollBy({ top: 120, behavior: "instant" }));
+    await expect.poll(() => frames(page)).toBeGreaterThan(idle);
     const ratio = await field.locator("canvas").evaluate((c: HTMLCanvasElement) => c.width / c.clientWidth);
     expect(ratio).toBeLessThanOrEqual(2);
     await expect(page.locator(".data-check")).toBeHidden();

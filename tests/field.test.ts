@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COLS, CYCLE, MARKS, REST, ROWS, SWEEP, barHeight, passed, scanAt } from "@/lib/field";
+import { COLS, MARKS, ROWS, barHeight } from "@/lib/field";
 
 describe("the 3D data field", () => {
   it("a 13 by 21 field of three bar heights", () => {
@@ -19,24 +19,5 @@ describe("the 3D data field", () => {
       expect(m.col).toBeLessThan(COLS);
     }
     expect(new Set(MARKS.map((m) => `${m.row},${m.col}`)).size).toBe(8);
-  });
-
-  it("the scan sweeps in 5.6 s and holds to 7 s", () => {
-    expect([SWEEP, CYCLE]).toEqual([5.6, 7]);
-    expect(scanAt(0)).toBe(0);
-    expect(scanAt(2.8)).toBeCloseTo(0.5, 6);
-    expect(scanAt(5.6)).toBe(1);
-    expect(scanAt(6.5)).toBe(1);
-    expect(scanAt(7)).toBe(0);
-    expect(scanAt(9.8)).toBeCloseTo(0.5, 6);
-  });
-
-  it("rows count as checked once the scan has passed them", () => {
-    expect(passed(0, 0)).toBe(true);
-    expect(passed(20, 0.9)).toBe(false);
-    expect(passed(20, 1)).toBe(true);
-    // At rest the scan waits at the golden section, past every mark.
-    expect(REST).toBe(0.618);
-    for (const m of MARKS) expect(passed(m.row, REST)).toBe(true);
   });
 });

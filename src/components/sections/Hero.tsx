@@ -6,14 +6,13 @@ import { LiveClock } from "./LiveClock";
 import { MotionToggle } from "@/components/motion/MotionToggle";
 
 /**
- * The first screen: who I am and what I do, and no project. A status line (what I'm looking for,
- * and where I am with the time there); the name, set huge in the display face; the headline and
- * the intro; the two main actions; and beside them (under them below 1024px) the data field, a
- * scan checking rows of data, in 3D (DataField) over its drawing (DataCheck), which stays wherever
- * 3D can't run.
+ * The first screen: who I am and what I do, and no project. Where I am with the time there, and
+ * the pause button; the name, set huge in the display face; the headline and the intro; the two
+ * main actions; and beside them (under them below 1024px) the data field, rows of data with their
+ * checks, in 3D (DataField) over its drawing (DataCheck), which stays wherever 3D can't run.
  *
- * Motion (CSS, globals.css "First screen"): the scan line runs and, as you scroll, the words lift
- * away. With reduced motion, everything is simply there.
+ * Motion (CSS, globals.css "Opening"): as you scroll, the words lift away. With reduced motion,
+ * everything is simply there.
  */
 export function Hero() {
   const [first, ...rest] = site.name.split(" ");
@@ -21,12 +20,6 @@ export function Hero() {
     <section id="intro" aria-labelledby="hero-title" className="hero">
       <div className="hero-wrap mx-auto w-full max-w-[1440px] px-gutter">
         <div className="hero-status">
-          {site.availability && (
-            <p className="now-pill type-small">
-              <span data-signal="" className="now-dot" aria-hidden />
-              Now: {site.availability}
-            </p>
-          )}
           <div className="hero-meta">
             <LiveClock city={`${site.location.city}, ${site.location.regionShort}`} />
             <MotionToggle />

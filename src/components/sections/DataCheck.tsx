@@ -1,8 +1,8 @@
 /**
- * The first screen's picture of what I do: rows of data checked one by one. An amber line scans
- * down a grid of bars; the rows it has passed show their marks, seven cells ticked and one defect
- * flagged in red (CSS: .data-check). It holds no numbers or records, so it invents nothing, and
- * it is decoration only (aria-hidden). With reduced motion the line rests and every mark shows.
+ * The first screen's picture of what I do, drawn: a grid of bars (rows of data) with seven cells
+ * ticked and one defect flagged in red (CSS: .data-check). It holds no numbers or records, so it
+ * invents nothing, and it is decoration only (aria-hidden). It doesn't move. It shows wherever the
+ * 3D field (DataField) can't run.
  */
 const W = 600;
 const H = 525;
@@ -33,9 +33,6 @@ export function DataCheck() {
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMin slice" focusable="false">
         <g className="dc-bars">{bars}</g>
         <g className="dc-marks" data-signal="">
-          {/* An empty frame the size of the drawing: the clip that reveals the marks measures this
-              group's box, so the frame makes it the drawing's box, the one the line moves in. */}
-          <rect className="dc-frame" width={W} height={H} fill="none" />
           {TICKS.map(([r, c]) => {
             const { x, y } = cell(r, c);
             return (
@@ -49,10 +46,6 @@ export function DataCheck() {
             <rect x={d.x} y={d.y} width={46} height={BAR_H} rx={4} />
             <path d={`M${d.x + 53} ${d.y + 2}l8 10m0-10l-8 10`} fill="none" strokeWidth={2} strokeLinecap="round" />
           </g>
-        </g>
-        <g className="dc-line" data-signal="">
-          <rect className="dc-glow" x={0} y={-40} width={W} height={40} />
-          <rect x={0} y={-1} width={W} height={2} />
         </g>
       </svg>
     </div>

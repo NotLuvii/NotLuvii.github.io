@@ -6,9 +6,9 @@ import { motionPaused, subscribeMotion } from "@/lib/motion";
 
 /**
  * - drawing: the server's state, and without JavaScript — the SVG data check shows.
- * - running: the 3D field animates.
+ * - running: the 3D field follows the pointer and the scroll, drawing only while it moves.
  * - paused: the field is off screen or the tab is hidden; nothing is drawn.
- * - still: reduced motion, or motion paused on the page — one frame, the scan at rest, every mark lit.
+ * - still: reduced motion, or motion paused on the page — one frame, the camera at rest.
  * - off: no WebGL, or the GPU dropped the context — the SVG shows again.
  */
 export type FieldState = "drawing" | "running" | "paused" | "still" | "off";
@@ -63,7 +63,7 @@ export function DataField({ children }: { children: ReactNode }) {
             setState("off");
           },
           onFrame: (n) => {
-            if (n === 1 || n % 30 === 0) el.dataset.frames = String(n);
+            el.dataset.frames = String(n);
           },
         });
       } catch {

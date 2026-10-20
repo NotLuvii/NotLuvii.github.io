@@ -240,29 +240,17 @@ svg[data-ink] {
   background: radial-gradient(1100px 520px at 61.8% 38.2%, rgb(255 176 0 / 0.1), transparent 60%);
   pointer-events: none;
 }
+/* The clock and the pause button: under the bar on a phone, in the top
+   right corner from 768px. */
 .hero-status {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 21px;
+  justify-content: flex-start;
   margin-bottom: 21px;
 }
-.now-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 13px 5px 13px;
-  border-radius: 999px;
-  background: var(--color-panel);
-  color: var(--color-text-2);
-}
-.now-dot {
-  flex: none;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-amber);
+@media (min-width: 768px) {
+  .hero-status {
+    justify-content: flex-end;
+  }
 }
 .hero-name {
   font-size: clamp(56.61px, 13.1vw, 188.53px);
@@ -327,11 +315,6 @@ svg[data-ink] {
 [data-field="still"] .data-check {
   visibility: hidden;
 }
-[data-field="running"] .data-check *,
-[data-field="paused"] .data-check *,
-[data-field="still"] .data-check * {
-  animation: none !important;
-}
 @media (min-width: 1024px) {
   .hero-visual {
     align-self: stretch;
@@ -356,8 +339,6 @@ svg[data-ink] {
 /* The visitor paused motion on the page (components/motion/MotionToggle.tsx): the loops and the
    turning stop, as with reduced motion. The 3D field goes still in DataField. */
 [data-motion="paused"] .marquee-track,
-[data-motion="paused"] .dc-line,
-[data-motion="paused"] .dc-marks,
 [data-motion="paused"] .section-title,
 [data-motion="paused"] .timeline-body,
 [data-motion="paused"] .hero-copy {
@@ -384,8 +365,7 @@ svg[data-ink] {
 .dc-bars rect {
   fill: #2a2a2a;
 }
-.dc-marks,
-.dc-line {
+.dc-marks {
   color: var(--color-amber);
 }
 .dc-defect rect {
@@ -394,36 +374,11 @@ svg[data-ink] {
 .dc-defect path {
   stroke: var(--color-defect);
 }
-.dc-line rect {
-  fill: currentColor;
-}
-.dc-line .dc-glow {
-  opacity: 0.08;
-}
-/* At rest the line waits two-thirds down and every mark shows. With
-   motion allowed (below), the line sweeps down in 5.6s and holds, and
-   the marks appear as it passes them: the clip on the marks moves with
-   the line, on the same clock. Both measure the whole drawing: the line
-   by its view box, the clip by the marks' frame (DataCheck.tsx). */
-.dc-line {
-  transform-box: view-box;
-  transform: translateY(65%);
-}
-.dc-marks {
-  clip-path: none;
-}
 
 /* ── Opening (components/sections/Hero.tsx) ────────────────────
-   With motion allowed: the data check's line scans and the marquee
-   slides, and as you scroll, the first screen's words lift away.
-   Everything rests finished otherwise. */
+   With motion allowed: the marquee slides, and as you scroll, the
+   first screen's words lift away. Everything rests finished otherwise. */
 @media (prefers-reduced-motion: no-preference) {
-  .dc-line {
-    animation: dc-scan 7s linear infinite;
-  }
-  .dc-marks {
-    animation: dc-reveal 7s linear infinite;
-  }
   .marquee-track {
     animation: marquee 40s linear infinite;
   }
@@ -437,24 +392,6 @@ svg[data-ink] {
   }
 }
 
-@keyframes dc-scan {
-  from {
-    transform: translateY(0);
-  }
-  80%,
-  to {
-    transform: translateY(100%);
-  }
-}
-@keyframes dc-reveal {
-  from {
-    clip-path: inset(0 0 100% 0);
-  }
-  80%,
-  to {
-    clip-path: inset(0 0 0 0);
-  }
-}
 @keyframes marquee {
   to {
     transform: translateX(-50%);

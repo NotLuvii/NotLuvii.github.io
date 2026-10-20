@@ -4,9 +4,9 @@
 
 A static Next.js site: one home page and a case study for each featured project.
 
-- **Home (`/`)**: marked up by hand. A first screen that is only who I am and what I do: a status
-  line with my local time, the name set huge, the headline and intro, and a 3D field of data
-  being checked beside them (three.js); a marquee of the tools I use; the three featured projects
+- **Home (`/`)**: marked up by hand. A first screen that is only who I am and what I do: my local
+  time, the name set huge, the headline and intro, and a 3D field of checked data beside them
+  (three.js); a marquee of the tools I use; the three featured projects
   as a row of cards that scrolls sideways and leans toward the pointer (the scam detection tool,
   Resume Analyzer, Immensa), then a box to try the scam tool's rules on your own text; the rest of
   the projects as a plain list; experience as a drawn timeline that unfolds as you reach it; about
@@ -21,7 +21,7 @@ Everything a visitor reads lives in `src/content/`:
 
 | File | What's in it |
 | --- | --- |
-| `site.ts` | Name, headline, intro, availability (the first screen's status line), contact links, resume path, navigation, and the sections the dots point to |
+| `site.ts` | Name, headline, intro, availability (Contact's lead sentence), contact links, resume path, navigation, and the sections the dots point to |
 | `projects.ts` | Featured projects and their case studies, the "More projects" list, screenshots and their captions, each card's line (`tileLine`) and the ring on Resume Analyzer's score (`ring`) |
 | `experience.ts` | Roles, education, background, skills (also the marquee's list), and `timeline()`, which orders them for Experience |
 
@@ -76,14 +76,14 @@ npm run dev            # http://localhost:3000
 | `npm test` | Vitest: content rules (including no company names in About), link allow-list, screenshot files and sizes, the design rules (fonts, true-black page, colours and contrast, one see-through surface, gradient hues, outline pills, monospace, touch, ink drawn at rest), the ink (same seed, same line), the scam tool's copied rules (the sample scores 94, High; repeated runs agree; thresholds; underline ranges), the timeline's order, the scroll-progress maths, the clock (Fredericton time, ADT and AST), the defect red kept to the data check, the golden ratio (the type steps, Fibonacci spacing, every font size the CSS declares), the 3D field's layout and timing, the card tilt, the grid's projection and glow |
 | `npm run build` | Static export to `out/` |
 | `npm start` | Serves `out/` on http://localhost:3000, the way GitHub Pages does |
-| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: every link, the case-study routes and their images, opening a screenshot full screen and closing it (Escape, close button, click outside) without leaving the page, the resume, the site bar (monogram, section pills that follow the scroll, nothing marked on case studies), the section dots, the phone menu, the skip link, focus outlines, anchors below the sticky header, copying the email (including when the clipboard is refused), no sideways scrolling and no text past the edge of a phone screen, 44px tap targets, heading order, the first screen (status, live clock and city-only without JavaScript, name, headline, intro, buttons, the data check; no project; fits short and narrow screens; still and complete with reduced motion; the reveal in step with the scan line), the marquee, the selected-work carousel (three cards and their links, Previous and Next and their ends, keyboard focus brings a card into view, the ring on the score, nothing of the old story left), trying the scam rules (your own text scored like the tool; empty and odd input; without JavaScript), More projects, Experience as a drawn timeline with its figures ringed, About naming no company, section titles in the display face, the footer name, the type scale, monospace only in code, no dividing lines, amber only on the main action, the ink and the signals, every mark drawn with reduced motion, the see-through bar, press feedback, the menu and viewer transitions, reduced motion and no-JavaScript; the golden ratio (every type size on the scale, Fibonacci spacing at 1440 and 390, the 1.618 : 1 split, line height φ, golden card pictures); the 3D field (running and its frames advancing, still with reduced motion, paused off screen, the drawing without WebGL, after a lost context and without JavaScript, never taking the pointer, three not in the first load); cards that tilt and settle (not on a phone or with reduced motion), titles and timeline that turn in and rest flat, no text fading; the grid (behind and inert, glowing under a mouse and then stopping, still on a phone) |
+| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: every link, the case-study routes and their images, opening a screenshot full screen and closing it (Escape, close button, click outside) without leaving the page, the resume, the site bar (monogram, section pills that follow the scroll, nothing marked on case studies), the section dots, the phone menu, the skip link, focus outlines, anchors below the sticky header, copying the email (including when the clipboard is refused), no sideways scrolling and no text past the edge of a phone screen, 44px tap targets, heading order, the first screen (live clock and city-only without JavaScript, name, headline, intro, buttons, the data field; no status pill and no project; fits short and narrow screens; still and complete with reduced motion; no scan line anywhere, only the marquee loops), the marquee, the selected-work carousel (three cards and their links, Previous and Next and their ends, keyboard focus brings a card into view, the ring on the score, nothing of the old story left), trying the scam rules (your own text scored like the tool; empty and odd input; without JavaScript), More projects, Experience as a drawn timeline with its figures ringed, About naming no company, section titles in the display face, the footer name, the type scale, monospace only in code, no dividing lines, amber only on the main action, the ink and the signals, every mark drawn with reduced motion, the see-through bar, press feedback, the menu and viewer transitions, reduced motion and no-JavaScript; the golden ratio (every type size on the scale, Fibonacci spacing at 1440 and 390, the 1.618 : 1 split, line height φ, golden card pictures); the 3D field (standing still until the pointer or the page moves it, still with reduced motion or paused, paused off screen, the drawing without WebGL, after a lost context and without JavaScript, never taking the pointer, three not in the first load); cards that tilt and settle (not on a phone or with reduced motion), titles and timeline that turn in and rest flat, no text fading; the grid (behind and inert, glowing under a mouse and then stopping, still on a phone) |
 
 `.github/workflows/ci.yml` runs all of it on every push.
 
 ## Design
 
 The first screen, the marquee, the pill navigation, the section dots and the carousel come from
-developer portfolios the owner pointed to (Aaftab's status line, clock, marquee and dots;
+developer portfolios the owner pointed to (Aaftab's clock, marquee and dots;
 Redoyan's huge name and project carousel; Sawad's condensed capitals and pill navigation; the
 scroll-following navigation of the sites in emmabostian/developer-portfolios). The 3D comes from
 four more (Anil Peter's three.js hero and tilting cards, Aditya Seth's grid behind the sections,
@@ -97,11 +97,11 @@ apple.com/ca. The hand-drawn ink stays where it marks real evidence.
   - the first screen splits 1.618 : 1 (words : field), the scam checker 1 : 1.618 (field : result), and the timeline keeps to 61.8% of the width;
   - card pictures and the phone's field band are golden rectangles, cards are 610px wide, and the glow sits on the golden point (61.8% across, 38.2% down).
 - **The 3D data field** (`components/sections/DataField.tsx`, `components/three/fieldScene.ts`,
-  layout and timing in `src/lib/field.ts`):
-  - 13 × 21 bars of three fixed heights, an amber scan plane with a light riding on it, and seven bars lit amber and one red once the scan has passed them (no data, so nothing invented);
-  - it turns toward a mouse and tilts back as the first screen scrolls away, and never takes the pointer;
+  layout in `src/lib/field.ts`):
+  - 13 × 21 bars of three fixed heights, seven lit amber (checked) and one red (the defect); no data, so nothing invented;
+  - nothing loops: it turns toward a mouse and tilts back as the first screen scrolls away, drawing frames only while it moves, and never takes the pointer;
   - three is loaded only after the page has loaded and the browser is idle (133 KB gzipped, never in the first load), drawn at most at 2× pixel ratio (1.5× on phones), and paused off screen or in a hidden tab;
-  - with reduced motion it renders one still frame with every mark lit; without WebGL, without JavaScript, or if the GPU drops the context, the SVG drawing (`DataCheck.tsx`) stays;
+  - with reduced motion, or motion paused, it renders one still frame; without WebGL, without JavaScript, or if the GPU drops the context, the SVG drawing (`DataCheck.tsx`) stays;
   - `data-field` on its wrapper says which: drawing, running, paused, still or off.
 - **3D motion in CSS**:
   - cards (and, gently, the skills tile) lean toward the pointer with a soft white glare (`components/motion/Tilt.tsx`, `src/lib/tilt.ts`), with a mouse only;
@@ -112,14 +112,14 @@ apple.com/ca. The hand-drawn ink stays where it marks real evidence.
   and fade over 1.5 s, and it stops drawing once they have faded. On touch screens and with reduced
   motion it is drawn once and stays still.
 
-- **First screen** (`components/sections/Hero.tsx`): who I am and what I do, and no project. A
-  status pill ("Now: " and `site.availability`) with an amber dot; Fredericton and the time there
+- **First screen** (`components/sections/Hero.tsx`): who I am and what I do, and no project.
+  Fredericton and the time there
   (`LiveClock.tsx`, `src/lib/clock.ts`: America/Moncton, so ADT or AST), added in the browser, so
   without JavaScript only the city shows; the name in the display face; the headline and intro;
   "See the work" and "Download resume". Beside them from 1024px (a band under them below that),
-  the 3D data field (above) over its drawing (`DataCheck.tsx`): an amber line scans down a grid
-  of bars, and the rows it has passed show their marks, seven ticked and one defect in red. It
-  holds no numbers or records, and it is decoration only (`aria-hidden`). A soft amber glow sits
+  the 3D data field (above) over its drawing (`DataCheck.tsx`): a grid of bars with seven cells
+  ticked and one defect in red, standing still. It holds no numbers or records, and it is
+  decoration only (`aria-hidden`). A soft amber glow sits
   behind it. As you scroll, the words lift away.
 - **Marquee** (`Marquee.tsx`): the skills from `experience.ts`, in the display face, sliding left
   with amber dots between them. Hidden from screen readers (About lists the same skills).
@@ -152,8 +152,8 @@ apple.com/ca. The hand-drawn ink stays where it marks real evidence.
   the browser has them). To change a mark's shape, change its seed.
 - **Colour**: a true-black page (`#000`), panel tiles (`#161617`), a slightly lighter `#1d1d1f`
   for frames and code; `#f5f5f7` text with two quieter greys; and one accent, signal amber
-  (`#ffb000`): the main action, the ink, the signals (`[data-signal]`: the status dot, the active
-  section dot, the scan line and its ticks, the marquee's dots) and keyboard focus. One red,
+  (`#ffb000`): the main action, the ink, the signals (`[data-signal]`: the active section dot, the
+  data field's ticks, the marquee's dots) and keyboard focus. One red,
   `--color-defect`, for the data check's flagged bar only. Contrast ratios are listed at the top of
   `src/app/globals.css`; all text meets WCAG AA and the tests recheck them.
 - **Type**: IBM Plex Sans (variable weight and width), self-hosted (licence in

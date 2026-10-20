@@ -57,7 +57,7 @@ export function Experience() {
                 <p aria-hidden data-ink className="timeline-year">
                   {entry.showYear ? entry.year : ""}
                 </p>
-                <div className="min-w-0 max-w-[68ch]">
+                <div className="timeline-body min-w-0 max-w-[68ch]">
                   <Entry entry={entry} />
                 </div>
               </li>

@@ -100,11 +100,15 @@ describe("colour", () => {
     expect(readFileSync(join(SRC, "components/layout/SiteHeader.tsx"), "utf8")).toContain("site-bar");
   });
 
-  it("keeps gradients to the first screen's amber glow: never blue or purple", () => {
+  it("gradients: the hero's amber glow and the cards' white glare, never blue or purple", () => {
     const gradients = sources.flatMap(({ path, text }) =>
       [...text.matchAll(/(?:linear|radial|conic)-gradient\(([^;]*?)\)\s*;|bg-gradient-to-\w+|bg-linear-\w+|bg-radial/g)].map((m) => ({ path, body: m[0] })),
     );
-    expect(gradients.length).toBeLessThanOrEqual(1);
+    expect(gradients.length).toBeLessThanOrEqual(2);
+    // One is the amber glow; any other is the glare, white only.
+    const glare = gradients.filter(({ body }) => !body.includes("255 176 0"));
+    expect(glare.length).toBeLessThanOrEqual(1);
+    for (const { body } of glare) expect(body).toMatch(/rgb\(255 255 255 \/ [\d.]+\)/);
     for (const { path, body } of gradients) {
       const colours = [...body.matchAll(/rgba?\((\d+)\s*,?\s*(\d+)\s*,?\s*(\d+)/g)].map(
         (m) => "#" + [m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, "0")).join(""),

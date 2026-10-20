@@ -3,6 +3,7 @@ import { featured, projectHref, type FeaturedProject } from "@/content/projects"
 import { MoreProjects } from "@/components/sections/MoreProjects";
 import { TryScamRules } from "@/components/sections/TryScamRules";
 import { WorkCarousel } from "@/components/sections/WorkCarousel";
+import { Tilt } from "@/components/motion/Tilt";
 import { checkSms } from "@/lib/scam-sms";
 import { CodeBlock } from "@/components/ui/CodeBlock";
 import { ButtonLink } from "@/components/ui/links";
@@ -100,7 +101,9 @@ export function Projects() {
       >
         {featured.map((p) => (
           <li key={p.slug}>
-            <WorkCard p={p} />
+            <Tilt className="h-full rounded-xl">
+              <WorkCard p={p} />
+            </Tilt>
           </li>
         ))}
       </WorkCarousel>

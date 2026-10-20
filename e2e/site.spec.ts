@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { featured, more, projectHref } from "../src/content/projects";
 import { alsoUsed, background, roles, skills } from "../src/content/experience";
 import { site } from "../src/content/site";
@@ -89,7 +89,7 @@ test.describe("home page", () => {
     const carousel = page.locator("#projects ul.carousel");
     await expect(carousel.locator("> li")).toHaveCount(3);
     expect(await carousel.evaluate((el) => getComputedStyle(el).scrollSnapType)).toContain("x");
-    const articles = carousel.locator("> li > article");
+    const articles = carousel.locator("> li article");
     // All three cards share one set of buttons.
     const caseStudyClasses = await articles.evaluateAll((as) =>
       as.map((a) => [...a.querySelectorAll("a")].find((l) => l.textContent?.startsWith("Read the case study"))?.className),
@@ -1196,5 +1196,116 @@ test.describe("3D data field", () => {
     const initial = srcs.filter((src) => html.includes(new URL(src).pathname));
     expect(initial.length).toBeGreaterThan(0);
     for (const src of initial) expect(await (await request.get(src)).text(), src).not.toContain("isWebGLRenderer");
+  });
+});
+
+/** The rotation an element's computed transform applies about x and y, in whole degrees (0 for none). */
+const rotation = (el: Locator) =>
+  el.evaluate((node) => {
+    const t = getComputedStyle(node).transform;
+    if (!t || t === "none") return { x: 0, y: 0 };
+    const m = new DOMMatrix(t);
+    // Perspective folds into the matrix's last column; the rotation lives in the upper 3×3.
+    return { x: Math.round((Math.atan2(m.m23, m.m33) * 180) / Math.PI) + 0, y: Math.round((Math.asin(Math.max(-1, Math.min(1, -m.m13))) * 180) / Math.PI) + 0 };
+  });
+
+test.describe("3D motion", () => {
+  test("cards lean toward the pointer and settle back", async ({ page }) => {
+    test.skip(isPhone(page), "a mouse is needed");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    const tilt = page.locator("#projects .tilt").first();
+    await tilt.scrollIntoViewIfNeeded();
+    const box = (await tilt.boundingBox())!;
+    await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
+    await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.2, { steps: 4 });
+    await page.waitForTimeout(400);
+    const leaning = await rotation(tilt);
+    expect(leaning.y).toBeGreaterThan(0);
+    expect(leaning.x).toBeGreaterThan(0);
+    await expect(tilt).toHaveAttribute("data-tilting", "");
+    await page.mouse.move(5, 5);
+    await page.waitForTimeout(900);
+    expect(await rotation(tilt)).toEqual({ x: 0, y: 0 });
+  });
+
+  test("the skills tile tilts too", async ({ page }) => {
+    test.skip(isPhone(page), "a mouse is needed");
+    await page.goto("/");
+    await expect(page.locator("#skills .tilt")).toHaveCount(1);
+  });
+
+  test("cards don't tilt on a phone or with reduced motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: isPhone(page) ? "no-preference" : "reduce" });
+    await page.goto("/");
+    const tilt = page.locator("#projects .tilt").first();
+    await tilt.scrollIntoViewIfNeeded();
+    const box = (await tilt.boundingBox())!;
+    await page.mouse.move(box.x + box.width * 0.85, box.y + box.height * 0.15, { steps: 4 });
+    await page.waitForTimeout(400);
+    expect(await rotation(tilt)).toEqual({ x: 0, y: 0 });
+  });
+
+  test("titles swing up as they enter and rest flat", async ({ page }) => {
+    test.skip(isPhone(page), "measured on the desktop layout");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    const title = page.locator("#experience h2");
+    // Placed by its container's top (the title's own box is foreshortened while it turns).
+    const at = (fraction: number) =>
+      title.evaluate((el, f) => window.scrollTo({ top: el.parentElement!.getBoundingClientRect().top + scrollY - innerHeight * f, behavior: "instant" }), fraction);
+    await at(0.97);
+    await page.waitForTimeout(150);
+    expect((await rotation(title)).x).toBeGreaterThan(10);
+    await at(0.4);
+    await page.waitForTimeout(150);
+    expect(await rotation(title)).toEqual({ x: 0, y: 0 });
+  });
+
+  test("timeline entries unfold from the spine", async ({ page }) => {
+    test.skip(isPhone(page), "measured on the desktop layout");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    const body = page.locator(".timeline-body").nth(1);
+    expect(await body.evaluate((el) => getComputedStyle(el).transformOrigin.split(" ")[0])).toBe("0px");
+    const at = (fraction: number) =>
+      body.evaluate((el, f) => window.scrollTo({ top: el.getBoundingClientRect().top + scrollY - innerHeight * f, behavior: "instant" }), fraction);
+    await at(0.97);
+    await page.waitForTimeout(150);
+    expect(Math.abs((await rotation(body)).y)).toBeGreaterThan(10);
+    await at(0.3);
+    await page.waitForTimeout(150);
+    expect(await rotation(body)).toEqual({ x: 0, y: 0 });
+  });
+
+  test("with reduced motion titles and timeline are flat", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await page.evaluate(() => window.scrollTo({ top: document.getElementById("experience")!.offsetTop, behavior: "instant" }));
+    const transforms = await page.locator(".section-title, .timeline-body").evaluateAll((els) => els.map((el) => getComputedStyle(el).transform));
+    expect(transforms.length).toBeGreaterThan(5);
+    for (const t of transforms) expect(t).toBe("none");
+  });
+
+  test("no text fades", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    for (const id of ["projects", "experience", "skills", "contact"]) {
+      await page.evaluate((id) => {
+        const el = document.getElementById(id)!;
+        window.scrollTo({ top: el.getBoundingClientRect().top + scrollY - innerHeight * 0.85, behavior: "instant" });
+      }, id);
+      await page.waitForTimeout(150);
+      const faded = await page.evaluate(() =>
+        [...document.querySelectorAll("main h2, main h3, main p, main li")]
+          .filter((el) => !el.closest(".hero, .dot-label, .sr-only") && el.getBoundingClientRect().width > 0)
+          .filter((el) => {
+            for (let n: Element | null = el; n; n = n.parentElement) if (parseFloat(getComputedStyle(n).opacity) < 1) return true;
+            return false;
+          })
+          .map((el) => el.textContent!.trim().slice(0, 30)),
+      );
+      expect(faded, id).toEqual([]);
+    }
   });
 });

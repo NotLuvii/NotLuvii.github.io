@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { featured, more, projectHref, type Screenshot } from "@/content/projects";
 import { alsoUsed, background, education, roles, skills, timeline } from "@/content/experience";
-import { nav, sections, site } from "@/content/site";
+import { nav, site } from "@/content/site";
 import { emphasize } from "@/lib/emphasize";
 
 const PUBLIC = join(process.cwd(), "public");
@@ -244,10 +244,6 @@ describe("site", () => {
   it("navigates to the four sections, in page order", () => {
     expect(nav.map((n) => n.id)).toEqual(["projects", "experience", "skills", "contact"]);
     for (const n of nav) expect(n.href).toBe(`/#${n.id}`);
-  });
-
-  it("lists the sections the dots point to, in page order", () => {
-    expect(sections.map((s) => s.id)).toEqual(["intro", "projects", "experience", "skills", "contact"]);
   });
 
   it("links to the right LinkedIn profile", () => {

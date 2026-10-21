@@ -111,7 +111,7 @@
 /* ── Type ─────────────────────────────────────────────────────
    At most eight sizes on the home page at desktop width: the display
    face for the name (187) and the section titles (115); 56 (the
-   checker's score), 35 (statements, the marquee, the timeline's
+   checker's score), 35 (statements, the timeline's
    years), 28 (titles), 21 (lede), 17 (body), 14 (small print). Case
    studies add 63 for their headlines. Most reading happens at 17–21px
    in IBM Plex Sans; Plex Mono is for code only, and Gochi Hand for
@@ -218,7 +218,6 @@ svg[data-ink] {
 .hero {
   position: relative;
   isolation: isolate;
-  /* Opaque, so the grid behind the sections (.grid-backdrop) starts below it. */
   background: var(--color-page);
   display: flex;
   flex-direction: column;
@@ -288,59 +287,8 @@ svg[data-ink] {
   height: 100%;
 }
 
-/* The 3D data field (components/sections/DataField.tsx) over the drawing:
-   the canvas fills the field's box; from 1024px the box is the whole
-   height of its column, with the drawing centred in it. The drawing is
-   hidden, and its animation stopped, while the 3D runs. Neither takes
-   the pointer. */
-.data-field {
-  position: relative;
-  pointer-events: none;
-}
-.field-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  opacity: 0;
-}
-[data-field="running"] .field-canvas,
-[data-field="paused"] .field-canvas,
-[data-field="still"] .field-canvas {
-  opacity: 1;
-}
-[data-field="running"] .data-check,
-[data-field="paused"] .data-check,
-[data-field="still"] .data-check {
-  visibility: hidden;
-}
-@media (min-width: 1024px) {
-  .hero-visual {
-    align-self: stretch;
-  }
-  .data-field {
-    display: flex;
-    align-items: center;
-    height: 100%;
-  }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .field-canvas {
-    transition: opacity 0.6s var(--ease-out-soft);
-  }
-  /* The drawing stays until the canvas has faded in over it. */
-  [data-field="running"] .data-check,
-  [data-field="paused"] .data-check {
-    transition: visibility 0s linear 0.6s;
-  }
-}
-
-/* The visitor paused motion on the page (components/motion/MotionToggle.tsx): the loops and the
-   turning stop, as with reduced motion. The 3D field goes still in DataField. */
-[data-motion="paused"] .marquee-track,
-[data-motion="paused"] .section-title,
-[data-motion="paused"] .timeline-body,
+/* The visitor paused motion on the page (components/motion/MotionToggle.tsx): what moves stops,
+   as with reduced motion. */
 [data-motion="paused"] .hero-copy {
   animation: none;
 }
@@ -376,13 +324,9 @@ svg[data-ink] {
 }
 
 /* ── Opening (components/sections/Hero.tsx) ────────────────────
-   With motion allowed: the marquee slides, and as you scroll, the
-   first screen's words lift away. Everything rests finished otherwise. */
+   With motion allowed, as you scroll, the first screen's words lift
+   away. Everything rests finished otherwise. */
 @media (prefers-reduced-motion: no-preference) {
-  .marquee-track {
-    animation: marquee 40s linear infinite;
-  }
-  /* As you scroll: the first screen's words lift away. */
   @supports (animation-timeline: scroll()) {
     .hero-copy {
       animation: hero-copy-lift linear both;
@@ -392,11 +336,6 @@ svg[data-ink] {
   }
 }
 
-@keyframes marquee {
-  to {
-    transform: translateX(-50%);
-  }
-}
 @keyframes hero-copy-lift {
   to {
     transform: translateY(-40px);
@@ -481,109 +420,6 @@ svg[data-ink] {
   color: var(--color-text);
 }
 
-/* ── Section dots (components/layout/SectionDots.tsx) ──────────
-   Down the right edge of the home page, from 1280px: a dot per
-   section, the one in view amber with its name beside it. Each link
-   is a 24px target. */
-.section-dots {
-  display: none;
-}
-@media (min-width: 1280px) {
-  .section-dots {
-    display: block;
-    position: fixed;
-    right: 20px;
-    top: 50%;
-    z-index: 30;
-    transform: translateY(-50%);
-  }
-}
-.section-dots ul {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 5px;
-}
-.dot-link {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  min-height: 24px;
-  min-width: 24px;
-}
-.dot-mark {
-  width: 7px;
-  height: 7px;
-  margin-right: 8px;
-  border-radius: 50%;
-  background: #3a3a3c;
-  outline: 2px solid rgb(0 0 0 / 0.6);
-  transition:
-    background-color 0.2s var(--ease-out-soft),
-    scale 0.2s var(--ease-out-soft);
-}
-.dot-link:hover .dot-mark {
-  background: var(--color-text-3);
-}
-.dot-mark[data-signal] {
-  background: var(--color-amber);
-  scale: 1.3;
-}
-/* The label sits on its own dark ground, so it stays readable where the
-   cards run under the dots. */
-.dot-label {
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgb(0 0 0 / 0.8);
-  font-size: 13.36px;
-  color: var(--color-text);
-  opacity: 0;
-  transition: opacity 0.2s var(--ease-out-soft);
-}
-.dot-link[aria-current="true"] .dot-label,
-.dot-link:hover .dot-label,
-.dot-link:focus-visible .dot-label {
-  opacity: 1;
-}
-
-/* ── Marquee (components/sections/Marquee.tsx) ─────────────────
-   The tools I use in the display face, sliding left under the first
-   screen, with amber dots between them. Dim, at the statement size.
-   Still with reduced motion. */
-.marquee {
-  overflow: hidden;
-  padding-block: 21px;
-  background: var(--color-page);
-}
-.marquee-track {
-  display: flex;
-  width: max-content;
-  align-items: center;
-  gap: 13px;
-  padding-right: 13px;
-  font-size: clamp(27.51px, 2.43vw, 34.99px);
-  line-height: 1;
-  white-space: nowrap;
-  color: #5e5e62;
-}
-.marquee-track i {
-  font-style: normal;
-  color: var(--color-amber);
-}
-
-/* The footer closes on the name in the display face, across the whole
-   screen (inside the gutters) on one line: "LUVNEET BAMRAH" is 7.9 times
-   its font size wide, so 12.5% of the width fills about 99% of it. */
-.footer-inner {
-  container-type: inline-size;
-}
-.footer-name {
-  width: fit-content;
-  font-size: 12.5cqw;
-  white-space: nowrap;
-}
-
 /* ── Tiles (home page) ──────────────────────────────────────────
    As on apple.com: About and Contact sit on tiles in the panel tone
    on black, 12px apart, two across from 834px. A tile clips what
@@ -607,81 +443,6 @@ svg[data-ink] {
 }
 .tile-wide {
   grid-column: 1 / -1;
-}
-/* ── 3D motion ──────────────────────────────────────────────────
-   Cards lean toward the pointer (components/motion/Tilt.tsx writes
-   --rx and --ry in degrees, --gx and --gy in percent) with a soft white
-   glare where it is; they settle back in 0.6s. Titles swing up and the
-   timeline's entries unfold from the spine as they scroll in, on view
-   timelines that finish while they are still entering. Text moves but
-   never fades. All of it rests flat: without a mouse, with reduced
-   motion, or where view timelines don't exist. */
-.tilt {
-  position: relative;
-  transform: perspective(1000px) rotateX(calc(var(--rx, 0) * 1deg)) rotateY(calc(var(--ry, 0) * 1deg));
-  transform-style: preserve-3d;
-  transition: transform 0.6s var(--ease-out-soft);
-}
-.tilt[data-tilting] {
-  transition-duration: 0.1s;
-}
-.tilt::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(circle at calc(var(--gx, 50) * 1%) calc(var(--gy, 50) * 1%), rgb(255 255 255 / 0.12), transparent 55%);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s var(--ease-out-soft);
-}
-.tilt[data-tilting]::after {
-  opacity: 1;
-}
-.timeline-body {
-  transform-origin: 0 50%;
-}
-@media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    .section-title {
-      transform-origin: 50% 100%;
-      animation: title-in linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 100%;
-    }
-    .timeline-body {
-      animation: fold-in linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 100%;
-    }
-  }
-}
-@keyframes title-in {
-  from {
-    transform: perspective(900px) rotateX(72deg);
-  }
-  to {
-    transform: none;
-  }
-}
-@keyframes fold-in {
-  from {
-    transform: perspective(1200px) rotateY(-64deg);
-  }
-  to {
-    transform: none;
-  }
-}
-
-/* The 3D grid behind the sections (components/motion/GridBackdrop.tsx):
-   fixed to the screen, under everything, never in the way. */
-.grid-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
 }
 
 /* ── Selected work (components/sections/Projects.tsx, WorkCarousel.tsx)
@@ -880,11 +641,16 @@ svg[data-ink] {
    with reduced motion, or before the engine starts, everything is
    simply in place. */
 
-/* Frames (screenshots and code) tilt flat and brighten as they arrive. */
+/* Frames (screenshots and code) tilt flat and brighten as they arrive.
+   With reduced motion or motion paused they simply sit flat. */
 .frame {
-  transform: perspective(1400px) rotateX(calc((1 - var(--p, 1)) * 16deg)) translateY(calc((1 - var(--p, 1)) * 48px));
   transform-origin: 50% 100%;
-  opacity: calc(0.55 + var(--p, 1) * 0.45);
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion="paused"]) .frame {
+    transform: perspective(1400px) rotateX(calc((1 - var(--p, 1)) * 16deg)) translateY(calc((1 - var(--p, 1)) * 48px));
+    opacity: calc(0.55 + var(--p, 1) * 0.45);
+  }
 }
 
 /* ── Screenshot viewer ─────────────────────────────────────────

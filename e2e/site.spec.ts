@@ -1,6 +1,6 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { featured, more, projectHref } from "../src/content/projects";
-import { alsoUsed, background, roles, skills } from "../src/content/experience";
+import { background, roles } from "../src/content/experience";
 import { site } from "../src/content/site";
 import { checkSms } from "../src/lib/scam-sms";
 import { isFib, onScale, PHI } from "../src/lib/golden";
@@ -18,19 +18,6 @@ const EXTERNAL = [
 ];
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 0) < 768;
-
-/** An init script that makes the browser report no WebGL, as an old or blocked GPU does. */
-const noWebGL = () => {
-  const original = HTMLCanvasElement.prototype.getContext as (this: HTMLCanvasElement, kind: string, ...rest: unknown[]) => RenderingContext | null;
-  // @ts-expect-error -- the overloads are narrowed; the test only needs the WebGL kinds to fail.
-  HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, kind: string, ...rest: unknown[]) {
-    if (/webgl/.test(kind)) return null;
-    return original.call(this, kind, ...rest);
-  };
-};
-
-/** The data field's frame count, as the page reports it. */
-const frames = (page: Page) => page.locator("[data-field]").evaluate((el) => Number(el.getAttribute("data-frames") ?? 0));
 
 /**
  * Scroll through the page, and each sideways row of cards to its end and back, then wait for lazy
@@ -179,33 +166,18 @@ test.describe("first screen", () => {
     await page.goto("/");
     const state = await page.evaluate(() => ({
       hero: document.querySelector(".hero")!.getAnimations({ subtree: true }).length,
-      marquee: document.querySelector(".marquee")!.getAnimations({ subtree: true }).length,
       clip: getComputedStyle(document.querySelector(".dc-marks")!).clipPath,
       marks: document.querySelectorAll(".dc-marks .dc-tick, .dc-marks .dc-defect").length,
     }));
-    expect(state).toEqual({ hero: 0, marquee: 0, clip: "none", marks: 8 });
+    expect(state).toEqual({ hero: 0, clip: "none", marks: 8 });
   });
 
-  test("no scan line anywhere: the drawing is still and only the marquee loops", async ({ page }) => {
+  test("no scan line anywhere", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
-    await page.addInitScript(noWebGL);
     await page.goto("/");
-    await expect(page.locator("[data-field]")).toHaveAttribute("data-field", "off");
-    await expect(page.locator(".data-check .dc-line")).toHaveCount(0);
-    expect(await page.locator(".data-check").evaluate((el) => el.getAnimations({ subtree: true }).length)).toBe(0);
-    await expect(page.locator(".dc-marks .dc-tick, .dc-marks .dc-defect")).toHaveCount(8);
-    expect(await page.locator(".marquee-track").evaluate((el) => (el.getAnimations()[0] as CSSAnimation | undefined)?.animationName)).toBe("marquee");
+    await expect(page.locator(".dc-line, .rc-scan")).toHaveCount(0);
   });
 
-  test("the marquee lists the real skills, and is hidden from screen readers", async ({ page }) => {
-    await page.goto("/");
-    const marquee = page.locator(".marquee");
-    await expect(marquee).toHaveAttribute("aria-hidden", "true");
-    const items = await marquee.locator(".marquee-track > span").allTextContents();
-    const expected = [...skills.flatMap((g) => g.items), ...alsoUsed];
-    expect(items).toEqual([...expected, ...expected]);
-    expect(await marquee.evaluate((el) => getComputedStyle(el).overflow)).toBe("hidden");
-  });
 });
 
 /** Visible text in main, as { size, family, words, inCode } per text node. */
@@ -720,30 +692,6 @@ test.describe("navigation", () => {
     await expect(page.locator("header [aria-current]")).toHaveCount(0);
   });
 
-  test("section dots show on a wide screen and hide on a phone", async ({ page }) => {
-    await page.goto("/");
-    const dots = page.locator("nav[aria-label=Sections]");
-    if (isPhone(page)) {
-      await expect(dots).toBeHidden();
-      return;
-    }
-    await expect(dots.locator("a")).toHaveCount(5);
-    await expect(dots).toBeVisible();
-    await page.locator("#contact").scrollIntoViewIfNeeded();
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    await expect(dots.getByRole("link", { name: "Contact" })).toHaveAttribute("aria-current", "true");
-  });
-
-  test("the section dots stay readable over the cards: the label sits on its own dark ground", async ({ page }) => {
-    test.skip(isPhone(page), "dots show from 1280px");
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/");
-    await page.locator("#projects").evaluate((el) => window.scrollTo({ top: el.getBoundingClientRect().top + scrollY + 300, behavior: "instant" }));
-    const label = page.locator('.dot-link[aria-current="true"] .dot-label');
-    await expect(label).toBeVisible();
-    expect(await label.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
-  });
-
   test("the footer closes with the name at full width", async ({ page }) => {
     await page.goto("/");
     const name = page.locator("footer .footer-name");
@@ -1115,242 +1063,44 @@ test.describe("golden ratio", () => {
   });
 });
 
-test.describe("3D data field", () => {
-  test("stands still until the pointer or the page moves it, then draws", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "no-preference" });
+test.describe("motion control, and nothing decorative", () => {
+  test("the decorative layer is gone", async ({ page, request }) => {
     await page.goto("/");
-    const field = page.locator("[data-field]");
-    await expect(field).toHaveAttribute("data-field", "running", { timeout: 15_000 });
-    await expect(field).toHaveAttribute("aria-hidden", "true");
-    // Nothing loops: left alone, it draws nothing.
-    await page.waitForTimeout(800);
-    const idle = await frames(page);
-    await page.waitForTimeout(1000);
-    expect(await frames(page)).toBe(idle);
-    // A mouse turns it (a desktop); scrolling tilts it (any screen).
-    if (!isPhone(page)) await page.mouse.move(1300, 200, { steps: 6 });
-    await page.evaluate(() => window.scrollBy({ top: 120, behavior: "instant" }));
-    await expect.poll(() => frames(page)).toBeGreaterThan(idle);
-    const ratio = await field.locator("canvas").evaluate((c: HTMLCanvasElement) => c.width / c.clientWidth);
-    expect(ratio).toBeLessThanOrEqual(2);
-    await expect(page.locator(".data-check")).toBeHidden();
-  });
-
-  test("with reduced motion it renders one still frame", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/");
-    const field = page.locator("[data-field]");
-    await expect(field).toHaveAttribute("data-field", "still", { timeout: 15_000 });
-    const first = await frames(page);
-    await page.waitForTimeout(1000);
-    expect(await frames(page)).toBe(first);
-    await expect(field.locator("canvas")).toBeVisible();
-    await expect(page.locator(".data-check")).toBeHidden();
-  });
-
-  test("follows a change to reduced motion while the page is open", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "no-preference" });
-    await page.goto("/");
-    const field = page.locator("[data-field]");
-    await expect(field).toHaveAttribute("data-field", "running", { timeout: 15_000 });
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await expect(field).toHaveAttribute("data-field", "still");
-    const first = await frames(page);
-    await page.waitForTimeout(1000);
-    expect(await frames(page)).toBe(first);
-    await page.emulateMedia({ reducedMotion: "no-preference" });
-    await expect(field).toHaveAttribute("data-field", "running");
-  });
-
-  test("a Pause motion button stops the looping motion, and the page remembers it", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "no-preference" });
-    await page.goto("/");
-    const field = page.locator("[data-field]");
-    await expect(field).toHaveAttribute("data-field", "running", { timeout: 15_000 });
-    const toggle = page.getByRole("button", { name: "Pause motion" });
-    await expect(toggle).toHaveAttribute("aria-pressed", "false");
-    await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-pressed", "true");
-    await expect(field).toHaveAttribute("data-field", "still");
-    expect(await page.locator(".marquee-track").evaluate((el) => el.getAnimations().length)).toBe(0);
-    await page.reload();
-    await expect(page.getByRole("button", { name: "Pause motion" })).toHaveAttribute("aria-pressed", "true");
-    await expect(field).toHaveAttribute("data-field", "still", { timeout: 15_000 });
-    await page.getByRole("button", { name: "Pause motion" }).click();
-    await expect(field).toHaveAttribute("data-field", "running");
-    expect(await page.locator(".marquee-track").evaluate((el) => el.getAnimations().length)).toBeGreaterThan(0);
-  });
-
-  test("the drawing stays visible while the 3D fades in over it", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "no-preference" });
-    await page.addInitScript(() => {
-      const w = window as unknown as { atFlip?: string };
-      new MutationObserver((records, observer) => {
-        for (const r of records) {
-          const el = r.target as HTMLElement;
-          if (el.getAttribute?.("data-field") === "running") {
-            requestAnimationFrame(() => (w.atFlip = getComputedStyle(el.querySelector(".data-check")!).visibility));
-            observer.disconnect();
-          }
-        }
-      }).observe(document, { attributes: true, subtree: true, attributeFilter: ["data-field"] });
-    });
-    await page.goto("/");
-    await expect(page.locator("[data-field]")).toHaveAttribute("data-field", "running", { timeout: 15_000 });
-    await expect.poll(() => page.evaluate(() => (window as unknown as { atFlip?: string }).atFlip)).toBe("visible");
-    await expect(page.locator(".data-check")).toBeHidden({ timeout: 3000 });
-  });
-
-  test("pauses off screen and runs again on return", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "no-preference" });
-    await page.goto("/");
-    const field = page.locator("[data-field]");
-    await expect(field).toHaveAttribute("data-field", "running", { timeout: 15_000 });
-    await page.evaluate(() => document.getElementById("contact")!.scrollIntoView({ behavior: "instant" }));
-    await expect(field).toHaveAttribute("data-field", "paused");
-    const parked = await frames(page);
-    await page.waitForTimeout(1000);
-    expect(await frames(page)).toBeLessThanOrEqual(parked + 30);
-    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
-    await expect(field).toHaveAttribute("data-field", "running");
-  });
-
-  test("without WebGL the drawing stays", async ({ page }) => {
-    await page.addInitScript(noWebGL);
-    await page.goto("/");
-    await expect(page.locator("[data-field]")).toHaveAttribute("data-field", "off", { timeout: 15_000 });
-    await expect(page.locator(".data-check")).toBeVisible();
-    await expect(page.locator("[data-field] canvas")).toHaveCount(0);
-  });
-
-  test("a lost WebGL context brings the drawing back", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "no-preference" });
-    await page.goto("/");
-    const field = page.locator("[data-field]");
-    await expect(field).toHaveAttribute("data-field", "running", { timeout: 15_000 });
-    await field.locator("canvas").evaluate((c: HTMLCanvasElement) => {
-      const gl = (c.getContext("webgl2") ?? c.getContext("webgl")) as WebGLRenderingContext;
-      gl.getExtension("WEBGL_lose_context")!.loseContext();
-    });
-    await expect(field).toHaveAttribute("data-field", "off");
-    await expect(page.locator(".data-check")).toBeVisible();
-  });
-
-  test("without JavaScript it is the drawing", async ({ browser }) => {
-    const context = await browser.newContext({ javaScriptEnabled: false });
-    const page = await context.newPage();
-    await page.goto("/");
-    await expect(page.locator("[data-field]")).toHaveAttribute("data-field", "drawing");
-    await expect(page.locator(".data-check")).toBeVisible();
-    await context.close();
-  });
-
-  test("the field never takes the pointer", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.locator("[data-field]")).toHaveAttribute("data-field", /running|still/, { timeout: 15_000 });
-    expect(await page.locator("[data-field] canvas").evaluate((c) => getComputedStyle(c).pointerEvents)).toBe("none");
-    expect(await page.locator("[data-field]").evaluate((c) => getComputedStyle(c).pointerEvents)).toBe("none");
-    await page.getByRole("link", { name: "See the work" }).click();
-    await expect(page).toHaveURL(/#projects$/);
-  });
-
-  test("three is not in the first-load scripts", async ({ page, request }) => {
-    await page.goto("/");
+    for (const sel of ["canvas", ".marquee", ".section-dots", ".tilt", ".grid-backdrop", "[data-field]"]) await expect(page.locator(sel), sel).toHaveCount(0);
     const srcs = await page.evaluate(() => [...document.querySelectorAll<HTMLScriptElement>("script[src]")].map((s) => s.src));
-    const html = await (await request.get("/")).text();
-    const initial = srcs.filter((src) => html.includes(new URL(src).pathname));
-    expect(initial.length).toBeGreaterThan(0);
-    for (const src of initial) expect(await (await request.get(src)).text(), src).not.toContain("isWebGLRenderer");
-  });
-});
-
-/** The rotation an element's computed transform applies about x and y, in whole degrees (0 for none). */
-const rotation = (el: Locator) =>
-  el.evaluate((node) => {
-    const t = getComputedStyle(node).transform;
-    if (!t || t === "none") return { x: 0, y: 0 };
-    const m = new DOMMatrix(t);
-    // Perspective folds into the matrix's last column; the rotation lives in the upper 3×3.
-    return { x: Math.round((Math.atan2(m.m23, m.m33) * 180) / Math.PI) + 0, y: Math.round((Math.asin(Math.max(-1, Math.min(1, -m.m13))) * 180) / Math.PI) + 0 };
+    for (const src of srcs) expect(await (await request.get(src)).text(), src).not.toContain("isWebGLRenderer");
   });
 
-test.describe("3D motion", () => {
-  test("cards lean toward the pointer and settle back", async ({ page }) => {
-    test.skip(isPhone(page), "a mouse is needed");
+  test("the motion control says what it will do, and the choice holds", async ({ page }) => {
+    await page.goto("/");
+    const toggle = page.locator("button.motion-toggle");
+    await expect(toggle).toHaveText("Pause motion");
+    await expect(toggle).not.toHaveAttribute("aria-pressed", /.*/);
+    await toggle.click();
+    await expect(toggle).toHaveText("Resume motion");
+    await expect(page.locator("html")).toHaveAttribute("data-motion", "paused");
+    await page.reload();
+    await expect(page.locator("button.motion-toggle")).toHaveText("Resume motion");
+    await page.locator("button.motion-toggle").click();
+    await expect(page.locator("button.motion-toggle")).toHaveText("Pause motion");
+    await expect(page.locator("html")).not.toHaveAttribute("data-motion", /.*/);
+  });
+
+  test("the motion choice holds on a case study", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/");
-    const tilt = page.locator("#projects .tilt").first();
-    await tilt.scrollIntoViewIfNeeded();
-    const box = (await tilt.boundingBox())!;
-    await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
-    await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.2, { steps: 4 });
-    await page.waitForTimeout(400);
-    const leaning = await rotation(tilt);
-    expect(leaning.y).toBeGreaterThan(0);
-    expect(leaning.x).toBeGreaterThan(0);
-    await expect(tilt).toHaveAttribute("data-tilting", "");
-    await page.mouse.move(5, 5);
-    await page.waitForTimeout(900);
-    expect(await rotation(tilt)).toEqual({ x: 0, y: 0 });
-  });
-
-  test("the skills tile tilts too", async ({ page }) => {
-    test.skip(isPhone(page), "a mouse is needed");
-    await page.goto("/");
-    await expect(page.locator("#skills .tilt")).toHaveCount(1);
-  });
-
-  test("cards don't tilt on a phone or with reduced motion", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: isPhone(page) ? "no-preference" : "reduce" });
-    await page.goto("/");
-    const tilt = page.locator("#projects .tilt").first();
-    await tilt.scrollIntoViewIfNeeded();
-    const box = (await tilt.boundingBox())!;
-    await page.mouse.move(box.x + box.width * 0.85, box.y + box.height * 0.15, { steps: 4 });
-    await page.waitForTimeout(400);
-    expect(await rotation(tilt)).toEqual({ x: 0, y: 0 });
-  });
-
-  test("titles swing up as they enter and rest flat", async ({ page }) => {
-    test.skip(isPhone(page), "measured on the desktop layout");
-    await page.emulateMedia({ reducedMotion: "no-preference" });
-    await page.goto("/");
-    const title = page.locator("#experience h2");
-    // Placed by its container's top (the title's own box is foreshortened while it turns).
-    const at = (fraction: number) =>
-      title.evaluate((el, f) => window.scrollTo({ top: el.parentElement!.getBoundingClientRect().top + scrollY - innerHeight * f, behavior: "instant" }), fraction);
-    await at(0.97);
-    await page.waitForTimeout(150);
-    expect((await rotation(title)).x).toBeGreaterThan(10);
-    await at(0.4);
-    await page.waitForTimeout(150);
-    expect(await rotation(title)).toEqual({ x: 0, y: 0 });
-  });
-
-  test("timeline entries unfold from the spine", async ({ page }) => {
-    test.skip(isPhone(page), "measured on the desktop layout");
-    await page.emulateMedia({ reducedMotion: "no-preference" });
-    await page.goto("/");
-    const body = page.locator(".timeline-body").nth(1);
-    expect(await body.evaluate((el) => getComputedStyle(el).transformOrigin.split(" ")[0])).toBe("0px");
-    const at = (fraction: number) =>
-      body.evaluate((el, f) => window.scrollTo({ top: el.getBoundingClientRect().top + scrollY - innerHeight * f, behavior: "instant" }), fraction);
-    await at(0.97);
-    await page.waitForTimeout(150);
-    expect(Math.abs((await rotation(body)).y)).toBeGreaterThan(10);
-    // Flat by the time the whole entry is on screen (its bottom just inside the screen's).
-    await body.evaluate((el) => window.scrollTo({ top: el.getBoundingClientRect().bottom + scrollY - innerHeight * 0.98, behavior: "instant" }));
-    await page.waitForTimeout(150);
-    expect(await rotation(body)).toEqual({ x: 0, y: 0 });
-  });
-
-  test("with reduced motion titles and timeline are flat", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/");
-    await page.evaluate(() => window.scrollTo({ top: document.getElementById("experience")!.offsetTop, behavior: "instant" }));
-    const transforms = await page.locator(".section-title, .timeline-body").evaluateAll((els) => els.map((el) => getComputedStyle(el).transform));
-    expect(transforms.length).toBeGreaterThan(5);
-    for (const t of transforms) expect(t).toBe("none");
+    await page.locator("button.motion-toggle").click();
+    await page.goto(projectHref(featured[0].slug));
+    await expect(page.locator("html")).toHaveAttribute("data-motion", "paused");
+    await page.evaluate(async () => {
+      for (let y = 0; y < document.documentElement.scrollHeight; y += 300) {
+        window.scrollTo(0, y);
+        await new Promise((r) => setTimeout(r, 40));
+      }
+    });
+    const frames = await page.locator(".frame").evaluateAll((els) => els.map((el) => ({ p: (el as HTMLElement).style.getPropertyValue("--p"), transform: getComputedStyle(el).transform, opacity: getComputedStyle(el).opacity })));
+    expect(frames.length).toBeGreaterThan(0);
+    for (const f of frames) expect(f).toEqual({ p: "", transform: "none", opacity: "1" });
   });
 
   test("no text fades", async ({ page }) => {
@@ -1364,7 +1114,7 @@ test.describe("3D motion", () => {
       await page.waitForTimeout(150);
       const faded = await page.evaluate(() =>
         [...document.querySelectorAll("main h2, main h3, main p, main li")]
-          .filter((el) => !el.closest(".hero, .dot-label, .sr-only") && el.getBoundingClientRect().width > 0)
+          .filter((el) => !el.closest(".hero, .sr-only") && el.getBoundingClientRect().width > 0)
           .filter((el) => {
             for (let n: Element | null = el; n; n = n.parentElement) if (parseFloat(getComputedStyle(n).opacity) < 1) return true;
             return false;
@@ -1373,59 +1123,5 @@ test.describe("3D motion", () => {
       );
       expect(faded, id).toEqual([]);
     }
-  });
-});
-
-test.describe("3D grid", () => {
-  const lit = (page: Page) => page.locator("canvas.grid-backdrop").evaluate((c) => Number(c.getAttribute("data-lit") ?? 0));
-
-  test("draws behind the content and stays out of the way", async ({ page }) => {
-    await page.goto("/");
-    const grid = page.locator("canvas.grid-backdrop");
-    await expect(grid).toHaveCount(1);
-    await expect(grid).toHaveAttribute("aria-hidden", "true");
-    const style = await grid.evaluate((c) => ({ pe: getComputedStyle(c).pointerEvents, pos: getComputedStyle(c).position, z: getComputedStyle(c).zIndex }));
-    expect(style).toEqual({ pe: "none", pos: "fixed", z: "-1" });
-    await page.evaluate(() => document.getElementById("experience")!.scrollIntoView({ behavior: "instant" }));
-    const hit = await page.evaluate(() => document.elementFromPoint(innerWidth / 2, innerHeight / 2)?.tagName);
-    expect(hit).not.toBe("CANVAS");
-  });
-
-  test("tiles near the pointer glow on a desktop, then the drawing stops", async ({ page }) => {
-    test.skip(isPhone(page), "a mouse is needed");
-    await page.emulateMedia({ reducedMotion: "no-preference" });
-    await page.goto("/");
-    await page.evaluate(() => document.getElementById("experience")!.scrollIntoView({ behavior: "instant" }));
-    await page.mouse.move(1200, 500);
-    await page.mouse.move(1260, 540, { steps: 4 });
-    await expect.poll(() => lit(page), { timeout: 2000 }).toBeGreaterThan(0);
-    await expect.poll(() => lit(page), { timeout: 4000 }).toBe(0);
-  });
-
-  test("the grid ignores the pointer over the parts that hide it", async ({ page }) => {
-    test.skip(isPhone(page), "a mouse is needed");
-    await page.emulateMedia({ reducedMotion: "no-preference" });
-    await page.goto("/");
-    // Over the first screen (opaque), the grid underneath can't be seen: nothing should light or draw.
-    await page.mouse.move(700, 400);
-    await page.mouse.move(760, 460, { steps: 6 });
-    await page.waitForTimeout(150);
-    expect(await lit(page)).toBe(0);
-  });
-
-  test("the grid is still on a phone and with reduced motion", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: isPhone(page) ? "no-preference" : "reduce" });
-    await page.goto("/");
-    await page.evaluate(() => document.getElementById("experience")!.scrollIntoView({ behavior: "instant" }));
-    await page.mouse.move(200, 400);
-    await page.mouse.move(260, 440, { steps: 4 });
-    await page.waitForTimeout(300);
-    expect(await lit(page)).toBe(0);
-  });
-
-  test("the opaque parts cover it", async ({ page }) => {
-    await page.goto("/");
-    const backgrounds = await page.evaluate(() => [".hero", ".marquee", ".tile"].map((sel) => getComputedStyle(document.querySelector(sel)!).backgroundColor));
-    for (const bg of backgrounds) expect(bg).not.toBe("rgba(0, 0, 0, 0)");
   });
 });

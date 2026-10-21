@@ -1,7 +1,6 @@
 import { alsoUsed, background, skills } from "@/content/experience";
 import { site } from "@/content/site";
 import { emphasize } from "@/lib/emphasize";
-import { Tilt } from "@/components/motion/Tilt";
 
 /**
  * About and skills, as tiles: what I do, wide and centred (grey, its key phrases in white, so it
@@ -37,8 +36,7 @@ export function About() {
           ))}
         </div>
 
-        <Tilt className="tile-wide" max={2}>
-        <div className="tile p-f21 md:p-f55">
+        <div className="tile tile-wide p-f21 md:p-f55">
           <h3 className="type-lede text-text">Skills</h3>
           <dl className="mt-f13 grid gap-x-f55 gap-y-f34 min-[834px]:grid-cols-2">
             {skills.map((s) => (
@@ -50,7 +48,6 @@ export function About() {
           </dl>
           <p className="type-small mt-f34 text-text-3">Also: {alsoUsed.join(", ")}.</p>
         </div>
-        </Tilt>
       </div>
     </section>
   );

@@ -100,15 +100,12 @@ describe("colour", () => {
     expect(readFileSync(join(SRC, "components/layout/SiteHeader.tsx"), "utf8")).toContain("site-bar");
   });
 
-  it("gradients: the hero's amber glow and the cards' white glare, never blue or purple", () => {
+  it("one gradient, the hero's amber glow, never blue or purple", () => {
     const gradients = sources.flatMap(({ path, text }) =>
       [...text.matchAll(/(?:linear|radial|conic)-gradient\(([^;]*?)\)\s*;|bg-gradient-to-\w+|bg-linear-\w+|bg-radial/g)].map((m) => ({ path, body: m[0] })),
     );
-    expect(gradients.length).toBeLessThanOrEqual(2);
-    // One is the amber glow; any other is the glare, white only.
-    const glare = gradients.filter(({ body }) => !body.includes("255 176 0"));
-    expect(glare.length).toBeLessThanOrEqual(1);
-    for (const { body } of glare) expect(body).toMatch(/rgb\(255 255 255 \/ [\d.]+\)/);
+    expect(gradients.length).toBe(1);
+    expect(gradients[0].body).toContain("255 176 0");
     for (const { path, body } of gradients) {
       const colours = [...body.matchAll(/rgba?\((\d+)\s*,?\s*(\d+)\s*,?\s*(\d+)/g)].map(
         (m) => "#" + [m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, "0")).join(""),
@@ -121,10 +118,10 @@ describe("colour", () => {
     }
   });
 
-  it("the defect red is used only by the data check, drawn or in 3D", () => {
+  it("the defect red is used only by the data check", () => {
     const uses = offenders(/#ff5a4e|--color-defect/i).map((line) => line.split(":")[0]);
     expect(uses.length).toBeGreaterThan(0);
-    for (const file of new Set(uses)) expect(["src/app/globals.css", "src/components/sections/DataCheck.tsx", "src/components/three/fieldScene.ts"]).toContain(file);
+    for (const file of new Set(uses)) expect(["src/app/globals.css", "src/components/sections/DataCheck.tsx"]).toContain(file);
     // In globals.css: the token, and rules for the data check only.
     const rules = [...css.matchAll(/([^{}]*)\{[^{}]*var\(--color-defect\)[^{}]*\}/g)].map((m) => m[1].replace(/\/\*[\s\S]*?\*\//g, "").trim());
     for (const selector of rules) expect(selector).toMatch(/^\.(data-check|dc-)/);

@@ -1,15 +1,14 @@
 import { site } from "@/content/site";
 import { ButtonLink, pairedPill } from "@/components/ui/links";
 import { DataCheck } from "./DataCheck";
-import { DataField } from "./DataField";
 import { LiveClock } from "./LiveClock";
 import { MotionToggle } from "@/components/motion/MotionToggle";
 
 /**
  * The first screen: who I am and what I do, and no project. Where I am with the time there, and
  * the pause button; the name, set huge in the display face; the headline and the intro; the two
- * main actions; and beside them (under them below 1024px) the data field, rows of data with their
- * checks, in 3D (DataField) over its drawing (DataCheck), which stays wherever 3D can't run.
+ * main actions; and beside them (under them below 1024px) the data check, rows of data with their
+ * checks (DataCheck).
  *
  * Motion (CSS, globals.css "Opening"): as you scroll, the words lift away. With reduced motion,
  * everything is simply there.
@@ -44,9 +43,7 @@ export function Hero() {
             </div>
           </div>
           <div className="hero-visual">
-            <DataField>
-              <DataCheck />
-            </DataField>
+            <DataCheck />
           </div>
         </div>
       </div>

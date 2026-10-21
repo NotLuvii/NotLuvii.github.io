@@ -884,15 +884,15 @@ svg[data-ink] {
    with reduced motion, or before the engine starts, everything is
    simply in place. */
 
-/* Frames (screenshots and code) tilt flat and brighten as they arrive.
-   With reduced motion or motion paused they simply sit flat. */
+/* Screenshots tilt flat as they arrive; their captions move with them
+   but never fade. With reduced motion or motion paused they simply sit
+   flat. */
 .frame {
   transform-origin: 50% 100%;
 }
 @media (prefers-reduced-motion: no-preference) {
   :root:not([data-motion="paused"]) .frame {
     transform: perspective(1400px) rotateX(calc((1 - var(--p, 1)) * 16deg)) translateY(calc((1 - var(--p, 1)) * 48px));
-    opacity: calc(0.55 + var(--p, 1) * 0.45);
   }
 }
 

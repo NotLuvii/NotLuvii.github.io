@@ -42,8 +42,6 @@ export type FeaturedProject = {
   team: string;
   /** Who it's for and the problem, in one or two sentences. */
   summary: string;
-  /** The summary's key phrase: the part a skimming reader most needs. */
-  summaryKeyPhrase: string;
   /** One line under the title on the home page's tile. */
   tileLine: string;
   /** Two or three figures from the result, each true of the project; the case study states them in prose. */
@@ -91,7 +89,6 @@ const scam: FeaturedProject = {
   team: "Solo",
   summary:
     "A browser tool that checks a suspicious email, text message, listing or link, scores it from 0 to 100 and lists the red flags behind the score.",
-  summaryKeyPhrase: "scores it from 0 to 100 and lists the red flags behind the score",
   tileLine: "Checks emails, texts, listings and links for common scam patterns.",
   // From the outcome below: the README's sample inputs, scored by the tool.
   stats: [
@@ -193,7 +190,6 @@ const immensa: FeaturedProject = {
   team: "Solo",
   summary:
     "An Android app for sales inquiries about 3D-printed industrial parts: one form for the part, material, files, criticality and testing, sent as one structured email.",
-  summaryKeyPhrase: "sent as one structured email",
   tileLine: "An Android form, sent as one structured email.",
   // From the case study: the required fields, and the tools screen's currencies and alloys.
   stats: [
@@ -290,7 +286,6 @@ const resume: FeaturedProject = {
   team: "Solo",
   summary:
     "Compares a resume (PDF or Word) with a job description and gives a relevance score, the shared and missing skills, and interview questions for the role.",
-  summaryKeyPhrase: "gives a relevance score",
   tileLine: "Scores a resume against a job posting.",
   // From the outcome: my resume against the sample posting shown in the screenshot.
   stats: [

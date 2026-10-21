@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { featured, more, projectHref } from "../src/content/projects";
-import { background, roles } from "../src/content/experience";
+import { approach, interests, roles, skills } from "../src/content/experience";
 import { site } from "../src/content/site";
 import { checkScam, SAMPLES } from "../src/lib/scam-rules";
 import { isFib, onScale, PHI } from "../src/lib/golden";
@@ -92,14 +92,30 @@ test.describe("home page", () => {
     }
   });
 
-  test("the intro is one paragraph with its key phrases in white and the rest in grey", async ({ page }) => {
+  test("the intro appears once", async ({ page }) => {
     await page.goto("/");
-    const intro = page.locator("#skills p.type-statement");
-    await expect(intro).toHaveText(site.intro);
-    expect(await intro.locator("strong").allTextContents()).toEqual([...site.introKeyPhrases]);
-    expect(await intro.evaluate((el) => getComputedStyle(el).color)).toBe("rgb(152, 152, 157)");
-    const strong = await intro.locator("strong").evaluateAll((els) => els.map((e) => getComputedStyle(e).color));
-    for (const c of strong) expect(c).toBe("rgb(245, 245, 247)");
+    const text = await page.locator("main").innerText();
+    expect(text.split(site.intro).length - 1).toBe(1);
+    await expect(page.locator("section.hero")).toContainText(site.intro);
+  });
+
+  test("About explains interests and approach, names no company, and lists skills once", async ({ page }) => {
+    await page.goto("/");
+    const about = page.locator("#skills");
+    await expect(about.getByRole("heading", { level: 3 })).toHaveText(["What I’m interested in", "How I work", "Skills"]);
+    await expect(about).toContainText(interests);
+    for (const a of approach) await expect(about).toContainText(a.point);
+    for (const a of approach.filter((x) => x.slug)) await expect(about.getByRole("link", { name: a.from })).toHaveAttribute("href", projectHref(a.slug!));
+    expect(await about.innerText()).not.toContain(site.intro);
+    const main = await page.locator("main").innerText();
+    for (const s of skills) expect(main.split(s.group).length - 1, s.group).toBe(1);
+  });
+
+  test("contact offers the same roles as the hero", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("#contact p.type-statement")).toHaveText(site.availability!);
+    expect(site.availability).toContain("web apps and data tools");
+    expect(site.headline).toContain("web apps and data tools");
   });
 });
 
@@ -460,18 +476,11 @@ test.describe("after the Apple audit", () => {
     expect(await page.locator("#skills").innerText()).not.toContain("University of New Brunswick");
   });
 
-  test("About's key phrases are white, without ink underlines", async ({ page }) => {
-    await page.goto("/");
-    const phrases = page.locator("#skills p.type-statement strong");
-    await expect(phrases).toHaveCount(2);
-    for (const bg of await phrases.evaluateAll((els) => els.map((e) => getComputedStyle(e).backgroundImage))) expect(bg).toBe("none");
-  });
-
   test("about and skills names no company I worked at", async ({ page }) => {
     await page.goto("/");
     const text = await page.locator("#skills").innerText();
     for (const name of ["AiKnod", "SafeTrack", "Immensa Tech", "Used in"]) expect(text).not.toContain(name);
-    await expect(page.locator("#skills")).toContainText(background[0]);
+    await expect(page.locator("#skills")).toContainText(interests);
   });
 });
 
@@ -1182,7 +1191,21 @@ test.describe("motion", () => {
     await expect(page.locator("#contact").getByText(site.availability!)).toBeVisible();
     await expect(page.getByText(site.headline)).toBeVisible();
     await expect(page.locator("section.hero [data-clock]")).toHaveText("Fredericton, NB");
-    await expect(page.locator("#skills p.type-statement")).toHaveText(site.intro);
+    await context.close();
+  });
+
+  test("without JavaScript every section is complete", async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto("/");
+    await expect(page.locator("figure.reconcile figcaption")).toBeVisible();
+    await expect(page.locator("figure.reconcile .rc-tick")).toHaveCount(7);
+    await expect(page.locator("#projects .carousel > li")).toHaveCount(3);
+    for (const p of featured) await expect(page.locator("#projects .carousel").getByRole("heading", { name: p.title })).toBeVisible();
+    await expect(page.locator("#demo [data-try-score]")).toHaveText("94");
+    await expect(page.locator("#experience .timeline-entry").first()).toBeVisible();
+    await expect(page.locator("#skills")).toContainText(interests);
+    await expect(page.locator("#contact").getByRole("link", { name: /Write an email/ })).toBeVisible();
     await context.close();
   });
 
@@ -1317,6 +1340,22 @@ test.describe("motion control, and nothing decorative", () => {
       );
       expect(faded, id).toEqual([]);
     }
+  });
+
+  test("no caption fades on a case study either", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto(projectHref("scam-detection"));
+    await page.waitForTimeout(300);
+    const faded = await page.evaluate(() =>
+      [...document.querySelectorAll("main figcaption, main p, main h2, main h3, main li")]
+        .filter((el) => !el.closest(".sr-only") && el.getBoundingClientRect().width > 0)
+        .filter((el) => {
+          for (let n: Element | null = el; n; n = n.parentElement) if (parseFloat(getComputedStyle(n).opacity) < 1) return true;
+          return false;
+        })
+        .map((el) => el.textContent!.trim().slice(0, 30)),
+    );
+    expect(faded).toEqual([]);
   });
 });
 

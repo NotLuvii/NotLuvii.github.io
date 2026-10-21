@@ -1,5 +1,5 @@
 /**
- * Work history, education, skills and the short background, from the resume
+ * Work history, education, skills, and what About says about interests and approach, from the resume
  * (public/Luvneet_Bamrah_Resume.pdf). Figures are quoted in the resume's own words.
  */
 export type Role = {
@@ -85,8 +85,20 @@ export function timeline(): TimelineEntry[] {
 }
 
 /** A line on how I work, under the intro. It says what I do, not where: no company names. */
-export const background = [
-  "Most of my work sits where software meets data: validating it, finding the defects that let it go wrong, and writing things down so a fix stays fixed. Outside work, I build my own tools.",
+/** What I'm interested in: the line on my work, and the personal projects listed under More projects. */
+export const interests =
+  "Most of my work sits where software meets data: validating it, finding the defects that let it go wrong, and writing things down so a fix stays fixed. Outside work I build my own tools: a vehicle counter for traffic video, an F1 lap-time predictor, a stock tracker with charts and a price prediction, and a music stem separator.";
+
+/**
+ * How I work, each point taken from something on this site that shows it: the reports work in
+ * Experience (named here without the company, as About names none), and three case studies (linked
+ * by slug).
+ */
+export const approach: { point: string; from: string; slug?: string }[] = [
+  { point: "Check figures against their source, and trace a discrepancy to its root cause.", from: "work on reports" },
+  { point: "Show the reasons behind a score, so it can be checked rather than trusted.", from: "the scam detection tool", slug: "scam-detection" },
+  { point: "Make missing information visible instead of leaving a blank.", from: "the inquiry app", slug: "immensa-inquiry-app" },
+  { point: "Add tests when I come back to code.", from: "Resume Analyzer", slug: "resume-analyzer" },
 ];
 
 /**

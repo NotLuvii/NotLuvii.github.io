@@ -2,10 +2,9 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { featured, more, projectHref, type Screenshot } from "@/content/projects";
-import { alsoUsed, background, education, roles, skills, timeline } from "@/content/experience";
+import { alsoUsed, approach, education, interests, roles, skills, timeline } from "@/content/experience";
 import { nav, site } from "@/content/site";
 import { checkScam, SAMPLES } from "@/lib/scam-rules";
-import { emphasize } from "@/lib/emphasize";
 
 const PUBLIC = join(process.cwd(), "public");
 
@@ -54,8 +53,6 @@ describe("featured projects", () => {
   it("each answers the brief: problem, figures from the result, stack and availability", () => {
     for (const p of featured) {
       expect(p.summary.length).toBeGreaterThan(30);
-      // The summary's key phrase is shown in white; emphasize() throws if it isn't in the summary.
-      expect(emphasize(p.summary, [p.summaryKeyPhrase]).filter((part) => part.strong)).toHaveLength(1);
       // Two or three figures, each with a label that says what it measures.
       expect(p.stats.length).toBeGreaterThanOrEqual(2);
       expect(p.stats.length).toBeLessThanOrEqual(3);
@@ -222,12 +219,34 @@ describe("experience and skills", () => {
 
   it("says what I do without naming the companies I worked at", () => {
     expect(site.intro).toBe("I build front ends in React and TypeScript, and write SQL and Python to automate reports and check data against its source.");
-    expect(site.introKeyPhrases).toEqual(["front ends in React and TypeScript", "SQL and Python"]);
-    expect(background).toEqual([
-      "Most of my work sits where software meets data: validating it, finding the defects that let it go wrong, and writing things down so a fix stays fixed. Outside work, I build my own tools.",
+    expect(interests).toBe(
+      "Most of my work sits where software meets data: validating it, finding the defects that let it go wrong, and writing things down so a fix stays fixed. Outside work I build my own tools: a vehicle counter for traffic video, an F1 lap-time predictor, a stock tracker with charts and a price prediction, and a music stem separator.",
+    );
+    const about = [site.intro, interests, ...approach.flatMap((a) => [a.point, a.from]), ...skills.flatMap((s) => [s.group, ...s.items]), ...alsoUsed];
+    for (const text of about) for (const company of ["AiKnod", "SafeTrack", "Immensa"]) expect(text).not.toContain(company);
+  });
+
+  it("About's approach points come from the work: one from the reports, three from the case studies", () => {
+    expect(approach.map((a) => a.point)).toEqual([
+      "Check figures against their source, and trace a discrepancy to its root cause.",
+      "Show the reasons behind a score, so it can be checked rather than trusted.",
+      "Make missing information visible instead of leaving a blank.",
+      "Add tests when I come back to code.",
     ]);
-    for (const text of [site.intro, ...background, ...skills.flatMap((s) => [s.group, ...s.items]), ...alsoUsed])
-      for (const company of ["AiKnod", "SafeTrack", "Immensa"]) expect(text).not.toContain(company);
+    expect(approach[0]).toEqual({ point: approach[0].point, from: "work on reports" });
+    expect(approach.slice(1).map((a) => a.slug)).toEqual(["scam-detection", "immensa-inquiry-app", "resume-analyzer"]);
+    for (const a of approach.slice(1)) expect(featured.map((p) => p.slug)).toContain(a.slug);
+    // Each point is something its source shows.
+    expect(roles.some((r) => r.points.some((b) => /check report figures against source systems/i.test(b)))).toBe(true);
+    const study = (slug: string) => featured.find((p) => p.slug === slug)!.caseStudy;
+    expect(study("scam-detection").context.join(" ")).toMatch(/checked rather than taken on trust/);
+    expect(study("immensa-inquiry-app").decision.title).toBe("Make missing information visible");
+    expect(study("resume-analyzer").built.join(" ")).toMatch(/tests added/);
+  });
+
+  it("availability matches the headline's roles", () => {
+    expect(site.availability).toBe("Open to software engineering roles building web apps and data tools.");
+    expect(site.headline).toContain("web apps and data tools");
   });
 
   it("doesn't claim tools only this site's build uses", () => {
@@ -236,9 +255,9 @@ describe("experience and skills", () => {
     expect(all).not.toContain("Tailwind CSS");
   });
 
-  it("keeps education and background short", () => {
+  it("keeps education and About short", () => {
     expect(education.degree).toMatch(/Software Engineering/);
-    expect(background.join(" ").split(/\s+/).length).toBeLessThan(80);
+    expect([interests, ...approach.map((a) => a.point)].join(" ").split(/\s+/).length).toBeLessThan(110);
   });
 });
 
@@ -263,17 +282,6 @@ describe("site", () => {
   });
 });
 
-describe("intro", () => {
-  it("marks each key phrase once and keeps the sentence whole", () => {
-    const parts = emphasize(site.intro, site.introKeyPhrases);
-    expect(parts.map((p) => p.text).join("")).toBe(site.intro);
-    expect(parts.filter((p) => p.strong).map((p) => p.text)).toEqual([...site.introKeyPhrases]);
-  });
-
-  it("refuses a key phrase that isn't in the text, so a typo can't silently drop it", () => {
-    expect(() => emphasize("I build web apps.", ["data tools"])).toThrow(/data tools/);
-  });
-});
 
 describe("first screen", () => {
   it("the checker opens on the text-message sample, not the email in the scam card's picture", () => {

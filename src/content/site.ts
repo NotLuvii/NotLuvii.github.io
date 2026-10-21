@@ -7,7 +7,6 @@ export const site = {
   role: "Software engineer",
   headline: "Software engineer building reliable web apps and data tools.",
   intro: "I build front ends in React and TypeScript, and write SQL and Python to automate reports and check data against its source.",
-  introKeyPhrases: ["front ends in React and TypeScript", "SQL and Python"],
   description:
     "Luvneet Bamrah is a software engineer in Fredericton, New Brunswick, building web apps in React and TypeScript and data tools in SQL and Python.",
 
@@ -22,8 +21,8 @@ export const site = {
   /** This site's address on GitHub Pages: canonical URLs, the sitemap and link previews. */
   url: "https://notluvii.github.io",
 
-  /** One line in the contact section. Set to null to hide it. */
-  availability: "Open to software roles in quality, manufacturing and data." as string | null,
+  /** One line in the contact section, the same roles as the headline. Set to null to hide it. */
+  availability: "Open to software engineering roles building web apps and data tools." as string | null,
 } as const;
 
 /**

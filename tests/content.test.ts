@@ -83,6 +83,19 @@ describe("featured projects", () => {
     }
   });
 
+  it("the scam tool's limitations name the regex defect, as engineering work left in the tool", () => {
+    const limits = featured[0].caseStudy.limitations;
+    const defect = limits.find((l) => l.includes("global"));
+    expect(defect).toBeDefined();
+    expect(defect).toContain("the fix belongs in the tool");
+    expect(defect).toContain("32, then 12");
+    expect(limits).toContain("There are no automated tests.");
+  });
+
+  it("case-study copy doesn't point at a screenshot below the text: the screenshot leads", () => {
+    for (const p of featured) for (const t of [...p.caseStudy.context, ...p.caseStudy.outcome]) expect(t, p.slug).not.toMatch(/screenshot below/i);
+  });
+
   it("reports the scores the checker computes from the README's samples", () => {
     const lead = featured[0];
     const score = (id: string) => {

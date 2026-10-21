@@ -746,17 +746,50 @@ test.describe("case studies", () => {
       expect(res?.status()).toBe(200);
       await expect(page.locator("h1")).toHaveText(p.title);
       await expect(page).toHaveTitle(`${p.title}, case study | ${site.name}`);
-      for (const h of ["Context", "What I built", "Key decision", "Outcome", "Limitations", "Inspect the code"]) {
+      for (const h of ["How it works", "Key decision", "Limitations", "Inspect the code"]) {
         await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
       }
       await expect(page.getByRole("link", { name: "All projects" })).toHaveAttribute("href", "/#projects");
-      // Screenshots sit in the Outcome section, next to the text that describes them.
+      // The first screenshot leads; the rest follow under the glance.
       await expect(page.locator("main img")).toHaveCount(p.caseStudy.figures.length);
-      await expect(page.locator('section[aria-labelledby="outcome"] img')).toHaveCount(p.caseStudy.figures.length);
+      await expect(page.locator(".cs-lead img")).toHaveCount(Math.min(1, p.caseStudy.figures.length));
+      await expect(page.locator('section[aria-labelledby="screens"] img')).toHaveCount(Math.max(0, p.caseStudy.figures.length - 1));
       // Fails if any image is missing or never loads.
       await scrollThrough(page);
     });
   }
+
+  for (const p of featured) {
+    test(`${p.slug}: starts with a visual, the problem, what I did and the outcome`, async ({ page }) => {
+      await page.goto(projectHref(p.slug));
+      const c = p.caseStudy;
+      const glance = page.locator("#glance");
+      await expect(glance.getByRole("heading", { level: 3 })).toHaveText(["The problem", "What I did", "Outcome"]);
+      await expect(glance).toContainText(c.context[0]);
+      await expect(glance).toContainText(c.role);
+      await expect(glance).toContainText(c.outcome[0]);
+      if (c.figures.length) await expect(page.locator(".cs-lead img")).toHaveCount(1);
+      else await expect(page.locator(".cs-lead.card-picture-pending")).toHaveText("Android screenshots to come");
+      const order = await page.evaluate(() => {
+        const sels = ["h1", ".cs-lead", "#glance", "#built", "#decision", "#limitations", "#code"];
+        const els = sels.map((s) => document.querySelector(s));
+        if (els.some((e) => !e)) return sels.filter((_, i) => !els[i]).map((s) => `missing ${s}`);
+        return els.slice(1).map((e, i) => (els[i]!.compareDocumentPosition(e!) & Node.DOCUMENT_POSITION_FOLLOWING ? "ok" : `${sels[i + 1]} before ${sels[i]}`));
+      });
+      expect(order.every((o) => o === "ok"), order.join(", ")).toBe(true);
+      // The repository is reached from "Inspect the code".
+      await expect(page.locator('section[aria-labelledby="code"]').getByRole("link", { name: new RegExp(`^${p.repo.label}`) })).toHaveAttribute("href", p.repo.href);
+      // No paragraph is printed twice.
+      const paras = await page.locator("main p").allTextContents();
+      const repeated = paras.filter((t, i) => t.length > 40 && paras.indexOf(t) !== i);
+      expect(repeated).toEqual([]);
+    });
+  }
+
+  test("the scam case study lists the checker's regex defect among its limitations", async ({ page }) => {
+    await page.goto(projectHref("scam-detection"));
+    await expect(page.locator('section[aria-labelledby="limitations"]')).toContainText("the fix belongs in the tool");
+  });
 
   test("unknown project paths get the 404 page", async ({ page }) => {
     const res = await page.goto("/projects/not-a-project/");

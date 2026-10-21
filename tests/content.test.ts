@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { featured, more, projectHref, type Screenshot } from "@/content/projects";
 import { alsoUsed, background, education, roles, skills, timeline } from "@/content/experience";
 import { nav, site } from "@/content/site";
+import { checkScam, SAMPLES } from "@/lib/scam-rules";
 import { emphasize } from "@/lib/emphasize";
 
 const PUBLIC = join(process.cwd(), "public");
@@ -82,29 +83,17 @@ describe("featured projects", () => {
     }
   });
 
-  it("tells the scam detection story with the detector's real rules, adding up to the 94 its case study reports", () => {
+  it("reports the scores the checker computes from the README's samples", () => {
     const lead = featured[0];
-    const story = lead.story!;
-    expect(story).toBeTruthy();
-    // The README's sample text message, verbatim.
-    expect(story.text).toBe("URGENT: Your bank detected unusual activity. Confirm now: https://bit.ly/xy7z\nReply YES to secure your account.");
-    // Each step's phrase appears in the message, in reading order.
-    let at = 0;
-    for (const step of story.steps) {
-      const i = story.text.indexOf(step.phrase, at);
-      expect(i, step.phrase).toBeGreaterThanOrEqual(0);
-      at = i + step.phrase.length;
-    }
-    // The weights the rules add (js/detectors.js, sms), and the total the case study reports.
-    expect(story.steps.map((s) => s.add)).toEqual([18, 18, 18, 25, 15]);
-    const total = story.steps.reduce((sum, s) => sum + s.add, 0);
-    expect(total).toBe(94);
+    const score = (id: string) => {
+      const s = SAMPLES.find((x) => x.id === id)!;
+      return checkScam(s.kind, s.text)!.risk;
+    };
+    expect(score("text")).toBe(94);
     expect(lead.caseStudy.outcome.join(" ")).toContain("the scam text 94");
-    // The tool's own thresholds for a text message: Medium from 35, High from 60.
-    expect(story.thresholds).toEqual({ medium: 35, high: 60 });
-    // Its source is a specific file in the project's repository.
-    expect(story.source.href.startsWith(`${lead.repo.href}/blob/`)).toBe(true);
+    expect(lead.stats.map((s) => s.value)).toEqual([String(score("email")), String(score("lookalike")), String(score("official"))]);
   });
+
 
   it("gives each card its one line, true of what its picture shows", () => {
     // The scam card shows the tool itself, whose tabs are email, text, listing and link.
@@ -274,9 +263,9 @@ describe("intro", () => {
 });
 
 describe("first screen", () => {
-  it("the checker's sample is a text message, not the email in the scam card's picture", () => {
+  it("the checker opens on the text-message sample, not the email in the scam card's picture", () => {
     const lead = featured[0];
-    expect(lead.story?.text).not.toMatch(/Dear Customer/);
+    expect(SAMPLES.find((s) => s.kind === "text")!.text).not.toMatch(/Dear Customer/);
     expect(lead.homeShot).toBeUndefined();
   });
 

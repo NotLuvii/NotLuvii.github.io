@@ -690,19 +690,94 @@ svg[data-ink] {
   color: var(--color-text-2);
 }
 
-/* The live checker under the cards (TryScamRules.tsx): the field
-   and its note, then the result beside them from 1024px. */
-.try-grid {
+/* The scam checker (components/sections/ScamChecker.tsx): what you're
+   checking, the samples and the field, then the result beside them
+   from 1024px. */
+.demo-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 34px;
 }
 @media (min-width: 1024px) {
-  /* The golden split: the field 1, the result 1.618. */
-  .try-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.618fr);
+  /* The golden split: the field 1.618, the result 1. */
+  .demo-grid {
+    grid-template-columns: minmax(0, 1.618fr) minmax(0, 1fr);
     gap: 55px;
   }
+}
+/* What you're checking: four radios as one segmented control. The
+   radio itself covers its label, unseen, so it keeps its own clicks and
+   keys; its focus shows on the label. */
+.demo-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.demo-kind {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 21px;
+  border-radius: 999px;
+  background: var(--color-raised);
+  font-size: 17px;
+  color: var(--color-text-2);
+  transition:
+    background-color 0.2s var(--ease-out-soft),
+    color 0.2s var(--ease-out-soft);
+}
+.demo-kind input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.demo-kind input:disabled {
+  cursor: default;
+}
+.demo-kind:hover {
+  color: var(--color-text);
+}
+.demo-kind:has(input:checked) {
+  background: var(--color-text);
+  color: var(--color-page);
+}
+.demo-kind:has(input:focus-visible) {
+  outline: 2px solid var(--color-amber);
+  outline-offset: 3px;
+}
+/* The samples, and Clear: small quiet buttons, 44px tall to tap. */
+.demo-chip,
+.demo-clear {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 13px;
+  border-radius: 999px;
+  font-size: 13.36px;
+  color: var(--color-text-2);
+  transition:
+    background-color 0.2s var(--ease-out-soft),
+    color 0.2s var(--ease-out-soft);
+}
+.demo-chip {
+  background: var(--color-panel);
+}
+.demo-chip:hover,
+.demo-clear:hover {
+  color: var(--color-text);
+}
+.demo-chip:hover {
+  background: var(--color-raised);
+}
+.demo-chip:disabled,
+.demo-clear:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* Experience (components/sections/Experience.tsx): a timeline drawn

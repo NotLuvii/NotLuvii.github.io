@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { featured, more, projectHref } from "../src/content/projects";
 import { background, roles } from "../src/content/experience";
 import { site } from "../src/content/site";
-import { checkSms } from "../src/lib/scam-sms";
+import { checkScam, SAMPLES } from "../src/lib/scam-rules";
 import { isFib, onScale, PHI } from "../src/lib/golden";
 
 const PAGES = ["/", ...featured.map((p) => projectHref(p.slug))];
@@ -11,7 +11,7 @@ const WIDTHS = [320, 375, 390, 768, 1024, 1440];
 /** External destinations the site may link to: verified repositories and profiles only. */
 const EXTERNAL = [
   /^https:\/\/github\.com\/NotLuvii$/,
-  /^https:\/\/github\.com\/NotLuvii\/(Fraud-Detection-Tool|Mobile-app|Resume-Analyze|Traffic-Detection|StockPredictor|CS3035-Individual-Graphing-Project)(\/blob\/(main|master)\/[\w./-]+(#L\d+-L\d+)?)?$/,
+  /^https:\/\/github\.com\/NotLuvii\/(Fraud-Detection-Tool|Mobile-app|Resume-Analyze|Traffic-Detection|StockPredictor|CS3035-Individual-Graphing-Project)(\/blob\/(main|master|558fa66)\/[\w./-]+(#L\d+-L\d+)?)?$/,
   /^https:\/\/www\.linkedin\.com\/in\/luvneet-bamrah-157281214$/,
   /^https:\/\/youtu\.be\/qHmMMeWLiNo$/,
   /^mailto:luvneetbamrah@gmail\.com$/,
@@ -59,7 +59,7 @@ test.describe("home page", () => {
     await page.goto("/");
     // Compared without case: the visible titles are set in capitals by CSS, the text is as written.
     const headings = (await page.locator("main h2").allTextContents()).map((h) => h.toLowerCase());
-    expect(headings).toEqual(["Selected work", "Experience", "About and skills", "Contact"].map((h) => h.toLowerCase()));
+    expect(headings).toEqual(["Selected work", "Try the scam checker", "More projects", "Experience", "About and skills", "Contact"].map((h) => h.toLowerCase()));
   });
 
   test("section titles are set in the display face", async ({ page }) => {
@@ -67,7 +67,7 @@ test.describe("home page", () => {
     const titles = await page.locator("main h2:not(.sr-only), #more-title").evaluateAll((hs) =>
       hs.map((h) => ({ text: h.textContent, transform: getComputedStyle(h).textTransform, stretch: getComputedStyle(h).fontStretch })),
     );
-    expect(titles.map((t) => t.text)).toEqual(["Selected work", "More projects", "Experience", "About and skills"]);
+    expect(titles.map((t) => t.text)).toEqual(["Selected work", "Try the scam checker", "More projects", "Experience", "About and skills"]);
     for (const t of titles) expect([t.text, t.transform, t.stretch]).toEqual([t.text, "uppercase", "75%"]);
   });
 
@@ -368,7 +368,7 @@ test.describe("after the Apple audit", () => {
       const list = document.querySelector("#projects ul[aria-labelledby=more-title]")!;
       list.querySelector("li p")!.textContent = "x".repeat(60);
       const vw = document.documentElement.clientWidth;
-      return [...list.querySelectorAll("li, li p, li h4")]
+      return [...list.querySelectorAll("li, li p, li h3")]
         .filter((el) => el.getBoundingClientRect().right > vw + 1)
         .map((el) => el.textContent!.trim().slice(0, 30));
     });
@@ -591,96 +591,151 @@ test.describe("selected work", () => {
     await page.goto("/");
     for (const sel of ["[data-story]", ".scan-beam", ".scan-cover", ".tile-picture", "[data-scan]"]) await expect(page.locator(sel), sel).toHaveCount(0);
   });
-
-  test("the checker follows the carousel under its own heading, with a plain note", async ({ page }) => {
-    await page.goto("/");
-    const heading = page.locator("#projects h3", { hasText: "Try the scam checker on your own text" });
-    await expect(heading).toHaveCount(1);
-    await expect(page.locator("#projects .note")).toHaveCount(0);
-    await expect(page.locator("#projects")).toContainText("The tool’s own rules, running in your browser. Nothing is sent anywhere.");
-  });
 });
 
-test.describe("try the rules", () => {
-  const field = (page: Page) => page.getByLabel("Paste a text message");
+test.describe("the scam checker", () => {
+  const field = (page: Page) => page.locator("#demo textarea");
+  const LEVEL = { low: "Low", medium: "Medium", high: "High" } as const;
+  const KIND = { email: "Email", text: "Text message", listing: "Listing", link: "Link" } as const;
 
-  test("scores your own text with the tool's rules", async ({ page }) => {
+  test("the demo is its own section, right after the cards", async ({ page }) => {
     await page.goto("/");
-    const text = "Congratulations you have won a free gift! Claim now at bit.ly/abc";
-    const expected = checkSms(text);
+    await expect(page.locator("#demo h2")).toHaveText("Try the scam checker");
+    await expect(page.locator("#demo")).toContainText("The tool’s own rules, copied from its source and running in your browser. Nothing is sent anywhere.");
+    const order = await page.evaluate(() => {
+      const carousel = document.querySelector("#projects .carousel")!;
+      const demo = document.querySelector("#demo")!;
+      const more = document.querySelector("#more-title")!;
+      return [carousel.compareDocumentPosition(demo) & Node.DOCUMENT_POSITION_FOLLOWING, demo.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING];
+    });
+    expect(order.every(Boolean)).toBe(true);
+  });
+
+  test("each README sample gives the tool's verdict", async ({ page }) => {
+    await page.goto("/");
     await expect(field(page)).toBeEditable();
-    await field(page).fill(text);
+    for (const s of SAMPLES) {
+      const expected = checkScam(s.kind, s.text)!;
+      await page.getByRole("group", { name: "Samples from the tool's README" }).getByRole("button", { name: s.label }).click();
+      await expect(page.getByRole("radio", { name: KIND[s.kind] })).toBeChecked();
+      await expect(field(page)).toHaveValue(s.text);
+      await expect(page.locator("[data-try-score]")).toHaveText(String(expected.risk));
+      await expect(page.locator("[data-try-level]")).toHaveText(LEVEL[expected.level]);
+      for (const issue of expected.issues) await expect(page.locator("[data-try-issues]")).toContainText(issue.msg);
+    }
+  });
+
+  test("the result names the detector's lines in the tool's source", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("#demo").getByRole("link", { name: /js\/detectors\.js, lines 79–126/ })).toHaveAttribute("href", /558fa66\/js\/detectors\.js#L79-L126$/);
+    await page.getByRole("button", { name: "Fake listing" }).click();
+    await expect(page.locator("#demo").getByRole("link", { name: /js\/detectors\.js, lines 129–177/ })).toHaveAttribute("href", /#L129-L177$/);
+  });
+
+  test("clearing gives a neutral state, not a low risk", async ({ page }) => {
+    await page.goto("/");
+    await expect(field(page)).toBeEditable();
+    await page.locator("#demo").getByRole("button", { name: "Clear" }).click();
+    await expect(field(page)).toHaveValue("");
+    await expect(page.locator("[data-try-empty]")).toHaveText("Paste something above or pick a sample.");
+    await expect(page.locator("[data-try-score]")).toHaveCount(0);
+    await expect(page.locator("[data-try-level]")).toHaveCount(0);
+    await expect(page.locator("#demo")).not.toContainText("Low risk");
+    // Spaces alone are nothing to check either.
+    await field(page).fill("   ");
+    await expect(page.locator("[data-try-empty]")).toBeVisible();
+    // A kind not yet used starts empty and neutral.
+    await page.getByRole("radio", { name: "Listing" }).check();
+    await expect(field(page)).toHaveValue("");
+    await expect(page.locator("[data-try-empty]")).toBeVisible();
+  });
+
+  test("typing scores live, with the field labelled for its kind", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByLabel("Paste a text message")).toBeEditable();
+    const text = "Congratulations you have won a free gift! Claim now at bit.ly/abc";
+    const expected = checkScam("text", text)!;
+    await page.getByLabel("Paste a text message").fill(text);
     await expect(page.locator("[data-try-score]")).toHaveText(String(expected.risk));
     await expect(page.locator("[data-try-level]")).toHaveText("High");
-    for (const issue of expected.issues) await expect(page.locator("[data-try-issues]")).toContainText(issue.msg);
     const marked = await page.locator("[data-try-marked] mark").allTextContents();
     expect(marked.length).toBeGreaterThan(0);
     for (const m of marked) expect(text.toLowerCase()).toContain(m.toLowerCase());
+    for (const [kind, label] of [["email", "Paste an email"], ["listing", "Paste a listing"], ["link", "Paste a link"]] as const) {
+      await page.getByRole("radio", { name: KIND[kind] }).check();
+      await expect(page.getByLabel(label)).toBeVisible();
+    }
   });
 
-  test("the result says its level in words, with no label over the score, and repeats the text in reading grey", async ({ page }) => {
+  test("the demo works from the keyboard", async ({ page }) => {
+    test.skip(isPhone(page), "keyboard");
     await page.goto("/");
-    const result = page.locator("[aria-live=polite]").filter({ has: page.locator("[data-try-score]") });
-    await expect(result).not.toContainText("Risk score");
-    await expect(result).toContainText("94 High risk");
-    expect(await page.locator("[data-try-marked]").evaluate((el) => getComputedStyle(el).color)).toBe("rgb(199, 199, 204)");
+    await expect(field(page)).toBeEditable();
+    await page.getByRole("radio", { name: "Text message" }).focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(page.getByRole("radio", { name: "Listing" })).toBeChecked();
+    await expect(page.getByRole("radio", { name: "Listing" })).toBeFocused();
+    let found = false;
+    for (let i = 0; i < 8 && !found; i++) {
+      await page.keyboard.press("Tab");
+      found = (await page.evaluate(() => document.activeElement?.textContent)) === "Fake listing";
+    }
+    expect(found).toBe(true);
+    await page.keyboard.press("Enter");
+    await expect(page.locator("[data-try-score]")).toHaveText("100");
+    await expect(page.getByRole("button", { name: "Fake listing" })).toBeFocused();
   });
 
   test("only the result is announced, not the text being typed", async ({ page }) => {
     await page.goto("/");
-    const live = page.locator("[aria-live]").filter({ has: page.locator("[data-try-score]") });
+    const live = page.locator("#demo [aria-live]");
     await expect(live).toHaveCount(1);
+    await expect(live.locator("[data-try-score]")).toHaveCount(1);
     await expect(live.locator("[data-try-issues]")).toHaveCount(1);
     await expect(live.locator("[data-try-marked]")).toHaveCount(0);
-    await expect(live.locator("a")).toHaveCount(0);
+    await expect(live.locator("a, textarea, button")).toHaveCount(0);
+    await expect(live).toContainText("94 High risk");
+    await expect(live).not.toContainText("Risk score");
   });
 
-  test("an empty field scores 0 and flags nothing", async ({ page }) => {
-    await page.goto("/");
-    await expect(field(page)).toBeEditable();
-    await field(page).fill("");
-    await expect(page.locator("[data-try-score]")).toHaveText("0");
-    await expect(page.locator("[data-try-level]")).toHaveText("Low");
-    await expect(page.locator("[data-try-issues]")).toHaveText("Nothing flagged.");
-  });
-
-  test("without JavaScript it shows the sample's result", async ({ browser }) => {
+  test("without JavaScript it shows the text sample's result, read-only", async ({ browser }) => {
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
     await page.goto("/");
     await expect(page.locator("[data-try-score]")).toHaveText("94");
     await expect(page.locator("[data-try-level]")).toHaveText("High");
     await expect(field(page)).toHaveAttribute("readonly", "");
+    await expect(page.getByRole("radio", { name: "Text message" })).toBeChecked();
     await context.close();
   });
 
-  test("odd input stays text and inside the page", async ({ page }) => {
+  test("odd input stays text for every kind, and inside the page", async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 700 });
     await page.goto("/");
     await expect(field(page)).toBeEditable();
-    const text = `<b>hi</b> 🎉\n${"x".repeat(200)} urgent`;
-    await field(page).fill(text);
-    await expect(page.locator("[data-try-score]")).toHaveText(String(checkSms(text).risk));
-    await expect(page.locator("[data-try-score]")).toHaveText("18");
-    await expect(page.locator("[data-try-marked] b")).toHaveCount(0);
-    await expect(page.locator("[data-try-marked]")).toContainText("<b>hi</b>");
+    const text = `<b>hi</b> 🎉 <img src=x onerror=alert(1)>\n${"x".repeat(200)} urgent`;
+    for (const kind of ["email", "text", "listing", "link"] as const) {
+      await page.getByRole("radio", { name: KIND[kind] }).check();
+      await field(page).fill(text);
+      await expect(page.locator("[data-try-score]")).toHaveText(String(checkScam(kind, text)!.risk));
+      await expect(page.locator("#demo b, #demo [data-try-marked] img")).toHaveCount(0);
+      await expect(page.locator("[data-try-marked]")).toContainText("<b>hi</b>");
+    }
     const past = await page.evaluate(() => {
       const vw = document.documentElement.clientWidth;
-      return [...document.querySelectorAll("#projects *")].filter((el) => el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > vw + 1 && !el.closest("pre, [data-code], .carousel > li")).map((el) => el.tagName);
+      return [...document.querySelectorAll("#demo *")].filter((el) => el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > vw + 1).map((el) => el.tagName);
     });
     expect(past).toEqual([]);
   });
 
-  test("the field is labelled, focusable and read-only until ready", async ({ page }) => {
+  test("the field is focusable, capped and shows focus", async ({ page }) => {
     await page.goto("/");
     const f = field(page);
     await expect(f).toBeEditable();
     await f.focus();
     await expect(f).toBeFocused();
-    const outline = await f.evaluate((el) => getComputedStyle(el).outlineStyle);
-    expect(outline).not.toBe("none");
-    await expect(page.locator("#try-text")).toHaveAttribute("maxlength", "1000");
-    await expect(page.getByText(/^The tool[’']s own rules, running in your browser\. Nothing is sent anywhere\.$/)).toBeVisible();
+    expect(await f.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe("none");
+    await expect(f).toHaveAttribute("maxlength", "1000");
   });
 });
 
@@ -1244,6 +1299,7 @@ test.describe("one column", () => {
         ...pick("section.hero h1"),
         ...pick("main h2:not(.sr-only)"),
         ...pick("#projects .carousel > li:first-child"),
+        ...pick("#demo h2"),
         ...pick("#more-title"),
         ...pick(".timeline"),
         ...pick("#skills h2"),

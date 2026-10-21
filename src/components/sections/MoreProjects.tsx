@@ -7,7 +7,7 @@ function MoreItem({ p }: { p: MoreProject }) {
   const meta = [p.note, [p.kind, p.year].filter(Boolean).join(", ")].filter(Boolean).join(" · ");
   return (
     <li>
-      <h4 className="type-lede text-text">{p.title}</h4>
+      <h3 className="type-lede text-text">{p.title}</h3>
       <p className="mt-f8 text-[17px] leading-[1.618] break-words text-text-2">
         <Figures text={p.summary} />
       </p>
@@ -34,9 +34,9 @@ function MoreItem({ p }: { p: MoreProject }) {
 export function MoreProjects() {
   return (
     <div className="mx-auto max-w-[1200px] px-gutter pt-f55 md:pt-f89">
-      <h3 id="more-title" className="type-display section-title text-text">
+      <h2 id="more-title" className="type-display section-title text-text">
         More projects
-      </h3>
+      </h2>
       <ul aria-labelledby="more-title" className="mt-f34 grid grid-cols-1 gap-x-f55 gap-y-f55 min-[834px]:grid-cols-2">
         {more.map((p) => (
           <MoreItem key={p.title} p={p} />

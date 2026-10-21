@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { featured, projectHref, type FeaturedProject } from "@/content/projects";
 import { MoreProjects } from "@/components/sections/MoreProjects";
-import { TryScamRules } from "@/components/sections/TryScamRules";
+import { ScamChecker } from "@/components/sections/ScamChecker";
 import { WorkCarousel } from "@/components/sections/WorkCarousel";
-import { checkSms } from "@/lib/scam-sms";
+import { checkScam, SAMPLES } from "@/lib/scam-rules";
 import { ButtonLink } from "@/components/ui/links";
 import { Screenshot } from "@/components/ui/Screenshot";
 import { Ink } from "@/components/ink/Ink";
@@ -80,10 +80,11 @@ function WorkCard({ p }: { p: FeaturedProject }) {
 
 /**
  * The selected work: a heading, then the three projects with public code and a case study as a
- * row of cards (WorkCarousel); then the scam checker to try; then the rest as a plain list.
+ * row of cards (WorkCarousel); then the scam checker to try, in its own section (#demo); then the
+ * rest as a plain list.
  */
 export function Projects() {
-  const scam = featured.find((p) => p.story)!;
+  const sample = SAMPLES.find((s) => s.kind === "text")!;
   return (
     <section id="projects" aria-labelledby="projects-title" className="pb-f34 pt-f55 md:pt-f89">
       <WorkCarousel
@@ -105,7 +106,7 @@ export function Projects() {
         ))}
       </WorkCarousel>
 
-      <TryScamRules sample={scam.story!.text} initial={checkSms(scam.story!.text)} source={scam.story!.source} />
+      <ScamChecker initial={checkScam(sample.kind, sample.text)!} />
 
       <MoreProjects />
     </section>

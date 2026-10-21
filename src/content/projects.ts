@@ -25,24 +25,6 @@ export type Screenshot = {
 /** A figure from a project's result, shown large on the home page with a line saying what it measures. */
 export type Stat = { value: string; label: string };
 
-/**
- * A result told step by step as you scroll (components/sections/ScanStory.tsx): a sample input, and
- * the rules that fired on it, in the order the tool applies them, each with the weight it adds.
- * Produced by running the project's own code on the sample, not written by hand.
- */
-export type ScanStory = {
-  /** What the input is, shown above it. */
-  label: string;
-  /** The input, verbatim. */
-  text: string;
-  /** In order: the words in the input each rule matched, the tool's own message, and the weight it adds. */
-  steps: { phrase: string; rule: string; add: number }[];
-  /** The tool's levels for this kind of input: Medium from `medium`, High from `high`. */
-  thresholds: { medium: number; high: number };
-  /** The rules' source, linked under the story. */
-  source: Link;
-};
-
 export type CodeExcerpt = {
   /** File path inside the repository, shown above the code. */
   file: string;
@@ -68,8 +50,6 @@ export type FeaturedProject = {
   stats: Stat[];
   /** The screenshot the home page shows, if not the first case-study figure (or the code, if none). */
   homeShot?: Screenshot;
-  /** Told as you scroll on the home page, in place of a screenshot. */
-  story?: ScanStory;
   /** Where the home screenshot's evidence is, ringed in ink: percent of the image, from its top left. */
   ring?: { x: number; y: number; w: number; h: number };
   stack: string[];
@@ -119,20 +99,6 @@ const scam: FeaturedProject = {
     { value: "70", label: "The lookalike link paypal-secure.com/verify-now, flagged High" },
     { value: "0", label: "www.amazon.com, reported as a recognised domain" },
   ],
-  // js/detectors.js (sms) at commit 558fa66, run on the README's sample text message, traced rule by rule.
-  story: {
-    label: "The README’s sample text message",
-    text: "URGENT: Your bank detected unusual activity. Confirm now: https://bit.ly/xy7z\nReply YES to secure your account.",
-    steps: [
-      { phrase: "URGENT", rule: "Scam-like phrase: \"urgent\"", add: 18 },
-      { phrase: "Your bank", rule: "Scam-like phrase: \"your bank\"", add: 18 },
-      { phrase: "unusual activity", rule: "Scam-like phrase: \"unusual activity\"", add: 18 },
-      { phrase: "bit.ly", rule: "Shortened URL - often used in SMS scams", add: 25 },
-      { phrase: "Reply YES", rule: "Asks you to reply to confirm - common in subscription fraud", add: 15 },
-    ],
-    thresholds: { medium: 35, high: 60 },
-    source: { label: "js/detectors.js, lines 79–126", href: `${GH}/Fraud-Detection-Tool/blob/main/js/detectors.js#L79-L126` },
-  },
   stack: ["JavaScript", "HTML and CSS", "Node.js", "Express", "Cheerio"],
   repo: { label: "Code on GitHub", href: `${GH}/Fraud-Detection-Tool` },
   availability: "No live demo; it runs locally.",

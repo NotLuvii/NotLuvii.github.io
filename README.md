@@ -128,8 +128,11 @@ checker promoted, and case studies that open with the result.
   is a verbatim copy of the tool's four detectors (Fraud-Detection-Tool, `js/detectors.js`, commit
   558fa66) with type annotations only. The tool reuses two global regular expressions with
   `test()`, so its second check of a text can miss what the first found ("Selling bike $50,
-  contact me" scores 32, then 12); the checker resets them before each run, and the fix belongs in
-  the tool. Nothing is sent anywhere.
+  contact me" scores 32, then 12); the checker resets them before each run. In Chrome the tool also
+  takes text with spaces as a link (Chrome's URL parser lets spaces into a host name); the checker
+  gives the tool's own "not a valid URL" answer there. It trims what you paste first, as the tool's
+  page does, and checks up to 10,000 characters, saying so when it reaches that. The fixes belong
+  in the tool. Nothing is sent anywhere.
 - **Case studies** (`components/CaseStudy.tsx`): the title and summary; the first screenshot in
   the cards' frame; the problem, what I did and the outcome, three across from 834px; the project,
   stack and availability; then more screenshots, how it works, the key decision, the rest of the
@@ -197,7 +200,8 @@ What the site can't supply without inventing it, and work that belongs in the pr
   by 40%" (the monitoring dashboards) are shown as written on the resume.
 - **About**: any interests beyond what the site already shows.
 - **Fraud-Detection-Tool**: make `sms.shortUrlPattern` and `listing.pricePattern` non-global (or
-  reset them), and add tests; the case study lists both as limitations.
+  reset them); reject a link whose host has a space, which Chrome's URL parser lets through; and
+  add tests. The case study lists each as a limitation, and the checker guards against both.
 - **Resume-Analyze**: match multi-word and punctuated skills (Power BI, C++, scikit-learn,
   problem-solving); the case study lists it as a limitation.
 

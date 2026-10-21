@@ -87,10 +87,14 @@ describe("featured projects", () => {
     expect(defect).toContain("the fix belongs in the tool");
     expect(defect).toContain("32, then 12");
     expect(limits).toContain("There are no automated tests.");
+    // Found while building the checker: Chrome's URL parser lets spaces through, so the tool scores them.
+    expect(limits.some((l) => /Chrome/.test(l) && /spaces/.test(l))).toBe(true);
   });
 
   it("case-study copy doesn't point at a screenshot below the text: the screenshot leads", () => {
     for (const p of featured) for (const t of [...p.caseStudy.context, ...p.caseStudy.outcome]) expect(t, p.slug).not.toMatch(/screenshot below/i);
+    // The glance sits beside the screenshot on a desktop and under it on a phone: no "above" there either.
+    for (const p of featured) for (const t of [p.caseStudy.context[0], p.caseStudy.outcome[0]]) expect(t, p.slug).not.toMatch(/screenshot (above|below)/i);
   });
 
   it("reports the scores the checker computes from the README's samples", () => {

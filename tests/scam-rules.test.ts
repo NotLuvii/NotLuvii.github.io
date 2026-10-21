@@ -82,6 +82,14 @@ describe("scam rules", () => {
     }
   });
 
+  it("trims the input first, as the tool's page does (js/app.js), so whitespace around a paste changes nothing", () => {
+    expect(checkScam("email", "  Dear Customer, please verify your account today.")).toMatchObject({ risk: 45, level: "medium" });
+    expect(checkScam("text", `Click bit.ly/a${"\n".repeat(10)}`)).toEqual(checkScam("text", "Click bit.ly/a"));
+    for (const s of SAMPLES) expect(checkScam(s.kind, `  \n${s.text}\n\n  `), s.id).toEqual(checkScam(s.kind, s.text));
+    for (const [kind, text] of [["listing", "Selling bike $50, contact me"], ["email", "Hello, verify your account immediately"]] as const)
+      expect(checkScam(kind, `   ${text}   `)).toEqual(checkScam(kind, text));
+  });
+
   it("an invalid link is the tool's own message", () => {
     expect(checkScam("link", "not a url at all")).toEqual({ risk: 100, level: "high", issues: [{ type: "invalid", msg: "This is not a valid URL." }] });
   });

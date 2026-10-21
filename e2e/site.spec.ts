@@ -585,6 +585,30 @@ test.describe("selected work", () => {
     if (!isPhone(page)) await expect(page.getByRole("button", { name: "Previous project" })).toBeDisabled();
   });
 
+  test("at 1024, where two cards show, Previous and Next reach every position and the count names the cards in view", async ({ page }) => {
+    test.skip(isPhone(page), "desktop widths");
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await page.goto("/");
+    const count = page.locator(".carousel-position .carousel-count");
+    const dots = page.locator(".carousel-position .carousel-dots button");
+    const prev = page.getByRole("button", { name: "Previous project" });
+    const next = page.getByRole("button", { name: "Next project" });
+    await expect(count).toHaveText("1–2 of 3");
+    await expect(dots.nth(0)).toHaveAttribute("aria-current", "true");
+    await expect(dots.nth(1)).toHaveAttribute("aria-current", "true");
+    await expect(dots.nth(2)).not.toHaveAttribute("aria-current", /.*/);
+    await expect(prev).toBeDisabled();
+    await next.click();
+    await expect(count).toHaveText("2–3 of 3");
+    await expect(next).toBeDisabled();
+    await expect(dots.nth(2)).toHaveAttribute("aria-current", "true");
+    await prev.click();
+    await expect(count).toHaveText("1–2 of 3");
+    await expect(prev).toBeDisabled();
+    await dots.nth(2).click();
+    await expect(count).toHaveText("2–3 of 3");
+  });
+
   test("position follows a resize", async ({ page }) => {
     test.skip(isPhone(page), "desktop widths");
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -737,14 +761,41 @@ test.describe("the scam checker", () => {
     expect(past).toEqual([]);
   });
 
-  test("the field is focusable, capped and shows focus", async ({ page }) => {
+  test("the field is focusable and shows focus", async ({ page }) => {
     await page.goto("/");
     const f = field(page);
     await expect(f).toBeEditable();
     await f.focus();
     await expect(f).toBeFocused();
     expect(await f.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe("none");
-    await expect(f).toHaveAttribute("maxlength", "1000");
+  });
+
+  test("a long paste is checked to the end, and the cap says so when reached", async ({ page }) => {
+    await page.goto("/");
+    await expect(field(page)).toBeEditable();
+    await page.getByRole("radio", { name: "Email" }).check();
+    const long = `${"Hi team, here is the long weekly update. ".repeat(40)}Verify your identity immediately: https://paypal-secure.com/verify-now`;
+    expect(long.length).toBeGreaterThan(1500);
+    await field(page).fill(long);
+    await expect(page.locator("[data-try-score]")).toHaveText(String(checkScam("email", long)!.risk));
+    await expect(page.locator("[data-try-cap]")).toHaveCount(0);
+    await field(page).fill("x".repeat(10_050));
+    expect((await field(page).inputValue()).length).toBe(10_000);
+    await expect(page.locator("[data-try-cap]")).toHaveText("Only the first 10,000 characters are checked.");
+  });
+
+  test("in this browser too, text with spaces is not a valid link", async ({ page }) => {
+    await page.goto("/");
+    await expect(field(page)).toBeEditable();
+    await page.getByRole("radio", { name: "Link" }).check();
+    for (const text of ["not a url at all", "paypal secure.com", "https://hello world/verify"]) {
+      await field(page).fill(text);
+      await expect(page.locator("[data-try-score]"), text).toHaveText("100");
+      await expect(page.locator("[data-try-issues]"), text).toHaveText("This is not a valid URL.");
+    }
+    // A space after the address, in its path, is still a link the tool can check.
+    await field(page).fill("https://www.amazon.com/a b");
+    await expect(page.locator("[data-try-issues]")).toContainText("Recognized official domain: amazon.com");
   });
 });
 
@@ -794,6 +845,34 @@ test.describe("case studies", () => {
       expect(repeated).toEqual([]);
     });
   }
+
+  test("the lead screenshot is shown whole, with its caption, beside the glance", async ({ page }) => {
+    test.skip(isPhone(page), "desktop layout");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    for (const p of featured.filter((x) => x.caseStudy.figures.length)) {
+      await page.goto(projectHref(p.slug));
+      const lead = p.caseStudy.figures[0];
+      const box = await page.locator(".cs-lead").evaluate((el) => {
+        const img = el.querySelector("img")!.getBoundingClientRect();
+        // The picture's visible part: clipped by every ancestor that clips.
+        let top = img.top, bottom = img.bottom;
+        for (let n = el.querySelector("img")!.parentElement; n; n = n.parentElement) {
+          const s = getComputedStyle(n);
+          if (s.overflowY !== "visible") {
+            const r = n.getBoundingClientRect();
+            top = Math.max(top, r.top);
+            bottom = Math.min(bottom, r.bottom);
+          }
+        }
+        return { shown: (bottom - top) / img.height, glance: document.querySelector("#glance")!.getBoundingClientRect().top };
+      });
+      expect(box.shown, p.slug).toBeGreaterThan(0.99);
+      expect(box.glance, `${p.slug}: the glance starts in the first screen`).toBeLessThan(900);
+      const caption = page.locator(".cs-lead figcaption", { hasText: lead.caption });
+      await expect(caption).toBeVisible();
+      await expect(caption).not.toHaveClass(/sr-only/);
+    }
+  });
 
   test("the scam case study lists the checker's regex defect among its limitations", async ({ page }) => {
     await page.goto(projectHref("scam-detection"));

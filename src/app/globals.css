@@ -855,14 +855,19 @@ svg[data-ink] {
 }
 
 /* ── Case studies (components/CaseStudy.tsx) ───────────────────
-   The first screenshot leads, in the cards' golden frame, held at its
-   foot; then the problem, what I did and the outcome, three across from
-   834px. */
-.cs-lead-figure,
-.cs-lead {
-  max-width: 760px;
+   The first screenshot leads, whole and captioned (Immensa's frame in
+   the cards' golden ratio), with the problem, what I did and the
+   outcome: under it, three across, from 834px; beside it, one above
+   another, from 1024px, at 1 : 1.618. */
+.cs-intro {
+  display: grid;
+  gap: 55px;
 }
 .cs-lead {
+  width: 100%;
+  max-width: 420px;
+}
+.cs-lead.card-picture-pending {
   border-radius: 12px;
   background: var(--color-panel);
 }
@@ -874,6 +879,19 @@ svg[data-ink] {
   .cs-glance {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 55px;
+  }
+}
+@media (min-width: 1024px) {
+  .cs-intro {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.618fr);
+    align-items: start;
+  }
+  .cs-lead {
+    max-width: none;
+  }
+  .cs-glance {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 34px;
   }
 }
 

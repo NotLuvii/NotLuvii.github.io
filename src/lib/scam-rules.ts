@@ -332,19 +332,27 @@ export const detectorHref = (kind: ScamKind) => {
 };
 
 /**
- * Scores an input with the tool's detector for its kind; null when there is nothing to check, so
- * an empty field never reads as a low risk.
+ * Scores an input with the tool's detector for its kind, as the tool's page does (js/app.js trims
+ * the input, then runs the detector); null when there is nothing to check, so an empty field never
+ * reads as a low risk.
  *
- * The tool reuses two global regular expressions with `test()` (`sms.shortUrlPattern` and
- * `listing.pricePattern`), and `test()` on a global expression starts where its last match ended,
- * so the tool's second check of the same text can miss what its first found ("Selling bike $50,
- * contact me" scores 32, then 12). Every global expression is reset here before each run, without
- * touching the rules; the fix belongs in the tool.
+ * Two guards sit outside the copied rules, each against a defect the tool has:
+ * - The tool reuses two global regular expressions with `test()` (`sms.shortUrlPattern` and
+ *   `listing.pricePattern`), and `test()` on a global expression starts where its last match
+ *   ended, so the tool's second check of the same text can miss what its first found ("Selling
+ *   bike $50, contact me" scores 32, then 12). Every global expression is reset before each run.
+ * - The link detector relies on `new URL()` to reject what isn't an address, but Chrome's parser
+ *   lets spaces into a host name ("not a url at all" becomes a host), where the URL standard, and
+ *   Node, reject it, so in Chrome the tool scores it 0. A link whose host has a space gets the
+ *   tool's own "not a valid URL" answer here, in every browser.
+ * The fixes belong in the tool.
  */
 export function checkScam(kind: ScamKind, input: string): ScamResult | null {
-  if (!input.trim()) return null;
+  const text = input.trim();
+  if (!text) return null;
   for (const re of [Detectors.sms.shortUrlPattern, Detectors.sms.numberPattern, Detectors.listing.pricePattern, ...Detectors.phishing.linkPatterns, ...Detectors.phishing.requestPatterns]) re.lastIndex = 0;
-  return DETECTOR[kind].run(input) as ScamResult;
+  if (kind === "link" && /\s/.test(text.replace(/^https?:\/\//i, "").split(/[/?#]/)[0])) return { risk: 100, level: "high", issues: [{ type: "invalid", msg: "This is not a valid URL." }] };
+  return DETECTOR[kind].run(text) as ScamResult;
 }
 
 /**

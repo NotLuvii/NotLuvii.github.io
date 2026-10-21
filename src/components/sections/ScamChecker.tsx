@@ -5,6 +5,8 @@ import { checkScam, DETECTOR_LINES, detectorHref, markRanges, SAMPLES, type Scam
 import { TextLink } from "@/components/ui/links";
 
 const LEVEL = { low: "Low", medium: "Medium", high: "High" } as const;
+/** Far beyond a real email or listing; the tool itself sets no limit. */
+const MAX = 10_000;
 const KINDS: { kind: ScamKind; label: string; field: string }[] = [
   { kind: "email", label: "Email", field: "Paste an email" },
   { kind: "text", label: "Text message", field: "Paste a text message" },
@@ -58,7 +60,7 @@ export function ScamChecker({ initial }: { initial: ScamResult }) {
   const text = texts[kind];
   const result = useMemo(() => (ready ? checkScam(kind, text) : initial), [ready, kind, text, initial]);
   const ranges = useMemo(() => (result ? markRanges(kind, text, result) : []), [kind, text, result]);
-  const setText = (value: string) => setTexts((t) => ({ ...t, [kind]: value }));
+  const setText = (value: string) => setTexts((t) => ({ ...t, [kind]: value.slice(0, MAX) }));
   const [from, to] = DETECTOR_LINES[kind];
   const current = KINDS.find((k) => k.kind === kind)!;
 
@@ -118,12 +120,17 @@ export function ScamChecker({ initial }: { initial: ScamResult }) {
               id="demo-text"
               value={text}
               readOnly={!ready}
-              maxLength={1000}
+              maxLength={MAX}
               rows={kind === "link" ? 2 : 5}
               spellCheck={false}
               onChange={(e) => setText(e.target.value)}
               className="mt-f8 block w-full resize-y rounded-xl border-0 bg-raised p-f13 text-[17px] leading-[1.618] text-text"
             />
+            {text.length >= MAX && (
+              <p data-try-cap className="type-small mt-f8 text-text-3">
+                Only the first 10,000 characters are checked.
+              </p>
+            )}
           </div>
 
           <div className="min-w-0">

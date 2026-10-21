@@ -35,9 +35,9 @@ function Bullets({ items }: { items: string[] }) {
 }
 
 /**
- * A case study, in the order a reviewer needs it: the title and summary; the first screenshot (or,
- * for Immensa, the frame saying its screenshots are to come); at a glance, the problem, what I did
- * and the outcome; the details; then, farther down, the other screenshots, how it works, the key
+ * A case study, in the order a reviewer needs it: the title and summary; the first screenshot, whole
+ * and captioned (or, for Immensa, the frame saying its screenshots are to come), with the problem,
+ * what I did and the outcome at a glance beside it from 1024px; the details; then, farther down, the other screenshots, how it works, the key
  * decision, the rest of the outcome, the limitations and the code. Nothing is printed twice: the
  * glance takes the first paragraph of the context and of the outcome, and the later sections the
  * rest.
@@ -65,20 +65,19 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
         </header>
 
         <div className="mx-auto max-w-[1200px] px-gutter">
+          <div className="cs-intro">
           {lead ? (
-            <figure className="cs-lead-figure">
-              <div className="cs-lead card-picture card-picture-foot">
-                <Screenshot shot={lead} captionHidden sizes="(min-width: 800px) 734px, 90vw" />
-              </div>
-              {c.figuresNote && <figcaption className="type-small mt-f13 text-text-3">{c.figuresNote}</figcaption>}
-            </figure>
+            <div className="cs-lead">
+              <Screenshot shot={lead} sizes="(min-width: 1024px) 400px, (min-width: 480px) 420px, 90vw" />
+              {c.figuresNote && <p className="type-small mt-f8 text-text-3">{c.figuresNote}</p>}
+            </div>
           ) : (
             <div className="cs-lead card-picture card-picture-pending">
               <p>Android screenshots to come</p>
             </div>
           )}
 
-          <section id="glance" aria-labelledby="glance-title" className="mt-f55">
+          <section id="glance" aria-labelledby="glance-title">
             <h2 id="glance-title" className="sr-only">
               At a glance
             </h2>
@@ -97,6 +96,7 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
               </div>
             </div>
           </section>
+          </div>
 
           <dl className="mt-f34 grid gap-x-f34 gap-y-f21 rounded-xl bg-panel p-f21 sm:grid-cols-3 md:p-f34">
             <div>

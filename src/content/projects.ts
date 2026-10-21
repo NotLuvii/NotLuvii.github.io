@@ -141,6 +141,7 @@ const scam: FeaturedProject = {
       "The list of official domains covers major marketplaces and payment sites only.",
       "There are no automated tests.",
       "In the tool, two regular expressions are global and reused with test(), so a second check can miss what the first found: the listing “Selling bike $50, contact me” scores 32, then 12. The checker on this site resets them before each run; the fix belongs in the tool.",
+      "In Chrome, the link check takes text with spaces in it, such as “not a url at all”, as a web address and scores it 0, because Chrome’s URL parser lets spaces into a host name where the URL standard rejects them. The checker on this site rejects such text, as the tool does in other browsers; the fix belongs in the tool.",
     ],
     figuresNote: "Screenshots of the tool running locally, October 2026, using the example inputs from its README.",
     figures: [
@@ -345,7 +346,7 @@ const resume: FeaturedProject = {
       },
     },
     outcome: [
-      "The screenshot above compares my own resume with a short sample posting that names nine listed skills once each. The tool scored it 55.6%: it found SQL, React, TypeScript, AWS and Python in both, listed Docker and Kubernetes as missing technical skills, and communication and teamwork as missing soft skills, since my resume doesn’t use those words.",
+      "The screenshot compares my own resume with a short sample posting that names nine listed skills once each. The tool scored it 55.6%: it found SQL, React, TypeScript, AWS and Python in both, listed Docker and Kubernetes as missing technical skills, and communication and teamwork as missing soft skills, since my resume doesn’t use those words.",
       "Twelve automated tests cover the weighting (including that short skill names like R are counted as whole words), the score from 0 to 100%, the web endpoint and the desktop window.",
     ],
     limitations: [

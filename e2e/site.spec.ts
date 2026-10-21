@@ -337,14 +337,6 @@ test.describe("after the Apple audit", () => {
   });
 
 
-  test("Immensa's code is cut off by its card like a picture: not a scroll region, caption read out", async ({ page }) => {
-    await page.goto("/");
-    const code = page.locator("#projects article").nth(2).locator("[data-code]");
-    await expect(code.locator("pre")).not.toHaveAttribute("tabindex", /.*/);
-    expect(await code.locator("pre").evaluate((el) => getComputedStyle(el).overflowY)).not.toMatch(/auto|scroll/);
-    await expect(code.locator("figcaption")).toHaveClass(/sr-only/);
-  });
-
   test("more projects: a plain list, two columns on desktop and one on a phone, no boxes", async ({ page }) => {
     await page.goto("/");
     const list = page.locator("#projects ul[aria-labelledby=more-title]");
@@ -486,6 +478,7 @@ test.describe("after the Apple audit", () => {
 test.describe("selected work", () => {
   test("the next button scrolls and the ends disable their button", async ({ page }) => {
     test.skip(isPhone(page), "the buttons show from 768px");
+    await page.setViewportSize({ width: 768, height: 1024 });
     await page.goto("/");
     const carousel = page.locator("#projects ul.carousel");
     const prev = page.getByRole("button", { name: "Previous project" });
@@ -528,6 +521,70 @@ test.describe("selected work", () => {
     expect(cx).toBeLessThan(img.x + img.width);
     expect(cy).toBeGreaterThan(img.y);
     expect(cy).toBeLessThan(img.y + img.height);
+  });
+
+  test("card previews are screenshots in one frame, with no code", async ({ page }) => {
+    await page.goto("/");
+    const pictures = page.locator("#projects .carousel .card-picture");
+    await expect(pictures).toHaveCount(3);
+    const ratios = await pictures.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().width / e.getBoundingClientRect().height));
+    for (const r of ratios) expect(Math.abs(r - 1.618)).toBeLessThanOrEqual(0.01);
+    await expect(pictures.nth(0).locator("img")).toHaveCount(1);
+    await expect(pictures.nth(1).locator("img")).toHaveCount(1);
+    await expect(pictures.nth(2)).toHaveClass(/card-picture-pending/);
+    await expect(pictures.nth(2)).toHaveText("Android screenshots to come");
+    await expect(page.locator("#projects .carousel [data-code]")).toHaveCount(0);
+  });
+
+  test("at 1440 all three cards are in view with no position controls", async ({ page }) => {
+    test.skip(isPhone(page), "desktop width");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    await page.locator("#projects .carousel").scrollIntoViewIfNeeded();
+    const boxes = await page.locator("#projects .carousel > li").evaluateAll((lis) => lis.map((li) => li.getBoundingClientRect()).map((r) => ({ left: r.left, right: r.right })));
+    expect(boxes).toHaveLength(3);
+    for (const b of boxes) {
+      expect(b.left).toBeGreaterThanOrEqual(0);
+      expect(b.right).toBeLessThanOrEqual(1440);
+    }
+    expect(await page.locator("#projects .carousel").evaluate((ul) => ul.scrollWidth - ul.clientWidth)).toBeLessThanOrEqual(2);
+    await expect(page.locator(".carousel-position")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Next project" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Previous project" })).toHaveCount(0);
+  });
+
+  test("when the row scrolls, it says where you are", async ({ page }) => {
+    if (!isPhone(page)) await page.setViewportSize({ width: 768, height: 1024 });
+    await page.goto("/");
+    const count = page.locator(".carousel-position .carousel-count");
+    const dots = page.locator(".carousel-position .carousel-dots button");
+    await expect(count).toHaveText("1 of 3");
+    await expect(dots).toHaveCount(3);
+    for (const [i, p] of featured.entries()) await expect(dots.nth(i)).toHaveAttribute("aria-label", `Show project ${i + 1}: ${p.title}`);
+    await expect(dots.nth(0)).toHaveAttribute("aria-current", "true");
+    if (isPhone(page)) await dots.nth(1).click();
+    else await page.getByRole("button", { name: "Next project" }).click();
+    await expect(count).toHaveText("2 of 3");
+    await expect(dots.nth(1)).toHaveAttribute("aria-current", "true");
+    await expect(dots.nth(0)).not.toHaveAttribute("aria-current", /.*/);
+    await dots.nth(2).click();
+    await expect(count).toHaveText("3 of 3");
+    await expect(dots.nth(2)).toHaveAttribute("aria-current", "true");
+    if (!isPhone(page)) await expect(page.getByRole("button", { name: "Next project" })).toBeDisabled();
+    await dots.nth(0).click();
+    await expect(count).toHaveText("1 of 3");
+    if (!isPhone(page)) await expect(page.getByRole("button", { name: "Previous project" })).toBeDisabled();
+  });
+
+  test("position follows a resize", async ({ page }) => {
+    test.skip(isPhone(page), "desktop widths");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    await expect(page.locator(".carousel-position")).toHaveCount(0);
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await expect(page.locator(".carousel-position .carousel-count")).toHaveText("1 of 3");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(page.locator(".carousel-position")).toHaveCount(0);
   });
 
   test("no scroll story is left", async ({ page }) => {

@@ -526,8 +526,9 @@ svg[data-ink] {
 }
 
 /* ── Selected work (components/sections/Projects.tsx, WorkCarousel.tsx)
-   A row of cards that scrolls sideways and snaps to each one. The
-   first card lines up with the heading; the row runs on to the right
+   Three cards in a row. From 1100px they share the column, a third
+   each; narrower, the row scrolls sideways and snaps to each card, the
+   first lined up with the heading and the row running on to the right
    edge of the screen, so the next card shows that there's more. */
 /* Section titles, More projects among them: the display face at 56.61px
    on a desktop, down to 34.99px on a phone. */
@@ -555,8 +556,13 @@ svg[data-ink] {
 }
 .carousel > li {
   flex: none;
-  width: min(610px, 85vw);
+  width: min(400px, 82vw);
   scroll-snap-align: start;
+}
+@media (min-width: 1100px) {
+  .carousel > li {
+    width: calc((100% - 42px) / 3);
+  }
 }
 @media (prefers-reduced-motion: no-preference) {
   .carousel {
@@ -593,6 +599,40 @@ svg[data-ink] {
   opacity: 0.35;
   cursor: default;
 }
+/* Where the row is, under it: "2 of 3" and a dot per card, each a 44px
+   target; the one in view is white and wider. */
+.carousel-count {
+  font-size: 13.36px;
+  line-height: 1.618;
+  color: var(--color-text-2);
+  font-variant-numeric: tabular-nums;
+}
+.carousel-dots {
+  display: flex;
+}
+.carousel-dots button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 44px;
+}
+.carousel-dots button::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #48484a;
+  transition:
+    width 0.2s var(--ease-out-soft),
+    background-color 0.2s var(--ease-out-soft);
+}
+.carousel-dots button:hover::before {
+  background: var(--color-text-3);
+}
+.carousel-dots button[aria-current="true"]::before {
+  width: 21px;
+  background: var(--color-text);
+}
 .work-card {
   position: relative;
   display: flex;
@@ -602,8 +642,9 @@ svg[data-ink] {
   overflow: clip;
   background: var(--color-panel);
 }
-/* The picture window: 16:10, cutting off what runs past it. Screenshots
-   are held at their foot, where the result is; code at its top. */
+/* The picture window: a golden rectangle, cutting off what runs past
+   it. Screenshots are held at their foot, where the result is. A
+   project with no screenshots yet says so in the same frame. */
 .card-picture {
   position: relative;
   aspect-ratio: 1.618 / 1;
@@ -615,6 +656,16 @@ svg[data-ink] {
 }
 .card-picture-foot > * {
   inset: auto 13px 0;
+}
+.card-picture-pending > p {
+  inset: 13px 13px 0;
+  display: grid;
+  place-items: center;
+  border-radius: 8px 8px 0 0;
+  background: var(--color-raised);
+  font-size: 13.36px;
+  line-height: 1.618;
+  color: var(--color-text-3);
 }
 .card-body {
   flex: 1;

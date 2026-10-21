@@ -4,16 +4,16 @@ import { MoreProjects } from "@/components/sections/MoreProjects";
 import { TryScamRules } from "@/components/sections/TryScamRules";
 import { WorkCarousel } from "@/components/sections/WorkCarousel";
 import { checkSms } from "@/lib/scam-sms";
-import { CodeBlock } from "@/components/ui/CodeBlock";
 import { ButtonLink } from "@/components/ui/links";
 import { Screenshot } from "@/components/ui/Screenshot";
 import { Ink } from "@/components/ink/Ink";
 import { ring } from "@/lib/ink";
 
 /**
- * A card's picture: a real screenshot, held at its foot, where the evidence is (the scam tool's
- * result, Resume Analyzer's score, ringed by hand); or, for Immensa, which has no screenshots, the
- * top of its code. The window is 16:10 and cuts the rest off (CSS: .card-picture).
+ * A card's picture, in one frame for all three: a real screenshot, held at its foot, where the
+ * evidence is (the scam tool's result, Resume Analyzer's score, ringed by hand). Immensa has no
+ * screenshots yet, so its frame says so and shows nothing made up; its code is in its case study.
+ * The window is a golden rectangle and cuts the rest off (CSS: .card-picture).
  */
 function CardPicture({ p }: { p: FeaturedProject }) {
   const shot = p.slug === "scam-detection" ? p.caseStudy.figures[0] : p.homeShot;
@@ -40,12 +40,11 @@ function CardPicture({ p }: { p: FeaturedProject }) {
         />
       </div>
     );
-  const code = p.caseStudy.decision.code;
-  return code ? (
-    <div className="card-picture">
-      <CodeBlock excerpt={code} teaser />
+  return (
+    <div className="card-picture card-picture-pending">
+      <p>Android screenshots to come</p>
     </div>
-  ) : null;
+  );
 }
 
 /** One project: its picture, its name (a link to the case study), one line, three tools and the two links. */
@@ -89,6 +88,7 @@ export function Projects() {
     <section id="projects" aria-labelledby="projects-title" className="pb-f34 pt-f55 md:pt-f89">
       <WorkCarousel
         label="Selected work"
+        names={featured.map((p) => p.title)}
         header={
           <>
             <h2 id="projects-title" className="type-display section-title text-text">

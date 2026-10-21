@@ -118,13 +118,14 @@ describe("colour", () => {
     }
   });
 
-  it("the defect red is used only by the data check", () => {
+  it("the defect red is used only by the diagram on the first screen", () => {
     const uses = offenders(/#ff5a4e|--color-defect/i).map((line) => line.split(":")[0]);
     expect(uses.length).toBeGreaterThan(0);
-    for (const file of new Set(uses)) expect(["src/app/globals.css", "src/components/sections/DataCheck.tsx"]).toContain(file);
-    // In globals.css: the token, and rules for the data check only.
+    for (const file of new Set(uses)) expect(["src/app/globals.css", "src/components/sections/ReconcileDiagram.tsx"]).toContain(file);
+    // In globals.css: the token, and rules for the diagram only.
     const rules = [...css.matchAll(/([^{}]*)\{[^{}]*var\(--color-defect\)[^{}]*\}/g)].map((m) => m[1].replace(/\/\*[\s\S]*?\*\//g, "").trim());
-    for (const selector of rules) expect(selector).toMatch(/^\.(data-check|dc-)/);
+    expect(rules.length).toBeGreaterThan(0);
+    for (const selector of rules) for (const part of selector.split(",")) expect(part.trim()).toMatch(/^\.(reconcile|rc-)/);
   });
 
   it("sets the page in true black, like Apple's dark tiles", () => {

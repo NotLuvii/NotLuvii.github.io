@@ -2,16 +2,19 @@ import { site } from "@/content/site";
 
 /**
  * The close: the name once more in the display face, filling the width of the screen on one line
- * (CSS: .footer-name); then the role and city, and the way back up.
+ * (CSS: .footer-name), the one block that runs past the column; then, in the column, the role and
+ * city, and the way back up.
  */
 export function Footer() {
   return (
-    <footer className="bg-page">
-      <div className="footer-inner px-gutter pb-f34 pt-f89">
+    <footer className="bg-page pb-f34 pt-f89">
+      <div className="footer-inner px-gutter">
         <p aria-hidden className="type-display footer-name text-text">
           {site.name}
         </p>
-        <div className="mt-f21 flex flex-col gap-f8 sm:flex-row sm:items-end sm:justify-between">
+      </div>
+      <div className="mx-auto mt-f21 max-w-[1200px] px-gutter">
+        <div className="footer-meta flex flex-col gap-f8 sm:flex-row sm:items-end sm:justify-between">
           <p className="type-small text-text-3">
             {site.role} in {site.location.city}, {site.location.region}
           </p>

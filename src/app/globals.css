@@ -110,8 +110,8 @@
 
 /* ── Type ─────────────────────────────────────────────────────
    At most eight sizes on the home page at desktop width: the display
-   face for the name (187) and the section titles (115); 56 (the
-   checker's score), 35 (statements, the timeline's
+   face for the name (189) and, at 57, the section titles and the
+   checker's score; 35 (statements, the timeline's
    years), 28 (titles), 21 (lede), 17 (body), 14 (small print). Case
    studies add 63 for their headlines. Most reading happens at 17–21px
    in IBM Plex Sans; Plex Mono is for code only, and Gochi Hand for
@@ -211,10 +211,10 @@ svg[data-ink] {
 }
 
 /* ── First screen (components/sections/Hero.tsx) ───────────────
-   A status line, then the name set huge with the headline, intro and
-   buttons under it; the data check beside them from 1024px, a band
-   under them below that. One soft amber glow sits behind the data
-   check: the page's one gradient. */
+   A status line, then the name set huge across the column; under it
+   the headline, intro and buttons, with the diagram beside them from
+   1024px and under them below that. One soft amber glow sits behind
+   the diagram: the page's one gradient. */
 .hero {
   position: relative;
   isolation: isolate;
@@ -251,40 +251,120 @@ svg[data-ink] {
     justify-content: flex-end;
   }
 }
+/* The name: 188.53px at 1440, and no more than 21% of the screen's
+   height, so a short laptop screen still shows the words under it. */
 .hero-name {
-  font-size: clamp(56.61px, 13.1vw, 188.53px);
+  font-size: clamp(56.61px, min(13.1vw, 21svh), 188.53px);
 }
 .hero-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 34px;
+  margin-top: 21px;
 }
 @media (min-width: 1024px) {
   /* The golden split: the words take 1.618 parts of the width, the
-     data check 1, level with them. */
+     diagram 1, level with them. */
   .hero-grid {
     grid-template-columns: minmax(0, 1.618fr) minmax(0, 1fr);
     align-items: center;
   }
 }
 
-/* The data check (components/sections/DataCheck.tsx): 600 by 525 from
-   1024px; below that a golden-rectangle band (1.618 : 1) showing its
-   top rows. */
-.data-check {
-  width: 100%;
-  aspect-ratio: 1.618 / 1;
+/* The diagram (components/sections/ReconcileDiagram.tsx): a 2 : 1 board,
+   the drawing filling it and its labels placed over it in percentages;
+   the caption under it. Report and source bars in grey; the ticks are
+   a signal (amber); the flag, its link, the trace and the root-cause
+   box are the page's one use of the defect red. */
+.reconcile {
+  max-width: 440px;
 }
-@media (min-width: 1024px) {
-  .data-check {
-    height: auto;
-    aspect-ratio: 600 / 525;
-  }
+.rc-board {
+  position: relative;
+  aspect-ratio: 2 / 1;
 }
-.data-check svg {
+.rc-board svg {
   display: block;
   width: 100%;
   height: 100%;
+  overflow: visible;
+}
+.rc-bar {
+  fill: #2a2a2a;
+}
+.rc-link {
+  fill: none;
+  stroke: var(--color-line);
+  stroke-width: 1.5;
+}
+.rc-tick {
+  fill: none;
+  stroke: var(--color-amber);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.rc-link-off,
+.rc-flag,
+.rc-trace,
+.rc-cause-box {
+  fill: none;
+  stroke: var(--color-defect);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.rc-link-off {
+  stroke-width: 1.5;
+  stroke-dasharray: 3 4;
+}
+.rc-trace {
+  stroke-width: 1.5;
+  stroke-dasharray: 1;
+  stroke-linejoin: round;
+}
+.rc-label {
+  position: absolute;
+  top: 0;
+  font-size: 13.36px;
+  line-height: 1.618;
+  color: var(--color-text-3);
+}
+.rc-cause-box {
+  stroke-width: 1.5;
+}
+.rc-cause {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13.36px;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--color-text-2);
+}
+/* Once, on load: the ticks row by row, then the flag, then the trace.
+   Each starts from its first frame (fill backwards) and, finished,
+   leaves the drawing as it is without the animation. */
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion="paused"]) .rc-tick {
+    animation: rc-in 0.3s var(--ease-out-soft) calc(var(--i) * 0.12s) backwards;
+  }
+  :root:not([data-motion="paused"]) .rc-flag {
+    animation: rc-in 0.3s var(--ease-out-soft) 1.1s backwards;
+  }
+  :root:not([data-motion="paused"]) .rc-trace {
+    animation: rc-draw 0.7s var(--ease-out-soft) 1.3s backwards;
+  }
+}
+@keyframes rc-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes rc-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
 }
 
 /* The visitor paused motion on the page (components/motion/MotionToggle.tsx): what moves stops,
@@ -309,18 +389,6 @@ svg[data-ink] {
 }
 .motion-toggle:hover {
   color: var(--color-text);
-}
-.dc-bars rect {
-  fill: #2a2a2a;
-}
-.dc-marks {
-  color: var(--color-amber);
-}
-.dc-defect rect {
-  fill: var(--color-defect);
-}
-.dc-defect path {
-  stroke: var(--color-defect);
 }
 
 /* ── Opening (components/sections/Hero.tsx) ────────────────────
@@ -420,6 +488,18 @@ svg[data-ink] {
   color: var(--color-text);
 }
 
+/* The footer closes on the name in the display face, across the whole
+   screen (inside the gutters) on one line: "LUVNEET BAMRAH" is 7.9 times
+   its font size wide, so 12.5% of the width fills about 99% of it. */
+.footer-inner {
+  container-type: inline-size;
+}
+.footer-name {
+  width: fit-content;
+  font-size: 12.5cqw;
+  white-space: nowrap;
+}
+
 /* ── Tiles (home page) ──────────────────────────────────────────
    As on apple.com: About and Contact sit on tiles in the panel tone
    on black, 12px apart, two across from 834px. A tile clips what
@@ -449,11 +529,9 @@ svg[data-ink] {
    A row of cards that scrolls sideways and snaps to each one. The
    first card lines up with the heading; the row runs on to the right
    edge of the screen, so the next card shows that there's more. */
+/* Section titles, More projects among them: the display face at 56.61px
+   on a desktop, down to 34.99px on a phone. */
 .section-title {
-  font-size: clamp(44.51px, 8.1vw, 116.52px);
-}
-/* More projects: the display face at the checker score's size. */
-.more-title {
   font-size: clamp(34.99px, 3.94vw, 56.61px);
 }
 /* The row and each card are positioned, so the hidden text inside the

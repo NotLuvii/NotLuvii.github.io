@@ -9,7 +9,7 @@ import { emphasize } from "@/lib/emphasize";
  */
 export function About() {
   return (
-    <section id="skills" aria-labelledby="skills-title" className="pt-f89 md:pt-f144">
+    <section id="skills" aria-labelledby="skills-title" className="pt-f55 md:pt-f89">
       <div className="mx-auto max-w-[1200px] px-gutter pb-f34 md:pb-f34">
         <h2 id="skills-title" className="type-display section-title text-text">
           About and skills

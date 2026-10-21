@@ -44,7 +44,7 @@ function Entry({ entry }: { entry: TimelineEntry }) {
  */
 export function Experience() {
   return (
-    <section id="experience" aria-labelledby="experience-title" className="pt-f89 md:pt-f144">
+    <section id="experience" aria-labelledby="experience-title" className="pt-f55 md:pt-f89">
       <div className="mx-auto max-w-[1200px] px-gutter">
         <h2 id="experience-title" className="type-display section-title text-text">
           Experience

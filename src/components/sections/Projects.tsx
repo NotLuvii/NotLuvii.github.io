@@ -86,7 +86,7 @@ function WorkCard({ p }: { p: FeaturedProject }) {
 export function Projects() {
   const scam = featured.find((p) => p.story)!;
   return (
-    <section id="projects" aria-labelledby="projects-title" className="pb-f34 pt-f89 md:pb-f34 md:pt-f144">
+    <section id="projects" aria-labelledby="projects-title" className="pb-f34 pt-f55 md:pt-f89">
       <WorkCarousel
         label="Selected work"
         header={

@@ -107,10 +107,10 @@ test.describe("home page", () => {
 test.describe("first screen", () => {
   test("nothing removed is left behind", async ({ page }) => {
     await page.goto("/");
-    for (const sel of ["[data-recording]", ".hero-frame", ".more-row", "[data-figure]", "video", ".role-grid", ".sketch"]) await expect(page.locator(sel), sel).toHaveCount(0);
+    for (const sel of ["[data-recording]", ".hero-frame", ".more-row", "[data-figure]", "video", ".role-grid", ".sketch", ".data-check"]) await expect(page.locator(sel), sel).toHaveCount(0);
   });
 
-  test("says who and what: the clock, the name, the headline, the intro, two buttons and the data field, with no status pill", async ({ page }) => {
+  test("says who and what: the clock, the name, the headline, the intro, two buttons and the diagram, with no status pill", async ({ page }) => {
     await page.goto("/");
     const hero = page.locator("section.hero");
     // No status pill: the first screen opens on the clock line and the name.
@@ -122,7 +122,7 @@ test.describe("first screen", () => {
     await expect(hero.getByText(site.intro)).toBeVisible();
     await expect(hero.getByRole("link", { name: "See the work" })).toHaveAttribute("href", "#projects");
     await expect(hero.getByRole("link", { name: /Download resume/ })).toHaveAttribute("download", "");
-    await expect(hero.locator(".data-check")).toHaveAttribute("aria-hidden", "true");
+    await expect(hero.locator("figure.reconcile svg")).toHaveAttribute("aria-hidden", "true");
     await expect(hero.locator("img, video, picture")).toHaveCount(0);
     for (const p of featured) await expect(hero).not.toContainText(p.title);
   });
@@ -135,25 +135,26 @@ test.describe("first screen", () => {
     await context.close();
   });
 
-  test("the first screen fits: the words and the data check on screen, clear of the bar", async ({ page }) => {
+  test("the first screen fits: the name, the words and the diagram on screen, clear of the bar", async ({ page }) => {
     for (const [w, h] of [[1440, 900], [1280, 720]] as const) {
       await page.setViewportSize({ width: w, height: h });
       await page.goto("/");
       const box = await page.locator("section.hero").evaluate((s) => {
+        const n = s.querySelector("h1")!.getBoundingClientRect();
         const c = s.querySelector(".hero-copy")!.getBoundingClientRect();
-        const d = s.querySelector(".data-check")!.getBoundingClientRect();
-        return { top: c.top, bottom: c.bottom, dTop: d.top, dBottom: d.bottom, dWidth: d.width, vh: innerHeight };
+        const d = s.querySelector(".hero-visual")!.getBoundingClientRect();
+        return { top: n.top, bottom: c.bottom, dTop: d.top, dBottom: d.bottom, dWidth: d.width, vh: innerHeight };
       });
       expect(box.top, `${w}x${h}`).toBeGreaterThanOrEqual(56);
       expect(box.bottom, `${w}x${h}`).toBeLessThanOrEqual(box.vh);
-      expect(box.dTop, `${w}x${h} data check`).toBeGreaterThanOrEqual(56);
-      expect(box.dBottom, `${w}x${h} data check`).toBeLessThanOrEqual(box.vh);
-      expect(box.dWidth, `${w}x${h} data check`).toBeGreaterThanOrEqual(360);
+      expect(box.dTop, `${w}x${h} diagram`).toBeGreaterThanOrEqual(56);
+      expect(box.dBottom, `${w}x${h} diagram`).toBeLessThanOrEqual(box.vh);
+      expect(box.dWidth, `${w}x${h} diagram`).toBeGreaterThanOrEqual(360);
     }
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto("/");
     const phone = await page.locator("section.hero").evaluate((s) => ({
-      top: s.querySelector(".hero-copy")!.getBoundingClientRect().top,
+      top: s.querySelector("h1")!.getBoundingClientRect().top,
       buttons: Math.max(...[...s.querySelectorAll(".hero-copy a")].map((a) => a.getBoundingClientRect().bottom)),
       vh: innerHeight,
     }));
@@ -166,16 +167,60 @@ test.describe("first screen", () => {
     await page.goto("/");
     const state = await page.evaluate(() => ({
       hero: document.querySelector(".hero")!.getAnimations({ subtree: true }).length,
-      clip: getComputedStyle(document.querySelector(".dc-marks")!).clipPath,
-      marks: document.querySelectorAll(".dc-marks .dc-tick, .dc-marks .dc-defect").length,
+      ticks: document.querySelectorAll(".rc-tick").length,
+      flags: document.querySelectorAll(".rc-flag").length,
     }));
-    expect(state).toEqual({ hero: 0, clip: "none", marks: 8 });
+    expect(state).toEqual({ hero: 0, ticks: 7, flags: 1 });
   });
 
   test("no scan line anywhere", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/");
     await expect(page.locator(".dc-line, .rc-scan")).toHaveCount(0);
+  });
+
+  test("the hero shows the reconciliation: 8 rows, 7 checked, 1 traced", async ({ page }) => {
+    await page.goto("/");
+    const figure = page.locator("section.hero figure.reconcile");
+    await expect(figure.locator("figcaption")).toHaveText("Report figures checked against the source system, row by row; the one that doesn't match is traced to its root cause.");
+    await expect(figure.locator(".rc-row")).toHaveCount(8);
+    await expect(figure.locator(".rc-tick")).toHaveCount(7);
+    await expect(figure.locator(".rc-flag")).toHaveCount(1);
+    await expect(figure.locator(".rc-trace")).toHaveCount(1);
+    await expect(figure.locator("svg")).toHaveAttribute("aria-hidden", "true");
+    for (const label of ["Report", "Source", "Root cause"]) await expect(figure.getByText(label, { exact: true })).toBeVisible();
+    // No numbers: the drawing invents no data.
+    expect(await figure.evaluate((f) => /\d/.test(f.querySelector(".rc-board")!.textContent!))).toBe(false);
+  });
+
+  test("with reduced motion or motion paused the check shows finished", async ({ browser }) => {
+    for (const mode of ["reduce", "paused"] as const) {
+      const context = await browser.newContext({ reducedMotion: mode === "reduce" ? "reduce" : "no-preference" });
+      if (mode === "paused") await context.addInitScript(() => localStorage.setItem("motion", "paused"));
+      const page = await context.newPage();
+      await page.goto("/");
+      const state = await page.locator("figure.reconcile").evaluate((f) => ({
+        running: f.getAnimations({ subtree: true }).length,
+        ticks: [...f.querySelectorAll(".rc-tick, .rc-flag")].map((el) => getComputedStyle(el).opacity),
+        trace: parseFloat(getComputedStyle(f.querySelector(".rc-trace")!).strokeDashoffset),
+      }));
+      expect(state.running, mode).toBe(0);
+      expect(state.ticks, mode).toEqual(Array(8).fill("1"));
+      expect(state.trace, mode).toBe(0);
+      await context.close();
+    }
+  });
+
+  test("with motion allowed the check runs once and ends finished", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    await page.waitForTimeout(2600);
+    const state = await page.locator("figure.reconcile").evaluate((f) => ({
+      running: f.getAnimations({ subtree: true }).filter((a) => a.playState === "running").length,
+      ticks: [...f.querySelectorAll(".rc-tick, .rc-flag")].map((el) => getComputedStyle(el).opacity),
+      trace: parseFloat(getComputedStyle(f.querySelector(".rc-trace")!).strokeDashoffset),
+    }));
+    expect(state).toEqual({ running: 0, ticks: Array(8).fill("1"), trace: 0 });
   });
 
 });
@@ -696,10 +741,14 @@ test.describe("navigation", () => {
     await page.goto("/");
     const name = page.locator("footer .footer-name");
     await expect(name).toHaveText(site.name);
-    if (!isPhone(page)) {
-      const ratio = await name.evaluate((el) => el.getBoundingClientRect().width / document.documentElement.clientWidth);
-      expect(ratio).toBeGreaterThanOrEqual(0.8);
-    }
+    // The text itself, not its box: one line across at least 80% of the screen.
+    const text = await name.evaluate((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      return { width: range.getBoundingClientRect().width / document.documentElement.clientWidth, lines: range.getClientRects().length };
+    });
+    expect(text.lines).toBe(1);
+    if (!isPhone(page)) expect(text.width).toBeGreaterThanOrEqual(0.8);
   });
 
   test("section links land below the sticky header", async ({ page }) => {
@@ -1122,6 +1171,41 @@ test.describe("motion control, and nothing decorative", () => {
           .map((el) => el.textContent!.trim().slice(0, 30)),
       );
       expect(faded, id).toEqual([]);
+    }
+  });
+});
+
+test.describe("one column", () => {
+  test("every block lines up on one column at 1440", async ({ page }) => {
+    test.skip(isPhone(page), "desktop width");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    const lefts = await page.evaluate(() => {
+      const pick = (sel: string) => [...document.querySelectorAll<HTMLElement>(sel)].map((el) => ({ sel, left: el.getBoundingClientRect().left }));
+      return [
+        ...pick(`header a[aria-label$=", home"]`),
+        ...pick("section.hero h1"),
+        ...pick("main h2:not(.sr-only)"),
+        ...pick("#projects .carousel > li:first-child"),
+        ...pick("#more-title"),
+        ...pick(".timeline"),
+        ...pick("#skills h2"),
+        ...pick("footer .footer-meta"),
+      ];
+    });
+    expect(lefts.length).toBeGreaterThanOrEqual(9);
+    for (const { sel, left } of lefts) expect(Math.abs(left - 175), `${sel} at ${left}`).toBeLessThanOrEqual(1);
+  });
+
+  test("section titles are 57px at most and sections sit 89px apart", async ({ page }) => {
+    test.skip(isPhone(page), "desktop width");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    const sizes = await page.locator("main h2:not(.sr-only)").evaluateAll((hs) => hs.map((h) => parseFloat(getComputedStyle(h).fontSize)));
+    expect(sizes.length).toBeGreaterThan(0);
+    for (const size of sizes) expect(size).toBeLessThanOrEqual(56.62);
+    for (const id of ["projects", "experience", "skills"]) {
+      expect(await page.locator(`#${id}`).evaluate((el) => getComputedStyle(el).paddingTop), id).toBe("89px");
     }
   });
 });

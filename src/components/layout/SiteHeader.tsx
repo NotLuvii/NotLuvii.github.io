@@ -47,7 +47,7 @@ export function SiteHeader() {
       >
         Skip to content
       </a>
-      <div className="mx-auto grid h-14 max-w-[1440px] grid-cols-[1fr_auto] items-center gap-f13 px-gutter md:grid-cols-[1fr_auto_1fr]">
+      <div className="mx-auto grid h-14 max-w-[1200px] grid-cols-[1fr_auto] items-center gap-f13 px-gutter md:grid-cols-[1fr_auto_1fr]">
         <Link href="/" aria-label={`${site.name}, home`} className="inline-flex min-h-11 items-center justify-self-start text-[21.62px] font-bold text-text [font-stretch:75%]">
           LB
         </Link>
@@ -88,7 +88,7 @@ export function SiteHeader() {
       </div>
 
       <nav id={menuId} aria-label="Main" hidden={!open} className="menu-panel md:hidden">
-        <div className="mx-auto max-w-[1440px] px-gutter pb-f13 pt-f5">
+        <div className="mx-auto max-w-[1200px] px-gutter pb-f13 pt-f5">
           <ul>
             {nav.map((n) => (
               <li key={n.href}>

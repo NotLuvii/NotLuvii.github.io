@@ -262,6 +262,116 @@ svg[data-ink] {
   }
 }
 
+/* ── Chapters (components/sections/ProjectChapter.tsx) ──────────
+   One project per chapter, as a product page tells one product: the
+   name small, a benefit headline large, a short lede, the links, then
+   the work at a readable size, and one known limitation. Chapters sit
+   144px apart from 1024px. */
+.chapter {
+  padding-top: 89px;
+}
+@media (min-width: 1024px) {
+  .chapter {
+    padding-top: 144px;
+  }
+}
+.chapter-name {
+  font-size: 17px;
+  line-height: 1.618;
+  font-weight: 600;
+  color: var(--color-text-2);
+}
+.chapter-headline {
+  margin-top: 8px;
+  max-width: 18ch;
+  letter-spacing: -0.02em;
+}
+.chapter-lede {
+  margin-top: 21px;
+  max-width: 40ch;
+}
+.chapter-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 13px 21px;
+  margin-top: 34px;
+}
+.chapter-visual {
+  margin-top: 55px;
+}
+@media (min-width: 1024px) {
+  .chapter-visual {
+    margin-top: 89px;
+  }
+}
+.chapter-limit {
+  max-width: 62ch;
+  margin-top: 55px;
+  font-size: 13.36px;
+  line-height: 1.618;
+  letter-spacing: 0.01em;
+  color: var(--color-text-3);
+}
+.chapter-limit-label {
+  font-weight: 600;
+  color: var(--color-text-2);
+}
+.chapter-demo {
+  margin-top: 89px;
+}
+
+/* The scam detection steps (ScamSteps.tsx): words beside each crop from
+   1024px, at 1 : 1.618; stacked below that. */
+.steps {
+  display: grid;
+  gap: 55px;
+}
+.step {
+  display: grid;
+  gap: 21px;
+}
+@media (min-width: 1024px) {
+  .steps {
+    gap: 89px;
+  }
+  .step {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.618fr);
+    gap: 55px;
+    align-items: center;
+  }
+}
+.step-number {
+  font-size: 13.36px;
+  line-height: 1.618;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--color-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The checker's score as a bar (ScamChecker.tsx): it eases to a new
+   score when motion is allowed, and jumps otherwise. */
+.demo-meter {
+  height: 5px;
+  margin-top: 13px;
+  max-width: 340px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--color-raised);
+}
+.demo-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-amber);
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion="paused"]) .demo-meter > span {
+    transition: width 0.3s var(--ease-out-soft);
+  }
+}
+
 /* ── Crops (components/ui/Crop.tsx) ─────────────────────────────
    A window onto a real capture: the window has the crop's aspect
    ratio, and the whole image sits in it, scaled by W/w and shifted by
@@ -889,8 +999,9 @@ html:has(dialog.lightbox[open]) {
 @media (prefers-reduced-motion: no-preference) {
   /* Ink: a mark set to "load" draws itself once, stroke by stroke; a
      mark set to "view" draws as it scrolls into view, where scroll
-     timelines exist. Anywhere else it simply rests drawn. */
-  [data-draw="load"] path {
+     timelines exist. Anywhere else, and while the visitor has paused
+     motion, it simply rests drawn. */
+  :root:not([data-motion="paused"]) [data-draw="load"] path {
     animation: ink-draw 0.55s var(--ease-out-soft) both;
     animation-delay: calc(0.25s + var(--i, 0) * 0.14s);
   }
@@ -898,7 +1009,7 @@ html:has(dialog.lightbox[open]) {
     svg[data-draw="view"] {
       view-timeline: --ink block;
     }
-    svg[data-draw="view"] path {
+    :root:not([data-motion="paused"]) svg[data-draw="view"] path {
       animation: ink-draw linear both;
       animation-timeline: --ink;
       /* Finished by the time the whole mark is on screen, so one at the

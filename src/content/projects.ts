@@ -59,6 +59,18 @@ export type FeaturedProject = {
   stats: Stat[];
   /** The screenshot the home page shows, if not the first case-study figure (or the code, if none). */
   homeShot?: Screenshot;
+  /**
+   * The home page's chapter for this project: a benefit headline, a lede, one known limitation, and
+   * either steps (each with a crop) or a visual (crops shown together, with a caption).
+   */
+  chapter?: {
+    headline: string;
+    lede: string;
+    limitation: string;
+    steps?: { title: string; text: string; crop: CropName }[];
+    visual?: CropName[];
+    caption?: string;
+  };
   /** Where the home screenshot's evidence is, ringed in ink: percent of the image, from its top left. */
   ring?: { x: number; y: number; w: number; h: number };
   stack: string[];
@@ -128,6 +140,22 @@ const scam: FeaturedProject = {
   ],
   stack: ["JavaScript", "HTML and CSS", "Node.js", "Express", "Cheerio"],
   repo: { label: "Code on GitHub", href: `${GH}/Fraud-Detection-Tool` },
+  chapter: {
+    headline: "A risk score that shows its reasons.",
+    lede: "Paste a suspicious email, text message, listing or link. Rule-based detectors score it from 0 to 100 and list each warning sign behind the score, so the result can be checked rather than trusted.",
+    // The case study's first limitation, word for word.
+    limitation:
+      "Rule-based only: keyword and pattern lists, with no machine learning or live threat data. New wording can slip through, and a safe message that uses an urgent phrase can be flagged.",
+    steps: [
+      { title: "The message", text: "The README’s sample phishing email, pasted into the tool.", crop: "scamMessage" },
+      {
+        title: "The warning signs",
+        text: "Each rule that matched, in the tool’s own words: urgent wording, a generic greeting, a lookalike domain and a request to click or verify.",
+        crop: "scamSigns",
+      },
+      { title: "The verdict", text: "The points add up to a score from 0 to 100, with the level spelled out: 100%, High risk.", crop: "scamVerdict" },
+    ],
+  },
   availability: "No live demo; it runs locally.",
   caseStudy: {
     context: [

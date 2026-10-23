@@ -59,7 +59,7 @@ test.describe("home page", () => {
     await page.goto("/");
     // Compared without case: the visible titles are set in capitals by CSS, the text is as written.
     const headings = (await page.locator("main h2").allTextContents()).map((h) => h.toLowerCase());
-    expect(headings).toEqual(["Selected work", "Try the scam checker", "More projects", "Experience", "About and skills", "Contact"].map((h) => h.toLowerCase()));
+    expect(headings).toEqual(["Selected work", "More projects", "Experience", "About and skills", "Contact"].map((h) => h.toLowerCase()));
   });
 
   test("section titles are set in the display face", async ({ page }) => {
@@ -67,7 +67,7 @@ test.describe("home page", () => {
     const titles = await page.locator("main h2:not(.sr-only), #more-title").evaluateAll((hs) =>
       hs.map((h) => ({ text: h.textContent, transform: getComputedStyle(h).textTransform, stretch: getComputedStyle(h).fontStretch })),
     );
-    expect(titles.map((t) => t.text)).toEqual(["Selected work", "Try the scam checker", "More projects", "Experience", "About and skills"]);
+    expect(titles.map((t) => t.text)).toEqual(["Selected work", "More projects", "Experience", "About and skills"]);
     for (const t of titles) expect([t.text, t.transform, t.stretch]).toEqual([t.text, "uppercase", "75%"]);
   });
 
@@ -497,7 +497,7 @@ test.describe("selected work", () => {
     await page.goto("/");
     const carousel = page.locator("#projects ul.carousel");
     for (const p of featured) {
-      await page.getByRole("link", { name: new RegExp(`^Read the case study\\s*: ${p.title}$`) }).focus();
+      await page.locator("#projects .carousel").getByRole("link", { name: new RegExp(`^Read the case study\\s*: ${p.title}$`) }).focus();
       await expect
         .poll(() =>
           carousel.evaluate((ul, title) => {
@@ -623,17 +623,36 @@ test.describe("the scam checker", () => {
   const LEVEL = { low: "Low", medium: "Medium", high: "High" } as const;
   const KIND = { email: "Email", text: "Text message", listing: "Listing", link: "Link" } as const;
 
-  test("the demo is its own section, right after the cards", async ({ page }) => {
+  test("the checker lives in its chapter, after the steps", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("#demo h2")).toHaveText("Try the scam checker");
+    await expect(page.locator("#scam-detection #demo")).toHaveCount(1);
+    await expect(page.locator("#demo h4")).toHaveText("Try it on your own text");
     await expect(page.locator("#demo")).toContainText("The tool’s own rules, copied from its source and running in your browser. Nothing is sent anywhere.");
-    const order = await page.evaluate(() => {
-      const carousel = document.querySelector("#projects .carousel")!;
-      const demo = document.querySelector("#demo")!;
-      const more = document.querySelector("#more-title")!;
-      return [carousel.compareDocumentPosition(demo) & Node.DOCUMENT_POSITION_FOLLOWING, demo.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING];
-    });
-    expect(order.every(Boolean)).toBe(true);
+    const after = await page.evaluate(() => !!(document.querySelector("#scam-detection .steps")!.compareDocumentPosition(document.querySelector("#demo")!) & Node.DOCUMENT_POSITION_FOLLOWING));
+    expect(after).toBe(true);
+  });
+
+  test("the meter follows the score and hides with no result", async ({ page }) => {
+    await page.goto("/");
+    await expect(field(page)).toBeEditable();
+    const meter = page.locator("#demo .demo-meter > span");
+    await page.getByRole("button", { name: "Fake listing" }).click();
+    await expect(meter).toHaveAttribute("style", /width: ?100%/);
+    await page.getByRole("button", { name: "Real link" }).click();
+    await expect(meter).toHaveAttribute("style", /width: ?0%/);
+    await page.locator("#demo").getByRole("button", { name: "Clear" }).click();
+    await expect(page.locator("#demo .demo-meter")).toHaveCount(0);
+    await expect(page.locator("[data-try-empty]")).toBeVisible();
+    await page.getByRole("radio", { name: "Text message" }).check();
+    await field(page).fill("urgent");
+    await expect(meter).toHaveAttribute("style", /width: ?18%/);
+    await expect(page.locator("#demo .demo-meter")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  test("with reduced motion the meter jumps", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    expect(await page.locator("#demo .demo-meter > span").evaluate((el) => getComputedStyle(el).transitionDuration)).toBe("0s");
   });
 
   test("each README sample gives the tool's verdict", async ({ page }) => {
@@ -944,7 +963,7 @@ test.describe("navigation", () => {
   test("the nav keeps up across client-side navigation", async ({ page }) => {
     test.skip(isPhone(page), "desktop nav");
     await page.goto("/");
-    await page.getByRole("link", { name: new RegExp(`^Read the case study\\s*: ${featured[0].title}$`) }).click();
+    await page.locator("#scam-detection").getByRole("link", { name: new RegExp(`^Read the case study\\s*: ${featured[0].title}$`) }).click();
     await expect(page).toHaveURL(new RegExp(projectHref(featured[0].slug)));
     await expect(page.locator("header nav[aria-label=Main] .nav-pill a[aria-current]")).toHaveCount(0);
     await page.locator('header a[aria-label="Luvneet Bamrah, home"]').click();
@@ -1156,7 +1175,10 @@ test.describe("layout", () => {
         // Images never spill out of their frames. (A card's picture further along the row of cards is
         // off to the side by design; the row itself is checked by the overflow above.)
         const spill = await page.evaluate(() =>
-          [...document.images].filter((i) => !i.closest(".carousel > li") && i.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).map((i) => i.src),
+          // A crop's image is larger than its window by design; the window is what must fit.
+          [...document.images, ...document.querySelectorAll(".crop-window")]
+            .filter((i) => !i.closest(".carousel > li") && !(i instanceof HTMLImageElement && i.closest(".crop-window")) && i.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5)
+            .map((i) => (i instanceof HTMLImageElement ? i.src : i.className)),
         );
         expect(spill, `${width}px`).toEqual([]);
       }
@@ -1466,5 +1488,51 @@ test.describe("one column", () => {
     for (const id of ["projects", "experience", "skills"]) {
       expect(await page.locator(`#${id}`).evaluate((el) => getComputedStyle(el).paddingTop), id).toBe("89px");
     }
+  });
+});
+
+test.describe("project chapters", () => {
+  test("the scam chapter tells the story: message, warning signs, verdict", async ({ page }) => {
+    await page.goto("/");
+    const chapter = page.locator("article#scam-detection");
+    await expect(chapter.locator("h3").first()).toHaveText("Scam detection tool");
+    await expect(chapter.locator(".chapter-headline")).toHaveText("A risk score that shows its reasons.");
+    await expect(chapter.locator(".chapter-lede")).toContainText("Rule-based detectors score it from 0 to 100");
+    await expect(chapter.getByRole("link", { name: /^Read the case study\s*: Scam detection tool$/ })).toHaveAttribute("href", projectHref("scam-detection"));
+    await expect(chapter.getByRole("link", { name: /^Code on GitHub\s*: Scam detection tool/ })).toHaveAttribute("href", featured[0].repo.href);
+    await expect(chapter.getByRole("link", { name: "Try it on your own text" })).toHaveAttribute("href", "#demo");
+    await expect(chapter.locator("ol.steps > li h4")).toHaveText(["The message", "The warning signs", "The verdict"]);
+    for (let i = 0; i < 3; i++) await expect(chapter.locator("ol.steps > li").nth(i).locator("[data-crop]")).toHaveCount(1);
+    await expect(chapter.locator("ol.steps > li").first().locator("[data-mark]")).toHaveCount(5);
+    await expect(chapter.locator(".chapter-limit")).toContainText("Rule-based only: keyword and pattern lists");
+    const follows = await page.evaluate(() => !!(document.querySelector(".hero")!.compareDocumentPosition(document.querySelector("#scam-detection")!) & Node.DOCUMENT_POSITION_FOLLOWING));
+    expect(follows).toBe(true);
+  });
+
+  test("chapter crops are readable", async ({ page }) => {
+    await page.goto("/");
+    const scales = await page.locator("#projects .chapter [data-crop]").evaluateAll((els) =>
+      els.map((c) => {
+        const el = c as HTMLElement;
+        const narrow = innerWidth < 640 && el.dataset.nw;
+        const w = Number(narrow ? el.dataset.nw : el.dataset.w);
+        return { w, scale: el.querySelector(".crop-window")!.getBoundingClientRect().width / w };
+      }),
+    );
+    expect(scales.length).toBeGreaterThanOrEqual(3);
+    for (const s of scales) expect(s.scale, JSON.stringify(s)).toBeGreaterThanOrEqual(isPhone(page) ? 0.6 : 0.8);
+  });
+
+  test("with motion paused the marks rest drawn", async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: "no-preference" });
+    await context.addInitScript(() => localStorage.setItem("motion", "paused"));
+    const page = await context.newPage();
+    await page.goto("/");
+    await page.locator("#scam-detection ol.steps").scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+    const state = await page.locator("#scam-detection [data-mark] path").evaluateAll((ps) => ps.map((p) => ({ offset: parseFloat(getComputedStyle(p).strokeDashoffset), running: p.getAnimations().length })));
+    expect(state.length).toBeGreaterThan(0);
+    for (const m of state) expect(m).toEqual({ offset: 0, running: 0 });
+    await context.close();
   });
 });

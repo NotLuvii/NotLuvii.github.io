@@ -194,6 +194,29 @@ describe("crops of real captures", () => {
   });
 });
 
+describe("project chapters", () => {
+  it("the scam chapter, as the spec words it", () => {
+    const scam = featured.find((p) => p.slug === "scam-detection")!;
+    const c = scam.chapter!;
+    expect(c.headline).toBe("A risk score that shows its reasons.");
+    expect(c.lede).toBe(
+      "Paste a suspicious email, text message, listing or link. Rule-based detectors score it from 0 to 100 and list each warning sign behind the score, so the result can be checked rather than trusted.",
+    );
+    expect(c.limitation).toBe(scam.caseStudy.limitations[0]);
+    expect(c.limitation).toMatch(/^Rule-based only/);
+    expect(c.steps!.map((s) => [s.title, s.crop])).toEqual([
+      ["The message", "scamMessage"],
+      ["The warning signs", "scamSigns"],
+      ["The verdict", "scamVerdict"],
+    ]);
+    expect(c.steps!.map((s) => s.text)).toEqual([
+      "The README’s sample phishing email, pasted into the tool.",
+      "Each rule that matched, in the tool’s own words: urgent wording, a generic greeting, a lookalike domain and a request to click or verify.",
+      "The points add up to a score from 0 to 100, with the level spelled out: 100%, High risk.",
+    ]);
+  });
+});
+
 describe("professional work", () => {
   it("labels the Immensa app, the dashboards and the sensor system as professional", () => {
     expect(featured.find((p) => p.slug === "immensa-inquiry-app")?.kind).toBe("Professional app");

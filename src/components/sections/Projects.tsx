@@ -4,7 +4,9 @@ import { MoreProjects } from "@/components/sections/MoreProjects";
 import { ScamChecker } from "@/components/sections/ScamChecker";
 import { WorkCarousel } from "@/components/sections/WorkCarousel";
 import { checkScam, SAMPLES } from "@/lib/scam-rules";
-import { ButtonLink } from "@/components/ui/links";
+import { ButtonLink, TextLink } from "@/components/ui/links";
+import { ProjectChapter } from "@/components/sections/ProjectChapter";
+import { ScamSteps } from "@/components/sections/ScamSteps";
 import { Screenshot } from "@/components/ui/Screenshot";
 import { Ink } from "@/components/ink/Ink";
 import { ring } from "@/lib/ink";
@@ -50,7 +52,7 @@ function CardPicture({ p }: { p: FeaturedProject }) {
 /** One project: its picture, its name (a link to the case study), one line, three tools and the two links. */
 function WorkCard({ p }: { p: FeaturedProject }) {
   return (
-    <article id={p.slug} className="work-card">
+    <article className="work-card">
       <CardPicture p={p} />
       <div className="card-body">
         <h3 className="type-title text-text">
@@ -85,6 +87,7 @@ function WorkCard({ p }: { p: FeaturedProject }) {
  */
 export function Projects() {
   const sample = SAMPLES.find((s) => s.kind === "text")!;
+  const scam = featured.find((p) => p.slug === "scam-detection")!;
   return (
     <section id="projects" aria-labelledby="projects-title" className="pb-f34 pt-f55 md:pt-f89">
       <WorkCarousel
@@ -106,7 +109,17 @@ export function Projects() {
         ))}
       </WorkCarousel>
 
-      <ScamChecker initial={checkScam(sample.kind, sample.text)!} />
+      <ProjectChapter
+        p={scam}
+        links={
+          <TextLink href="#demo" className="chapter-try">
+            Try it on your own text
+          </TextLink>
+        }
+        after={<ScamChecker initial={checkScam(sample.kind, sample.text)!} />}
+      >
+        <ScamSteps p={scam} />
+      </ProjectChapter>
 
       <MoreProjects />
     </section>

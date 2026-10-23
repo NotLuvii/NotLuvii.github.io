@@ -41,14 +41,15 @@ function Marked({ text, ranges }: { text: string; ranges: [number, number][] }) 
 }
 
 /**
- * The page's one live demonstration: the scam detection tool's own four detectors
+ * The page's one live demonstration, inside the scam detection chapter: the tool's own four detectors
  * (src/lib/scam-rules.ts) score what you paste as you type, in the browser, with the tool's own
  * messages, the matched words underlined in ink and a link to the detector's lines. Nothing is sent
  * anywhere.
  *
  * Pick what you're checking (each kind keeps its own text, as the tool's tabs do) or one of the
  * README's samples. An empty field gives a neutral prompt, never a score. Only the result is
- * announced as it changes. Before the script runs, and without JavaScript, it shows the text
+ * announced as it changes. Under the score a bar shows it, and eases to each new score (instantly
+ * with reduced motion or motion paused); with no result there is no bar. Before the script runs, and without JavaScript, it shows the text
  * sample and its result, worked out at build time, with the field read-only and the controls
  * unavailable, so it never looks able to answer while it can't.
  */
@@ -65,12 +66,12 @@ export function ScamChecker({ initial }: { initial: ScamResult }) {
   const current = KINDS.find((k) => k.kind === kind)!;
 
   return (
-    <section id="demo" aria-labelledby="demo-title" className="pt-f55 md:pt-f89">
-      <div className="mx-auto max-w-[1200px] px-gutter">
-        <h2 id="demo-title" className="type-display section-title text-text">
-          Try the scam checker
-        </h2>
-        <p className="type-lede mt-f13 max-w-[34em] text-text-3">
+    <div id="demo" aria-labelledby="demo-title" className="chapter-demo">
+      <div>
+        <h4 id="demo-title" className="type-title text-text">
+          Try it on your own text
+        </h4>
+        <p className="mt-f8 max-w-[52ch] text-[17px] leading-[1.618] text-text-3">
           The tool&rsquo;s own rules, copied from its source and running in your browser. Nothing is sent anywhere.
         </p>
 
@@ -146,6 +147,10 @@ export function ScamChecker({ initial }: { initial: ScamResult }) {
                       <span data-try-level>{LEVEL[result.level]}</span> risk
                     </span>
                   </p>
+                  {/* The score as a bar: it moves to a new score, the one state change on the page worth animating. */}
+                  <div aria-hidden className="demo-meter" data-signal="">
+                    <span style={{ width: `${result.risk}%` }} />
+                  </div>
                   <ul data-try-issues className="mt-f13 space-y-f5 text-[17px] leading-[1.618] text-text-2">
                     {result.issues.length ? result.issues.map((issue) => <li key={issue.msg}>{issue.msg}</li>) : <li>Nothing flagged.</li>}
                   </ul>
@@ -169,6 +174,6 @@ export function ScamChecker({ initial }: { initial: ScamResult }) {
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

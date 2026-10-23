@@ -1,9 +1,10 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { featured, projectHref, type FeaturedProject } from "@/content/projects";
+import { crops, featured, projectHref, type FeaturedProject } from "@/content/projects";
 import { ButtonLink, Chevron, TextLink } from "@/components/ui/links";
 import { CodeBlock } from "@/components/ui/CodeBlock";
 import { Screenshot } from "@/components/ui/Screenshot";
+import { Crop } from "@/components/ui/Crop";
 
 /**
  * A case-study section: its heading stays in the left column while the section scrolls (desktop).
@@ -47,6 +48,8 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
   const index = featured.findIndex((f) => f.slug === p.slug);
   const next = featured[(index + 1) % featured.length];
   const [lead, ...screens] = c.figures;
+  // The lead: the chapter's own crops of the first capture, so the evidence is shown at a readable size.
+  const leadCrops = p.chapter ? (p.chapter.steps?.map((s) => s.crop) ?? p.chapter.visual ?? []) : [];
   const [problem, ...context] = c.context;
   const [outcome, ...moreOutcome] = c.outcome;
 
@@ -66,11 +69,18 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
 
         <div className="mx-auto max-w-[1200px] px-gutter">
           <div className="cs-intro">
-          {lead ? (
-            <div className="cs-lead">
-              <Screenshot shot={lead} sizes="(min-width: 1024px) 400px, (min-width: 480px) 420px, 90vw" />
-              {c.figuresNote && <p className="type-small mt-f8 text-text-3">{c.figuresNote}</p>}
-            </div>
+          {leadCrops.length > 0 && lead ? (
+            <figure className="cs-lead">
+              <div className="cs-lead-crops">
+                {leadCrops.map((name, i) => (
+                  <Crop key={name} crop={crops[name]} sizes="(min-width: 1024px) 640px, 90vw" priority={i === 0} />
+                ))}
+              </div>
+              <figcaption className="type-small mt-f13 text-text-3">
+                {lead.caption}
+                {c.figuresNote && <span className="mt-f5 block">{c.figuresNote}</span>}
+              </figcaption>
+            </figure>
           ) : null}
 
           <section id="glance" aria-labelledby="glance-title">
@@ -114,17 +124,16 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
 
         <div className="mx-auto max-w-[1200px] px-gutter pb-f55 pt-f34">
           {screens.length > 0 && (
-            <Section id="screens" title="More screenshots">
-              <div className="figures">
-                <div className={screens.length > 1 ? "grid items-start gap-f34 sm:grid-cols-2" : "max-w-[560px]"}>
-                  {screens.map((f) => (
-                    <div key={f.src}>
-                      <Screenshot shot={f} sizes="(min-width: 1200px) 420px, (min-width: 640px) 45vw, 100vw" />
-                    </div>
-                  ))}
-                </div>
+            <section aria-labelledby="screens" className="py-f55">
+              <h2 id="screens" className="type-title text-text">
+                More screenshots
+              </h2>
+              <div className="cs-screens mt-f21">
+                {screens.map((f) => (
+                  <Screenshot key={f.src} shot={f} sizes="(min-width: 1200px) 528px, (min-width: 1024px) 46vw, 100vw" />
+                ))}
               </div>
-            </Section>
+            </section>
           )}
 
           <Section id="built" title="How it works">

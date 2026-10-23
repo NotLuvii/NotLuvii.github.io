@@ -10,7 +10,10 @@ export function Footer() {
       <div className="mx-auto max-w-[1200px] px-gutter">
         <div className="footer-meta flex flex-col gap-f8 sm:flex-row sm:items-center sm:justify-between">
           <p className="type-small text-text-3">
-            {site.name}, {site.role.toLowerCase()} in {site.location.city}, {site.location.region}
+            {site.name}, {site.role.toLowerCase()} in{" "}
+            <span className="whitespace-nowrap">
+              {site.location.city}, {site.location.region}
+            </span>
           </p>
           <a href="#top" className="type-small inline-flex min-h-11 items-center text-text-2 underline-offset-4 hover:underline">
             Back to top

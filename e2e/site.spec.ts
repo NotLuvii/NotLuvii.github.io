@@ -414,6 +414,31 @@ test.describe("after the Apple audit", () => {
     await page.mouse.up();
   });
 
+  test("every control answers the press: the checker's controls and the crops", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("#demo textarea")).toBeEditable();
+    const pressed = async (target: string, measure: string) => {
+      const el = page.locator(target).first();
+      await el.scrollIntoViewIfNeeded();
+      const box = (await el.boundingBox())!;
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.mouse.down();
+      const scale = () =>
+        page.locator(measure).first().evaluate((e) => {
+          const cs = getComputedStyle(e);
+          return cs.scale && cs.scale !== "none" ? parseFloat(cs.scale) : new DOMMatrixReadOnly(cs.transform === "none" ? undefined : cs.transform).a;
+        });
+      await expect.poll(scale, { message: target }).toBeLessThan(1);
+      await page.mouse.up();
+    };
+    await pressed(".demo-chip", ".demo-chip");
+    await pressed(".demo-kind", ".demo-kind");
+    await pressed("#demo .demo-clear", "#demo .demo-clear");
+    await page.keyboard.press("Escape");
+    await pressed("#scam-detection .crop-open", "#scam-detection .crop-window");
+    await page.keyboard.press("Escape");
+  });
+
   test("the phone menu eases in", async ({ page }) => {
     test.skip(!isPhone(page), "phone layout only");
     await page.goto("/");
@@ -433,8 +458,10 @@ test.describe("after the Apple audit", () => {
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
     await page.waitForTimeout(400);
+    // The open viewer, held before closing (the crops above have their own, closed, viewers).
+    const open = await page.locator("dialog.lightbox[open]").elementHandle();
     await page.keyboard.press("Escape");
-    expect(await page.locator("dialog.lightbox").first().evaluate((el) => el.getAnimations().length)).toBeGreaterThan(0);
+    expect(await open!.evaluate((el) => el.getAnimations().length)).toBeGreaterThan(0);
     await expect(dialog).toBeHidden();
   });
 
@@ -679,9 +706,9 @@ test.describe("case studies", () => {
         await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
       }
       await expect(page.getByRole("link", { name: "All projects" })).toHaveAttribute("href", "/#projects");
-      // The first screenshot leads; the rest follow under the glance.
-      await expect(page.locator("main img")).toHaveCount(p.caseStudy.figures.length);
-      await expect(page.locator(".cs-lead img")).toHaveCount(Math.min(1, p.caseStudy.figures.length));
+      // The chapter's crops of the first capture lead; the other captures follow, whole.
+      const leadCrops = p.chapter ? (p.chapter.steps?.length ?? p.chapter.visual?.length ?? 0) : 0;
+      await expect(page.locator(".cs-lead [data-crop] img")).toHaveCount(leadCrops);
       await expect(page.locator('section[aria-labelledby="screens"] img')).toHaveCount(Math.max(0, p.caseStudy.figures.length - 1));
       // Fails if any image is missing or never loads.
       await scrollThrough(page);
@@ -709,37 +736,28 @@ test.describe("case studies", () => {
       // The repository is reached from "Inspect the code".
       await expect(page.locator('section[aria-labelledby="code"]').getByRole("link", { name: new RegExp(`^${p.repo.label}`) })).toHaveAttribute("href", p.repo.href);
       // No paragraph is printed twice.
-      const paras = await page.locator("main p").allTextContents();
+      // Page copy only: each full-screen viewer (a closed dialog) carries its capture's caption.
+      const paras = await page.locator("main p:not(dialog p)").allTextContents();
       const repeated = paras.filter((t, i) => t.length > 40 && paras.indexOf(t) !== i);
       expect(repeated).toEqual([]);
     });
   }
 
-  test("the lead screenshot is shown whole, with its caption, beside the glance", async ({ page }) => {
+  test("the lead's crops come with their caption, and the glance starts in the first screen", async ({ page }) => {
     test.skip(isPhone(page), "desktop layout");
     await page.setViewportSize({ width: 1440, height: 900 });
     for (const p of featured.filter((x) => x.caseStudy.figures.length)) {
       await page.goto(projectHref(p.slug));
       const lead = p.caseStudy.figures[0];
-      const box = await page.locator(".cs-lead").evaluate((el) => {
-        const img = el.querySelector("img")!.getBoundingClientRect();
-        // The picture's visible part: clipped by every ancestor that clips.
-        let top = img.top, bottom = img.bottom;
-        for (let n = el.querySelector("img")!.parentElement; n; n = n.parentElement) {
-          const s = getComputedStyle(n);
-          if (s.overflowY !== "visible") {
-            const r = n.getBoundingClientRect();
-            top = Math.max(top, r.top);
-            bottom = Math.min(bottom, r.bottom);
-          }
-        }
-        return { shown: (bottom - top) / img.height, glance: document.querySelector("#glance")!.getBoundingClientRect().top };
-      });
-      expect(box.shown, p.slug).toBeGreaterThan(0.99);
-      expect(box.glance, `${p.slug}: the glance starts in the first screen`).toBeLessThan(900);
       const caption = page.locator(".cs-lead figcaption", { hasText: lead.caption });
       await expect(caption).toBeVisible();
       await expect(caption).not.toHaveClass(/sr-only/);
+      const glance = await page.locator("#glance").evaluate((g) => g.getBoundingClientRect().top);
+      expect(glance, `${p.slug}: the glance starts in the first screen`).toBeLessThan(900);
+      // The whole capture is one press away.
+      await page.locator(".cs-lead .crop-open").first().click();
+      await expect(page.getByRole("dialog").locator("img")).toHaveAttribute("src", new RegExp(`${lead.src.split("/").pop()}@2x\\.webp$`));
+      await page.keyboard.press("Escape");
     }
   });
 
@@ -846,6 +864,30 @@ test.describe("navigation", () => {
     await expect(page.locator("footer").getByRole("link", { name: "Back to top" })).toBeVisible();
     const sizes = await page.locator("footer p, footer a").evaluateAll((els) => els.map((e) => parseFloat(getComputedStyle(e).fontSize)));
     for (const size of sizes) expect(size).toBeLessThanOrEqual(17);
+  });
+
+  test("the footer keeps the place on one line, down to 320px", async ({ browser }) => {
+    for (const width of [320, 390]) {
+      const page = await browser.newPage({ viewport: { width, height: 700 } });
+      await page.goto("/");
+      const tops = await page.locator("footer .footer-meta p").evaluate((p) => {
+        const text = p.firstChild!.parentElement!.textContent!;
+        const start = text.indexOf("Fredericton");
+        const walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
+        const range = document.createRange();
+        let offset = 0;
+        let begun = false;
+        for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+          const len = n.textContent!.length;
+          if (!begun && start < offset + len) { range.setStart(n, start - offset); begun = true; }
+          if (begun) range.setEnd(n, len);
+          offset += len;
+        }
+        return new Set([...range.getClientRects()].filter((r) => r.width > 0).map((r) => Math.round(r.top))).size;
+      });
+      expect(tops, `${width}px: "Fredericton, New Brunswick" on one line`).toBe(1);
+      await page.close();
+    }
   });
 
   test("section links land below the sticky header", async ({ page }) => {
@@ -970,7 +1012,8 @@ test.describe("screenshots", () => {
     await page.goto(PAGE);
     const url = page.url();
     const triggers = page.getByRole("button", { name: /^View screenshot full screen/ });
-    await expect(triggers).toHaveCount(featured[0].caseStudy.figures.length);
+    // The first capture leads as crops (each opens it whole); the rest are shown whole.
+    await expect(triggers).toHaveCount(featured[0].caseStudy.figures.length - 1);
     const trigger = triggers.first();
 
     await trigger.click();
@@ -1144,6 +1187,10 @@ test.describe("motion", () => {
     await page.goto("/");
     await expect(page.locator(".hero-visual img")).toBeVisible();
     await expect(page.locator(".hero-visual figcaption")).toBeVisible();
+    for (const img of await page.locator("#projects [data-crop] img").all()) await expect(img).toBeVisible();
+    const marks = await page.locator("#scam-detection [data-mark] path").evaluateAll((ps) => ps.map((p) => parseFloat(getComputedStyle(p).strokeDashoffset)));
+    expect(marks.length).toBeGreaterThan(0);
+    for (const m of marks) expect(m).toBe(0);
     for (const id of ["scam-detection", "resume-analyzer"]) await expect(page.locator(`#${id} [data-crop]`).first()).toBeVisible();
     await expect(page.locator("#immensa-inquiry-app")).toBeVisible();
     await expect(page.locator("#demo [data-try-score]")).toHaveText("94");
@@ -1451,5 +1498,48 @@ test.describe("the work, in order", () => {
     const gap = await page.locator("#more ul[aria-labelledby=more-title]").evaluate((ul) => parseFloat(getComputedStyle(ul).rowGap));
     expect(gap).toBeLessThanOrEqual(34);
     await expect(page.locator("#more strong")).toHaveCount(0);
+  });
+});
+
+test.describe("case studies and calm", () => {
+  test("case studies lead with readable crops", async ({ page }) => {
+    for (const [slug, count] of [["scam-detection", 3], ["resume-analyzer", 2]] as const) {
+      await page.goto(projectHref(slug));
+      const crops = page.locator(".cs-lead [data-crop]");
+      await expect(crops, slug).toHaveCount(count);
+      if (!isPhone(page)) {
+        const scales = await crops.evaluateAll((els) => els.map((c) => c.querySelector(".crop-window")!.getBoundingClientRect().width / Number((c as HTMLElement).dataset.w)));
+        for (const sc of scales) expect(sc, slug).toBeGreaterThanOrEqual(0.8);
+      }
+    }
+    await page.goto(projectHref("immensa-inquiry-app"));
+    await expect(page.locator(".cs-lead, .card-picture-pending")).toHaveCount(0);
+  });
+
+  test("more screenshots are shown large enough to read", async ({ page }) => {
+    test.skip(isPhone(page), "desktop width");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(projectHref("scam-detection"));
+    const widths = await page.locator('section[aria-labelledby="screens"] figure').evaluateAll((fs) => fs.map((f) => f.getBoundingClientRect().width));
+    expect(widths.length).toBe(3);
+    for (const w of widths) expect(w).toBeGreaterThanOrEqual(480);
+  });
+
+  test("nothing moves with reduced motion or paused, on every page", async ({ browser }) => {
+    for (const mode of ["reduce", "paused"] as const) {
+      const context = await browser.newContext({ reducedMotion: mode === "reduce" ? "reduce" : "no-preference" });
+      if (mode === "paused") await context.addInitScript(() => localStorage.setItem("motion", "paused"));
+      const page = await context.newPage();
+      for (const path of PAGES) {
+        await page.goto(path);
+        await scrollThrough(page);
+        const state = await page.evaluate(() => ({
+          running: document.getAnimations().filter((a) => a.playState === "running").length,
+          undrawn: [...document.querySelectorAll("[data-ink] path")].filter((p) => parseFloat(getComputedStyle(p).strokeDashoffset) > 0.001).length,
+        }));
+        expect(state, `${mode} ${path}`).toEqual({ running: 0, undrawn: 0 });
+      }
+      await context.close();
+    }
   });
 });

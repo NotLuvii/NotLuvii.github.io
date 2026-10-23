@@ -387,6 +387,11 @@ svg[data-ink] {
   border-radius: 8px;
   aspect-ratio: var(--w) / var(--h);
   background: #fff;
+  transition: scale 0.1s var(--ease-out-soft);
+}
+/* The press lands on the picture, not the invisible button over it. */
+.crop-window:has(.crop-open:active) {
+  scale: 0.99;
 }
 .crop-window > img {
   position: absolute;
@@ -711,6 +716,20 @@ svg[data-ink] {
 .demo-chip:hover {
   background: var(--color-raised);
 }
+/* Every control answers the press at once (as the pill buttons do). */
+.demo-kind,
+.demo-chip,
+.demo-clear {
+  transition:
+    scale 0.1s var(--ease-out-soft),
+    background-color 0.2s var(--ease-out-soft),
+    color 0.2s var(--ease-out-soft);
+}
+.demo-kind:has(input:active:not(:disabled)),
+.demo-chip:active:not(:disabled),
+.demo-clear:active:not(:disabled) {
+  scale: 0.97;
+}
 .demo-chip:disabled,
 .demo-clear:disabled {
   opacity: 0.5;
@@ -747,21 +766,23 @@ svg[data-ink] {
 }
 
 /* ── Case studies (components/CaseStudy.tsx) ───────────────────
-   The first screenshot leads, whole and captioned (Immensa's frame in
-   the cards' golden ratio), with the problem, what I did and the
-   outcome: under it, three across, from 834px; beside it, one above
-   another, from 1024px, at 1 : 1.618. */
+   The project's own crops lead, at a readable size, with their
+   caption; beside them from 1024px (the crops the wider, 1.618 : 1),
+   the problem, what I did and the outcome, one above another. A
+   project with no pictures yet has no lead: its three glance blocks
+   sit side by side from 834px. More screenshots, whole, two across
+   from 1024px. */
 .cs-intro {
   display: grid;
   gap: 55px;
 }
 .cs-lead {
   width: 100%;
-  max-width: 420px;
+  max-width: 660px;
 }
-.cs-lead.card-picture-pending {
-  border-radius: 12px;
-  background: var(--color-panel);
+.cs-lead-crops {
+  display: grid;
+  gap: 13px;
 }
 .cs-glance {
   display: grid;
@@ -774,16 +795,26 @@ svg[data-ink] {
   }
 }
 @media (min-width: 1024px) {
-  .cs-intro {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.618fr);
+  .cs-intro:has(.cs-lead) {
+    grid-template-columns: minmax(0, 1.618fr) minmax(0, 1fr);
     align-items: start;
   }
   .cs-lead {
     max-width: none;
   }
-  .cs-glance {
+  .cs-intro:has(.cs-lead) .cs-glance {
     grid-template-columns: minmax(0, 1fr);
     gap: 34px;
+  }
+}
+.cs-screens {
+  display: grid;
+  gap: 34px;
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .cs-screens {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

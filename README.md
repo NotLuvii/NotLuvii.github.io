@@ -4,16 +4,16 @@
 
 A static Next.js site: one home page and a case study for each featured project.
 
-- **Home (`/`)**: marked up by hand, in one 1200px column. A first screen that is only who I am
-  and what I do: my local time, the name set huge, the headline, intro and two buttons, and beside
-  them a diagram of the work (report figures checked against their source, the mismatch traced to
-  its root cause). Then the three featured projects as comparable cards (the scam detection tool,
-  Resume Analyzer, Immensa); the scam checker, running the tool's own four detectors on what you
-  paste; the rest of the projects as a plain list; experience as a drawn timeline; about and
-  skills; contact. Its proportions follow the golden ratio.
-- **Case studies (`/projects/<slug>/`)**: the first screenshot, then the problem, what I did and
-  the outcome at a glance, and the details; farther down, more screenshots, how it works, the key
-  decision (with a verbatim code excerpt linked to the file on GitHub), the rest of the outcome,
+- **Home (`/`)**: marked up by hand, in one 1200px column, paced like a product page. A first
+  screen with my name, what I do, the two main actions and, beside them, a readable crop of the scam
+  detection tool's real result. Then the work as chapters: the scam detection tool (a benefit
+  headline, the message, the warning signs and the verdict in three real crops, its known
+  limitation, and the live checker running the tool's own rules) and Resume Analyzer (its score and
+  gap analysis); Immensa as a compact entry until real screenshots exist; the rest of the projects
+  as a plain list; experience; about and skills; contact.
+- **Case studies (`/projects/<slug>/`)**: the chapter's crops of the project's own capture, beside
+  the problem, what I did and the outcome; the details; then more screenshots, how it works, the
+  key decision (with a verbatim code excerpt linked to the file on GitHub), the rest of the outcome,
   limitations, and the repository and its files.
 
 ## Editing the words
@@ -23,7 +23,7 @@ Everything a visitor reads lives in `src/content/`:
 | File | What's in it |
 | --- | --- |
 | `site.ts` | Name, headline, intro, availability (Contact's lead sentence, the same roles as the headline), contact links, resume path, navigation |
-| `projects.ts` | Featured projects and their case studies, the "More projects" list, screenshots and their captions, each card's line (`tileLine`) and the ring on Resume Analyzer's score (`ring`) |
+| `projects.ts` | Featured projects, each with its home-page `chapter` (headline, lede, limitation, steps or visual) and its case study; the "More projects" list; screenshots and their captions; and `crops`, the windows onto the captures the home page and case studies show (with their ink marks and ring) |
 | `experience.ts` | Roles, education, skills, About's `interests` and `approach` (each point with where it comes from), and `timeline()`, which orders them for Experience |
 
 Rules the content follows, enforced by `tests/content.test.ts`:
@@ -32,7 +32,8 @@ Rules the content follows, enforced by `tests/content.test.ts`:
   repositories and projects without public code get a note instead of a link.
 - Each figure from the resume (75%, 50%, 40%) appears once, in the resume's own words.
 - Every screenshot is a real capture, exists at 1x and 2x with the size declared in
-  `projects.ts`, and has alt text and a caption saying what it shows.
+  `projects.ts`, and has alt text and a caption saying what it shows. Every crop lies inside its
+  capture, with its own alt text, and its marks and ring lie inside the crop.
 - About and skills names no company I worked at; those names belong to Experience. Its "How I
   work" points each come from something the site shows: the reports work, or a case study.
 - The scam checker's samples are the README's example inputs, verbatim, and the case study's scores
@@ -50,8 +51,9 @@ Rules the content follows, enforced by `tests/content.test.ts`:
   [Resume-Analyze](https://github.com/NotLuvii/Resume-Analyze), comparing the published resume with
   a short sample job description (quoted in the caption).
 
-Clicking a screenshot opens the 2x file full screen over the page (a `<dialog>`, so nothing
-navigates). To replace one, keep the file name, export a 2x WebP and a 1x WebP at half the width, and update
+Clicking a screenshot, or a crop of one, opens the whole 2x capture full screen over the page (a
+`<dialog>`, so nothing navigates). A crop is cut in CSS (`components/ui/Crop.tsx`), so no image is
+redrawn or edited: change a crop by changing its rectangle in `crops`. To replace one, keep the file name, export a 2x WebP and a 1x WebP at half the width, and update
 `width` and `height` in `projects.ts`. The unit tests check that the sizes match.
 
 ### A recording of the scam detection tool
@@ -76,125 +78,101 @@ npm run dev            # http://localhost:3000
 | --- | --- |
 | `npm run typecheck` | Generates Next.js route types, then TypeScript in strict mode |
 | `npm run lint` | ESLint with the Next.js rules |
-| `npm test` | Vitest: content rules (no company names in About, its approach points traced to their sources, availability matching the headline, the scam limitation naming the regex defect), link allow-list, screenshot files and sizes, the design rules (fonts, true-black page, colours and contrast, one see-through surface, one gradient, outline pills, monospace, touch, ink drawn at rest, the defect red kept to the diagram), the ink (same seed, same line), the scam tool's four detectors (each README sample scores as the tool does; repeated runs agree where the tool's don't; an empty field is no result; an invalid link; thresholds; underline ranges), the timeline's order, the scroll-progress maths, the clock (Fredericton time, ADT and AST), the golden ratio (the type steps, Fibonacci spacing, every font size the CSS declares) |
+| `npm test` | Vitest: content rules (no company names in About, its approach points traced to their sources, availability matching the headline, the scam limitations naming the tool's defects, the chapters' wording, every crop inside its capture), link allow-list, screenshot files and sizes, the design rules (fonts, true-black page, colours and contrast, one see-through surface, no gradients, outline pills, monospace, touch, ink drawn at rest, capitals for the name only), the ink (same seed, same line), the scam tool's four detectors (each README sample scores as the tool does; repeated runs agree where the tool's don't; trimming; an empty field is no result; an invalid link; thresholds; underline ranges), the timeline's order, the clock (Fredericton time, ADT and AST), the golden ratio (the type steps, Fibonacci spacing, every font size the CSS declares) |
 | `npm run build` | Static export to `out/` |
 | `npm start` | Serves `out/` on http://localhost:3000, the way GitHub Pages does |
-| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: one column (every block's left edge at 1440), section titles at most 57px and 89px apart; the first screen (live clock and city-only without JavaScript, name, headline, intro, buttons, the diagram with its caption, 8 rows, 7 ticks, 1 flag and the trace; finished with reduced motion or motion paused, run once otherwise; fits 1440×900, 1280×720 and 375×667; no project, no status pill, no scan line); the motion control ("Pause motion" / "Resume motion", remembered, honoured on case studies); nothing decorative left (no canvas, three.js, marquee, dots, tilt or grid); the cards (three, comparable, one golden frame each, screenshots or Immensa's "Android screenshots to come", no code; all in view at 1440 with no controls; "1 of 3", dots and Previous/Next when the row scrolls, following a resize; keyboard focus brings a card into view; the ring on the score); the scam checker (its own section; each README sample's verdict; Clear and spaces give a neutral prompt, not a low risk; typing scores live; the keyboard; only the result announced; odd input stays text for every kind; without JavaScript); the case studies (visual, problem, what I did and outcome first; no paragraph twice; the repository under "Inspect the code"; routes and images); every link; opening a screenshot full screen and closing it; the resume; the site bar; the phone menu; the skip link; focus outlines; anchors below the sticky header; copying the email; no sideways scrolling; 44px tap targets; heading order; the intro once; About's interests and approach; contact matching the headline; the footer name; the type scale; monospace only in code; no dividing lines; amber only on the main action, the ink and the signals; reduced motion and no-JavaScript; the golden ratio |
+| `npm run test:e2e` | Playwright on desktop (1440px) and phone (Pixel 7) against `out/`: the first screen (live clock and city-only without JavaScript; the name, then the headline, then the intro, by size; the scam tool's result crop at nearly its own size, its caption and its link; fits 1440×900, 1280×720 and 375×667); crops (aligned at odd widths, opening the whole capture and giving focus back, readable at 1440 and 390); the chapters (the scam story in order with its five underlines, the resume chapter with its ring on 55.6%, their links and limitations; Immensa as a compact entry with no picture, and "screenshots to come" nowhere); the checker (inside its chapter; each README sample's verdict; the meter following the score and gone with no result; Clear and spaces give a neutral prompt, not a low risk; typing scores live; the keyboard; only the result announced; odd input for every kind; long pastes; links with spaces; without JavaScript); sentence-case headings, calm section titles, the chapters' headlines as the large moments, a 62-character measure; Experience as a plain list, every point word for word; the case studies (crops lead, the glance in the first screen, more screenshots at a readable size, no paragraph twice, the repository under "Inspect the code"); one column; the motion control (remembered, honoured everywhere); nothing moving with reduced motion or paused, on every page; no glow, no lift, no scroll tilt, nothing snapping sideways; every control answering the press; every link; the full-screen viewer; the resume; the site bar; the phone menu; the skip link; focus outlines; anchors below the sticky header; copying the email; no sideways scrolling; 44px tap targets; heading order; the intro once; About; contact matching the headline; the quiet footer; amber only on the main action, the ink and the signals; no-JavaScript |
 
 `.github/workflows/ci.yml` runs all of it on every push.
 
 ## Design
 
-The pill navigation, the huge name and the clock come from developer portfolios the owner
-pointed to; the tiles are modelled on apple.com/ca. The hand-drawn ink stays where it marks real
-evidence. The October 2026 refinement put understanding the work ahead of effects: one column,
-smaller titles, one diagram of the work instead of a 3D field, comparable project cards, the scam
-checker promoted, and case studies that open with the result.
+The October 2026 refinements, guided by Apple's design principles and apple.com's product pages:
+the work is the subject. Each strong project gets a chapter with a benefit headline, its real
+interface at a readable size, a short explanation, its links and an honest limitation; type is
+calm and sentence case, with large type kept for a few moments; and anything decorative that
+competed with the work is gone (the 3D field, the glow, the diagram, card tilt, the carousel, the
+drawn timeline). The pill navigation and the clock come from developer portfolios the owner pointed
+to; the tiles are modelled on apple.com/ca.
 
-- **Layout**: one 1200px column for the bar, the first screen, every section and the footer row,
-  with a gutter from 21 to 55px. Three exceptions, on purpose: the project row runs to the screen's
-  edge while it scrolls, the footer name spans the screen, and the Contact tile is a full-width band.
+- **Layout**: one 1200px column for the bar, the first screen, every chapter and section, and the
+  footer, with a gutter from 21 to 55px. Chapters sit 144px apart from 1024px; supporting sections
+  89px. The Contact tile is the one full-width band.
 - **The golden ratio** (φ ≈ 1.618, `src/lib/golden.ts`, the tests check it):
-  - every type size is 17px × √φⁿ (13.36, 17, 21.62, 27.51, 34.99, 56.61 and 188.53 on the home page; case studies add 72.01 for their titles);
-  - margins, paddings and gaps are Fibonacci numbers (`mt-f21`, `gap-f13`…: 2, 3, 5, 8, 13, 21, 34, 55, 89, 144); sections sit 55px apart on a phone and 89px from 768px;
+  - every type size is 17px × √φⁿ (13.36, 17, 21.62, 27.51, 34.99, 56.61 and 116.52 on the home page; case studies add 72.01 for their titles);
+  - margins, paddings and gaps are Fibonacci numbers (`mt-f21`, `gap-f13`…: 2, 3, 5, 8, 13, 21, 34, 55, 89, 144);
   - reading text has a line height of φ, titles √φ;
-  - the first screen splits 1.618 : 1 (words : diagram), and so does the scam checker (field : result);
-  - card pictures are golden rectangles, and the glow sits on the golden point (61.8% across, 38.2% down).
-- **First screen** (`components/sections/Hero.tsx`): who I am and what I do, and no project.
-  Fredericton and the time there (`LiveClock.tsx`, `src/lib/clock.ts`: America/Moncton, so ADT or
-  AST), added in the browser, so without JavaScript only the city shows, and the motion control
-  beside it; the name across the column (188.53px at 1440, never more than 21% of the screen's
-  height); the headline, intro, "See the work" and "Download resume"; and beside them from 1024px
-  (under them below that) the diagram.
-- **The diagram** (`ReconcileDiagram.tsx`): what the resume describes, "Wrote SQL to check report
-  figures against source systems and trace discrepancies to their root cause". Report and source
-  bars side by side, row by row: seven match and get an amber tick, one doesn't and gets a red
-  flag, and a red line traces it to "Root cause". No numbers, so it invents nothing. The drawing is
-  `aria-hidden`; the labels are text and the caption says what it shows. It runs once on load
-  (ticks, then the flag, then the trace, about two seconds) and is simply finished with reduced
-  motion, motion paused or no JavaScript. No scan line.
-- **Selected work** (`Projects.tsx`, `WorkCarousel.tsx`): three cards, each a real screenshot in
-  the same golden frame (the scam tool's result, Resume Analyzer's ringed score, held at their
-  foot) or, for Immensa, a frame reading "Android screenshots to come"; then its name, one line,
-  three tools and two links. From 1100px the three share the column with no controls. Narrower,
-  the row scrolls and snaps, and says where you are: "2 of 3", a dot per project (the one in view
-  marked with `aria-current`) and, from 768px, Previous and Next (each unavailable at its end). A
-  card that gets focus scrolls into view.
-- **The scam checker** (`ScamChecker.tsx`, `#demo`): pick Email, Text message, Listing or Link, or
-  one of the README's five samples; the score, the tool's own messages, the matched words
-  underlined and a link to that detector's lines in `js/detectors.js` follow as you type. An empty
-  field asks for input; it never reports a low risk. Only the result is announced. Without
-  JavaScript it shows the text sample's result with the field read-only. `src/lib/scam-rules.ts`
-  is a verbatim copy of the tool's four detectors (Fraud-Detection-Tool, `js/detectors.js`, commit
-  558fa66) with type annotations only. The tool reuses two global regular expressions with
-  `test()`, so its second check of a text can miss what the first found ("Selling bike $50,
-  contact me" scores 32, then 12); the checker resets them before each run. In Chrome the tool also
-  takes text with spaces as a link (Chrome's URL parser lets spaces into a host name); the checker
-  gives the tool's own "not a valid URL" answer there. It trims what you paste first, as the tool's
-  page does, and checks up to 10,000 characters, saying so when it reaches that. The fixes belong
-  in the tool. Nothing is sent anywhere.
-- **Case studies** (`components/CaseStudy.tsx`): the title and summary; the first screenshot in
-  the cards' frame; the problem, what I did and the outcome, three across from 834px; the project,
-  stack and availability; then more screenshots, how it works, the key decision, the rest of the
-  outcome, the limitations and the code. Nothing is printed twice.
-- **Site bar**: the monogram "LB" (home), the section links in a pill that marks the section in
-  view on the home page (`useActiveSection.ts`, an IntersectionObserver), and the resume as an
-  outline pill. The one see-through surface: it blurs what scrolls under it, solid where blur
-  isn't supported or the visitor asks for less transparency. On phones the links fold into a menu.
-- **Footer**: the name in the display face across the width of the screen; the role, city and
-  "Back to top" in the column.
-- **The ink**: an amber marker on the page's real evidence: the timeline's spine, years and
-  rings, the ring round Resume Analyzer's score, and the checker's underlines. The marks are drawn
-  by rough.js (MIT) at build time, from fixed seeds (`src/lib/ink.ts`, server only), so every
-  build draws the same lines and no drawing library reaches the browser; `components/ink/Ink.tsx`
-  renders them. The years are set in Gochi Hand (SIL Open Font License,
-  `src/fonts/Gochi-Hand-LICENSE.txt`), which is used for nothing else. At rest every mark is fully
-  drawn; when motion is allowed they draw as they scroll into view (CSS scroll timelines, where
-  the browser has them). To change a mark's shape, change its seed.
-- **Colour**: a true-black page (`#000`), panel tiles (`#161617`), a slightly lighter `#1d1d1f`
-  for frames and code; `#f5f5f7` text with two quieter greys; and one accent, signal amber
-  (`#ffb000`): the main action, the ink, the signals (`[data-signal]`: the diagram's ticks) and
-  keyboard focus. One red, `--color-defect`, for the diagram's flag, trace and root cause only.
-  Contrast ratios are listed at the top of `src/app/globals.css`; all text meets WCAG AA and the
-  tests recheck them.
+  - splits at 1.618 : 1 (a scam step's crop : its words; Resume Analyzer's score : its gap analysis; a case study's crops : its glance), and the first screen at 1 : 1.
 - **Type**: IBM Plex Sans (variable weight and width), self-hosted (licence in
-  `src/fonts/IBM-Plex-LICENSE.txt`). The display face (`type-display`) is Plex Sans at its
-  narrowest (75%) and boldest, in capitals: the name (188.53px at 1440), section titles (56.61px)
-  and the footer name; it is the only place capitals are used. Reading happens at 17–21.62px.
-  IBM Plex Mono is used for code only.
-- **Buttons**: pills, as on apple.com (`button()` in `components/ui/links.tsx`): amber for the one
-  main action, a light pill for a card's main link, and outline pills (drawn with `outline`, not a
-  border) beside it and for the header's resume. On phones a pair stacks at one width.
-- **Experience**: a timeline drawn by hand: the three roles and the degree, newest first, each
-  year written once in the margin, every bullet word for word, each resume figure white and
-  circled where it stands.
-- **About and skills**: what I'm interested in (the line on my work and the personal projects
-  under More projects) and how I work (four points, each with where it comes from: the reports
-  work, or a case study, linked); then the four skill groups, once. No company names.
-- **Motion**: the diagram's one check on load; the words lift away as you scroll; the case
-  studies' later screenshots tilt flat as they arrive (`ScrollScenes.tsx` writes `--p`, 0 to 1,
-  and the CSS reads it, falling back to the finished state); the ink draws as it scrolls in. The
-  motion control beside the clock (`MotionToggle.tsx`, `src/lib/motion.ts`) says what it will do
-  ("Pause motion", then "Resume motion"), stops all of it on every page, and is remembered, as
-  WCAG 2.2.2 asks. With reduced motion nothing moves; without JavaScript everything is readable.
-  Text may move, but never fades (the hero's words lifting away as you scroll is the one fade).
-- **Feel**: buttons shrink slightly the moment they're pressed; taps don't flash the browser's
-  grey highlight or wait for a double-tap; the phone menu eases down; a full-screen screenshot
-  fades in and out.
+  `src/fonts/IBM-Plex-LICENSE.txt`). The display face (Plex Sans at its narrowest and boldest, in
+  capitals) is for the name only, at 116.52px and no more than 14% of the screen's height. The
+  chapters' headlines (56.61px) are the other large moments; section titles are 34.99px; everything
+  is sentence case. Tracking tightens on large type and loosens slightly on small print. Body text
+  keeps to about 62 characters a line. IBM Plex Mono is for code only.
+- **First screen** (`components/sections/Hero.tsx`): the name; the headline and intro; "See the
+  work" and "Download resume"; and beside them (under them below 1024px) a crop of the scam tool's
+  real result for the README's phishing email, with a caption and a link to its chapter. The clock
+  (`LiveClock.tsx`, America/Moncton) and the motion control sit above in small type.
+- **Crops** (`components/ui/Crop.tsx`, data in `crops`): a window onto a capture, cut in CSS: the
+  window takes the crop's shape and the whole image sits in it, scaled and shifted. Never shown
+  larger than 1.25 times its own size; a narrower crop below 640px where one is set. Ink underlines
+  and rings are placed in percentages of the crop, so they stay on their words at any width. A crop
+  opens the whole capture full screen (`ScreenshotViewer.tsx`, shared with screenshots).
+- **Chapters** (`ProjectChapter.tsx`):
+  - **The scam detection tool**: "A risk score that shows its reasons." Three steps, each a crop of
+    the same real capture beside a line of text: the message (with the four phrases the tool quoted
+    underlined in ink), the warning signs, the verdict. Then its known limitation, and the live
+    checker (`ScamChecker.tsx`, `#demo`): pick Email, Text message, Listing or Link, or one of the
+    README's five samples; the score, a bar that eases to it, the tool's own messages, the matched
+    words underlined and a link to that detector's lines follow as you type. An empty field asks
+    for input; it never reports a low risk. `src/lib/scam-rules.ts` is a verbatim copy of the
+    tool's four detectors (commit 558fa66) with type annotations only, plus two guards outside the
+    copy against the tool's defects (stateful regular expressions; spaces in a link's host in
+    Chrome). Nothing is sent anywhere.
+  - **Resume Analyzer**: "Match a resume to a job posting, skill by skill." Its score (ringed) and
+    its gap analysis, side by side from 1200px, with the sample posting's result in the caption,
+    and its known limitation.
+  - **Immensa**: a compact entry (summary, kind, stack, year, links) until real screenshots exist.
+- **More projects**: a plain two-column list, figures as written.
+- **Experience**: a plain list, newest first: the dates, then the role and organisation and every
+  point word for word.
+- **About and skills**: what I'm interested in and how I work (each point with where it comes
+  from); the four skill groups, four across. No company names.
+- **Case studies** (`components/CaseStudy.tsx`): the chapter's crops lead, captioned, beside the
+  problem, what I did and the outcome; the details; more screenshots, whole, two across; how it
+  works; the key decision; the rest of the outcome; limitations; the code. Nothing is printed twice.
+- **Site bar**: the monogram "LB" (home), Projects, Experience, About and Contact in a pill that
+  marks the section in view, and the resume as an outline pill. The one see-through surface, solid
+  where blur isn't supported or less transparency is asked for. On phones the links fold into a menu.
+- **Footer**: one quiet row: who and where, and "Back to top".
+- **The ink**: an amber marker on the work's real evidence only: the phrases the scam tool quoted,
+  the ring round Resume Analyzer's score, and the checker's underlines, drawn by rough.js (MIT) at
+  build time from fixed seeds (`src/lib/ink.ts`, server only).
+- **Colour**: a true-black page (`#000`), panel tiles (`#161617`), `#1d1d1f` for frames; `#f5f5f7`
+  text with two quieter greys; and one accent, signal amber (`#ffb000`): the main action, the ink,
+  the signals (`[data-signal]`: the checker's score bar) and keyboard focus. No gradients. Contrast
+  ratios are listed at the top of `src/app/globals.css`; all text meets WCAG AA.
+- **Interaction and motion**: every control answers the press at once (pills, the checker's
+  choices, samples and Clear scale to 0.97 in 100ms; a crop's picture to 0.99); colours change in
+  200ms; one easing. What moves is what explains: the checker's score bar easing to a new score,
+  the ink drawing in as it scrolls into view, and the full-screen viewer fading in and out on the
+  same path. Nothing loops, nothing snaps, scrolling is native. The motion control beside the clock
+  ("Pause motion", then "Resume motion", remembered) and reduced motion leave everything finished
+  and still; without JavaScript everything is readable.
+- **Feel**: taps don't flash the browser's grey highlight or wait for a double-tap; the phone menu
+  eases down.
 - **House rules** (checked by `tests/design.test.ts` and the end-to-end tests): one see-through
-  surface (the site bar); one gradient, the first screen's amber glow, and never a blue or purple
-  one; type on the φ scale and spacing on Fibonacci steps; text that moves but never fades; no
-  gradient text; no dividing lines (code panels aside); monospace for code only; corners at most
-  12px; shadows only on the screenshot viewer; no emoji; capitals only in the display face; none
-  of the default fonts that make sites look generated; amber only on the main action, the ink and
-  the signals; and every mark drawn at rest.
+  surface; no gradients; type on the φ scale and spacing on Fibonacci steps; text that moves but
+  never fades; no dividing lines (code panels aside); monospace for code only; corners at most
+  12px; shadows only on the full-screen viewer; no emoji; capitals for the name only; amber only on
+  the main action, the ink and the signals; every mark drawn at rest.
 
 ## Needs the owner
 
 What the site can't supply without inventing it, and work that belongs in the projects themselves:
 
-- **Immensa inquiry app**: real Android screenshots or a screen recording. Until then its card and
-  case study say "Android screenshots to come".
+- **Immensa inquiry app**: real Android screenshots or a screen recording. Until then it is a
+  compact text entry on the home page, and its case study opens on text alone.
 - **The resume's three percentages**: how each was measured. "Increased route data accuracy by 75%"
   (SafeTrack), "Reduced delivery delays by 50%" (Immensa Tech) and "Reduced troubleshooting effort
   by 40%" (the monitoring dashboards) are shown as written on the resume.

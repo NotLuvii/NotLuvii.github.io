@@ -4,7 +4,6 @@ import { gochiHand, plexMono, plexSans } from "./fonts";
 import { site } from "@/content/site";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Footer } from "@/components/layout/Footer";
-import { ScrollScenes } from "@/components/motion/ScrollScenes";
 import { MOTION_SCRIPT } from "@/lib/motion";
 import "./globals.css";
 
@@ -41,7 +40,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <SiteHeader />
         {children}
         <Footer />
-        <ScrollScenes />
       </body>
     </html>
   );

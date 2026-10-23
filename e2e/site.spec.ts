@@ -970,18 +970,13 @@ test.describe("navigation", () => {
     await expect(page.locator("header [aria-current]")).toHaveCount(0);
   });
 
-  test("the footer closes with the name at full width", async ({ page }) => {
+  test("the footer is quiet", async ({ page }) => {
     await page.goto("/");
-    const name = page.locator("footer .footer-name");
-    await expect(name).toHaveText(site.name);
-    // The text itself, not its box: one line across at least 80% of the screen.
-    const text = await name.evaluate((el) => {
-      const range = document.createRange();
-      range.selectNodeContents(el);
-      return { width: range.getBoundingClientRect().width / document.documentElement.clientWidth, lines: range.getClientRects().length };
-    });
-    expect(text.lines).toBe(1);
-    if (!isPhone(page)) expect(text.width).toBeGreaterThanOrEqual(0.8);
+    await expect(page.locator("footer .footer-name")).toHaveCount(0);
+    await expect(page.locator("footer")).toContainText("Luvneet Bamrah, software engineer in Fredericton, New Brunswick");
+    await expect(page.locator("footer").getByRole("link", { name: "Back to top" })).toBeVisible();
+    const sizes = await page.locator("footer p, footer a").evaluateAll((els) => els.map((e) => parseFloat(getComputedStyle(e).fontSize)));
+    for (const size of sizes) expect(size).toBeLessThanOrEqual(17);
   });
 
   test("section links land below the sticky header", async ({ page }) => {
@@ -1224,8 +1219,6 @@ test.describe("motion", () => {
     await page.goto("/");
     await scrollThrough(page);
     expect(await page.locator("[data-reveal]").count()).toBe(0);
-    // The scroll engine never starts, so no scene gets a progress value.
-    expect(await page.locator('[data-scene][style*="--p"]').count()).toBe(0);
     // The first screen is still.
     await page.evaluate(() => window.scrollTo(0, 0));
     expect(await page.locator(".hero").evaluate((el) => el.getAnimations({ subtree: true }).length)).toBe(0);
@@ -1388,15 +1381,25 @@ test.describe("motion control, and nothing decorative", () => {
     await page.locator("button.motion-toggle").click();
     await page.goto(projectHref(featured[0].slug));
     await expect(page.locator("html")).toHaveAttribute("data-motion", "paused");
-    await page.evaluate(async () => {
-      for (let y = 0; y < document.documentElement.scrollHeight; y += 300) {
-        window.scrollTo(0, y);
-        await new Promise((r) => setTimeout(r, 40));
-      }
-    });
-    const frames = await page.locator(".frame").evaluateAll((els) => els.map((el) => ({ p: (el as HTMLElement).style.getPropertyValue("--p"), transform: getComputedStyle(el).transform, opacity: getComputedStyle(el).opacity })));
-    expect(frames.length).toBeGreaterThan(0);
-    for (const f of frames) expect(f).toEqual({ p: "", transform: "none", opacity: "1" });
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("data-motion", "paused");
+  });
+
+  test("nothing on the page moves on scroll", async ({ page }) => {
+    for (const path of ["/", projectHref("scam-detection")]) {
+      await page.goto(path);
+      await expect(page.locator("[data-scene]"), path).toHaveCount(0);
+      await expect(page.locator(".frame"), path).toHaveCount(0);
+    }
+  });
+
+  test("the hero has no glow and doesn't lift away", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    expect(await page.locator(".hero").evaluate((el) => getComputedStyle(el, "::before").backgroundImage)).toBe("none");
+    await page.evaluate(() => window.scrollTo(0, 400));
+    await page.waitForTimeout(200);
+    expect(await page.locator(".hero-copy").evaluate((el) => getComputedStyle(el).opacity)).toBe("1");
   });
 
   test("no text fades", async ({ page }) => {

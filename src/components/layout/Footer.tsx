@@ -1,22 +1,16 @@
 import { site } from "@/content/site";
 
 /**
- * The close: the name once more in the display face, filling the width of the screen on one line
- * (CSS: .footer-name), the one block that runs past the column; then, in the column, the role and
- * city, and the way back up.
+ * The close, quiet: who and where, and the way back up, in the column. The name is set large once,
+ * on the first screen.
  */
 export function Footer() {
   return (
     <footer className="bg-page pb-f34 pt-f89">
-      <div className="footer-inner px-gutter">
-        <p aria-hidden className="type-display footer-name text-text">
-          {site.name}
-        </p>
-      </div>
-      <div className="mx-auto mt-f21 max-w-[1200px] px-gutter">
-        <div className="footer-meta flex flex-col gap-f8 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mx-auto max-w-[1200px] px-gutter">
+        <div className="footer-meta flex flex-col gap-f8 sm:flex-row sm:items-center sm:justify-between">
           <p className="type-small text-text-3">
-            {site.role} in {site.location.city}, {site.location.region}
+            {site.name}, {site.role.toLowerCase()} in {site.location.city}, {site.location.region}
           </p>
           <a href="#top" className="type-small inline-flex min-h-11 items-center text-text-2 underline-offset-4 hover:underline">
             Back to top

@@ -100,23 +100,13 @@ describe("colour", () => {
     expect(readFileSync(join(SRC, "components/layout/SiteHeader.tsx"), "utf8")).toContain("site-bar");
   });
 
-  it("one gradient, the hero's amber glow, never blue or purple", () => {
+  it("no gradients at all: the work is the only picture", () => {
     const gradients = sources.flatMap(({ path, text }) =>
-      [...text.matchAll(/(?:linear|radial|conic)-gradient\(([^;]*?)\)\s*;|bg-gradient-to-\w+|bg-linear-\w+|bg-radial/g)].map((m) => ({ path, body: m[0] })),
+      [...text.matchAll(/(?:linear|radial|conic)-gradient\(([^;]*?)\)\s*;|bg-gradient-to-\w+|bg-linear-\w+|bg-radial/g)].map((m) => `${path}: ${m[0]}`),
     );
-    expect(gradients.length).toBe(1);
-    expect(gradients[0].body).toContain("255 176 0");
-    for (const { path, body } of gradients) {
-      const colours = [...body.matchAll(/rgba?\((\d+)\s*,?\s*(\d+)\s*,?\s*(\d+)/g)].map(
-        (m) => "#" + [m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, "0")).join(""),
-      );
-      colours.push(...[...body.matchAll(/#[0-9a-fA-F]{6}\b/g)].map((m) => m[0]));
-      for (const c of colours) {
-        const { h, s } = hexToHsl(c);
-        expect(h >= 180 && h <= 300 && s > 0.2, `${path}: ${c} is blue or purple`).toBe(false);
-      }
-    }
+    expect(gradients).toEqual([]);
   });
+
 
   it("the defect red is used only by the diagram on the first screen", () => {
     const uses = offenders(/#ff5a4e|--color-defect/i).map((line) => line.split(":")[0]);

@@ -213,8 +213,7 @@ svg[data-ink] {
 /* ── First screen (components/sections/Hero.tsx) ───────────────
    A status line, then the name set huge across the column; under it
    the headline, intro and buttons, with the diagram beside them from
-   1024px and under them below that. One soft amber glow sits behind
-   the diagram: the page's one gradient. */
+   1024px and under them below that. */
 .hero {
   position: relative;
   isolation: isolate;
@@ -230,14 +229,6 @@ svg[data-ink] {
   .hero {
     padding-top: 21px;
   }
-}
-.hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: radial-gradient(1100px 520px at 61.8% 38.2%, rgb(255 176 0 / 0.1), transparent 60%);
-  pointer-events: none;
 }
 /* The clock and the pause button: under the bar on a phone, in the top
    right corner from 768px. */
@@ -367,11 +358,6 @@ svg[data-ink] {
   }
 }
 
-/* The visitor paused motion on the page (components/motion/MotionToggle.tsx): what moves stops,
-   as with reduced motion. */
-[data-motion="paused"] .hero-copy {
-  animation: none;
-}
 .hero-meta {
   display: flex;
   flex-wrap: wrap;
@@ -389,26 +375,6 @@ svg[data-ink] {
 }
 .motion-toggle:hover {
   color: var(--color-text);
-}
-
-/* ── Opening (components/sections/Hero.tsx) ────────────────────
-   With motion allowed, as you scroll, the first screen's words lift
-   away. Everything rests finished otherwise. */
-@media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: scroll()) {
-    .hero-copy {
-      animation: hero-copy-lift linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0px 50vh;
-    }
-  }
-}
-
-@keyframes hero-copy-lift {
-  to {
-    transform: translateY(-40px);
-    opacity: 0;
-  }
 }
 
 /* ── Site bar (components/layout/SiteHeader.tsx) ────────────────
@@ -486,18 +452,6 @@ svg[data-ink] {
 .nav-pill a[aria-current="true"] {
   background: var(--color-raised);
   color: var(--color-text);
-}
-
-/* The footer closes on the name in the display face, across the whole
-   screen (inside the gutters) on one line: "LUVNEET BAMRAH" is 7.9 times
-   its font size wide, so 12.5% of the width fills about 99% of it. */
-.footer-inner {
-  container-type: inline-size;
-}
-.footer-name {
-  width: fit-content;
-  font-size: 12.5cqw;
-  white-space: nowrap;
 }
 
 /* ── Tiles (home page) ──────────────────────────────────────────
@@ -892,25 +846,6 @@ svg[data-ink] {
   .cs-glance {
     grid-template-columns: minmax(0, 1fr);
     gap: 34px;
-  }
-}
-
-/* ── Scroll scenes ─────────────────────────────────────────────
-   components/motion/ScrollScenes.tsx writes --p (0 to 1) on each
-   [data-scene] element while it is on screen. Every rule reads --p
-   with a fallback that is the resting state, so with JavaScript off,
-   with reduced motion, or before the engine starts, everything is
-   simply in place. */
-
-/* Screenshots tilt flat as they arrive; their captions move with them
-   but never fade. With reduced motion or motion paused they simply sit
-   flat. */
-.frame {
-  transform-origin: 50% 100%;
-}
-@media (prefers-reduced-motion: no-preference) {
-  :root:not([data-motion="paused"]) .frame {
-    transform: perspective(1400px) rotateX(calc((1 - var(--p, 1)) * 16deg)) translateY(calc((1 - var(--p, 1)) * 48px));
   }
 }
 

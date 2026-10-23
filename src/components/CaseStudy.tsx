@@ -122,7 +122,7 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
               <div className="figures">
                 <div className={screens.length > 1 ? "grid items-start gap-f34 sm:grid-cols-2" : "max-w-[560px]"}>
                   {screens.map((f) => (
-                    <div key={f.src} data-scene="pass" className="frame">
+                    <div key={f.src}>
                       <Screenshot shot={f} sizes="(min-width: 1200px) 420px, (min-width: 640px) 45vw, 100vw" />
                     </div>
                   ))}

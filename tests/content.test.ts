@@ -158,6 +158,14 @@ describe("crops of real captures", () => {
     }
   });
 
+  it("the score's phone crop ends above the score bar, so it never shows the bar cut short (fuller than 55.6%)", () => {
+    // In results.webp the bar runs from y 539 to 549 and spans past x 798; a 470px-wide window that
+    // reached it would show a bar mostly blue under "55.6%".
+    const { narrow, ring } = crops.resumeScore;
+    expect(narrow!.y + narrow!.h).toBeLessThanOrEqual(539);
+    expect(ring!.y >= narrow!.y && ring!.y + ring!.h <= narrow!.y + narrow!.h, "the ring stays inside the phone crop").toBe(true);
+  });
+
   it("the crops are the spec's, cut from the scam tool's and Resume Analyzer's own captures", () => {
     expect(Object.keys(crops)).toEqual(["scamResult", "scamMessage", "scamSigns", "scamVerdict", "resumeScore", "resumeGap"]);
     expect(crops.scamResult.rect).toEqual({ x: 20, y: 595, w: 552, h: 281 });
@@ -165,7 +173,7 @@ describe("crops of real captures", () => {
     expect(crops.scamSigns.rect).toEqual({ x: 33, y: 714, w: 340, h: 146 });
     expect(crops.scamVerdict.rect).toEqual({ x: 33, y: 606, w: 527, h: 112 });
     expect(crops.resumeScore.rect).toEqual({ x: 50, y: 422, w: 772, h: 192 });
-    expect(crops.resumeScore.narrow).toEqual({ x: 50, y: 422, w: 470, h: 140 });
+    expect(crops.resumeScore.narrow).toEqual({ x: 50, y: 422, w: 470, h: 116 });
     expect(crops.resumeScore.ring).toEqual({ x: 56, y: 488, w: 126, h: 46 });
     expect(crops.resumeGap.rect).toEqual({ x: 50, y: 623, w: 420, h: 264 });
     expect(crops.scamMessage.marks).toHaveLength(5);

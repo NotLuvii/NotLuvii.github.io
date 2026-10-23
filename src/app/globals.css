@@ -383,7 +383,9 @@ svg[data-ink] {
 }
 .crop-window {
   position: relative;
-  overflow: hidden;
+  /* clip, not hidden: a hidden window would be a scroll container, and
+     the marks' view timelines would follow it instead of the page. */
+  overflow: clip;
   border-radius: 8px;
   aspect-ratio: var(--w) / var(--h);
   background: #fff;
@@ -413,8 +415,14 @@ svg[data-ink] {
     left: calc(var(--nx) / var(--nw) * -100%);
     top: calc(var(--ny) / var(--nh) * -100%);
   }
+  /* The marks are placed on the wide rect: map that box into the narrow
+     window (which clips it), so they stay on their words here too. */
   .crop-has-narrow .crop-overlay {
-    display: none;
+    inset: auto;
+    left: calc((var(--x) - var(--nx)) / var(--nw) * 100%);
+    top: calc((var(--y) - var(--ny)) / var(--nh) * 100%);
+    width: calc(var(--w) / var(--nw) * 100%);
+    height: calc(var(--h) / var(--nh) * 100%);
   }
 }
 .crop-overlay {
@@ -875,6 +883,16 @@ html:has(dialog.lightbox[open]) {
       /* Finished by the time the whole mark is on screen, so one at the
          very bottom of the page still ends fully drawn. */
       animation-range: entry 10% entry 100%;
+    }
+    /* A crop's marks follow the crop itself (a mark is a few pixels
+       tall): they draw while the crop rises from the bottom of the screen
+       to just short of its middle. */
+    .crop {
+      view-timeline: --crop block;
+    }
+    :root:not([data-motion="paused"]) .crop svg[data-draw="view"] path {
+      animation-timeline: --crop;
+      animation-range: entry 75% cover 45%;
     }
   }
 }

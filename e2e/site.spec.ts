@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { featured, more, projectHref } from "../src/content/projects";
+import { crops, featured, more, projectHref } from "../src/content/projects";
 import { approach, interests, roles, skills } from "../src/content/experience";
 import { site } from "../src/content/site";
 import { checkScam, SAMPLES } from "../src/lib/scam-rules";
@@ -1153,6 +1153,25 @@ test.describe("motion", () => {
     await context.close();
   });
 
+  test("with motion allowed, the message's underlines wait below the fold and draw as its crop comes into view", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    const crop = page.locator("#scam-detection [data-crop]").filter({ has: page.locator("[data-mark]") }).first();
+    const offsets = () => crop.locator("[data-mark] path").evaluateAll((ps) => ps.map((p) => parseFloat(getComputedStyle(p).strokeDashoffset)));
+    // Below the fold: not drawn yet.
+    expect(await crop.evaluate((c) => c.getBoundingClientRect().top > innerHeight)).toBe(true);
+    for (const o of await offsets()) expect(o).toBeGreaterThan(0.5);
+    // Its top just inside the screen: drawing, not done.
+    await crop.evaluate((c) => window.scrollBy({ top: c.getBoundingClientRect().top - innerHeight + c.getBoundingClientRect().height * 0.9, behavior: "instant" }));
+    await page.waitForTimeout(200);
+    const mid = await offsets();
+    expect(Math.max(...mid)).toBeGreaterThan(0.01);
+    // In the middle of the screen: drawn.
+    await crop.evaluate((c) => c.scrollIntoView({ block: "center", behavior: "instant" }));
+    await page.waitForTimeout(200);
+    for (const o of await offsets()) expect(o).toBeLessThan(0.01);
+  });
+
   test("with motion allowed, every mark ends fully drawn once scrolled past", async ({ page }) => {
     for (const [w, h] of [[1440, 900], [1920, 1200]] as const) {
       await page.setViewportSize({ width: w, height: h });
@@ -1188,6 +1207,9 @@ test.describe("motion", () => {
     await expect(page.locator(".hero-visual img")).toBeVisible();
     await expect(page.locator(".hero-visual figcaption")).toBeVisible();
     for (const img of await page.locator("#projects [data-crop] img").all()) await expect(img).toBeVisible();
+    // The marks draw in CSS alone, as their crop comes into view.
+    await page.locator("#scam-detection [data-mark]").first().evaluate((m) => m.closest("[data-crop]")!.scrollIntoView({ block: "center", behavior: "instant" }));
+    await page.waitForTimeout(200);
     const marks = await page.locator("#scam-detection [data-mark] path").evaluateAll((ps) => ps.map((p) => parseFloat(getComputedStyle(p).strokeDashoffset)));
     expect(marks.length).toBeGreaterThan(0);
     for (const m of marks) expect(m).toBe(0);
@@ -1461,16 +1483,21 @@ test.describe("the work, in order", () => {
     await expect(chapter.locator("figcaption")).toHaveText("My resume against a sample posting: 55.6%, with communication, teamwork, Docker and Kubernetes missing.");
     await expect(chapter.locator(".chapter-limit")).toContainText("Power BI, C++ and problem-solving");
     await expect(chapter.locator("[data-crop]")).toHaveCount(2);
-    if (!isPhone(page)) {
-      const at = await chapter.locator("[data-crop]").first().evaluate((c) => {
-        const win = c.querySelector(".crop-window")!.getBoundingClientRect();
-        const ring = c.querySelector("[data-ring]")!.getBoundingClientRect();
-        return { x: (ring.left + ring.width / 2 - win.left) / win.width, y: (ring.top + ring.height / 2 - win.top) / win.height };
-      });
-      expect(at.x).toBeLessThan(0.2);
-      expect(at.y).toBeGreaterThan(0.33);
-      expect(at.y).toBeLessThan(0.67);
-    }
+    // The ring sits on 55.6% on every screen, in the phone crop too.
+    const { rect, narrow, ring } = crops.resumeScore;
+    const r = isPhone(page) ? narrow! : rect;
+    const score = chapter.locator("[data-crop]").first();
+    await score.scrollIntoViewIfNeeded();
+    const at = await score.evaluate((c) => {
+      const win = c.querySelector(".crop-window")!.getBoundingClientRect();
+      const el = c.querySelector("[data-ring]")!;
+      const box = el.getBoundingClientRect();
+      return { visible: el.checkVisibility(), x: (box.left + box.width / 2 - win.left) / win.width, y: (box.top + box.height / 2 - win.top) / win.height, w: box.width / win.width };
+    });
+    expect(at.visible).toBe(true);
+    expect(at.x).toBeCloseTo((ring!.x + ring!.w / 2 - r.x) / r.w, 2);
+    expect(at.y).toBeCloseTo((ring!.y + ring!.h / 2 - r.y) / r.h, 2);
+    expect(at.w).toBeCloseTo(ring!.w / r.w, 2);
   });
 
   test("Immensa is a compact entry, with no picture", async ({ page }) => {

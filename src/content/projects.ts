@@ -505,7 +505,8 @@ export const crops: Record<CropName, Crop> = {
   resumeScore: {
     shot: resumeResults,
     rect: { x: 50, y: 422, w: 772, h: 192 },
-    narrow: { x: 50, y: 422, w: 470, h: 140 },
+    // Ends above the score bar (y 539): cut short, the bar would look fuller than 55.6%.
+    narrow: { x: 50, y: 422, w: 470, h: 116 },
     alt: "Resume Analyzer’s relevance score: 55.6 percent, with a bar and the note that it is the share of the job description’s skills the resume mentions, weighted by how often the description names each one.",
     // Around "55.6%".
     ring: { x: 56, y: 488, w: 126, h: 46 },

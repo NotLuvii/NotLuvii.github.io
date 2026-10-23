@@ -65,6 +65,10 @@
       scroll-behavior: auto;
     }
   }
+  /* "Pause motion" stops the glide too: links and scrolls land at once. */
+  :root[data-motion="paused"] {
+    scroll-behavior: auto;
+  }
 
   body {
     font-family: var(--font-sans);

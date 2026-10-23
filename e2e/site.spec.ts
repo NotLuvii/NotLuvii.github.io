@@ -1447,6 +1447,20 @@ test.describe("project chapters", () => {
     for (const s of scales) expect(s.scale, JSON.stringify(s)).toBeGreaterThanOrEqual(isPhone(page) ? 0.6 : 0.8);
   });
 
+  test("with motion paused, the page jumps to a link instead of gliding", async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: "no-preference" });
+    const page = await context.newPage();
+    await page.goto("/");
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior)).toBe("smooth");
+    await page.evaluate(() => localStorage.setItem("motion", "paused"));
+    await page.reload();
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior)).toBe("auto");
+    // A scroll lands at once: nothing is still on its way there.
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(1000);
+    await context.close();
+  });
+
   test("with motion paused the marks rest drawn", async ({ browser }) => {
     const context = await browser.newContext({ reducedMotion: "no-preference" });
     await context.addInitScript(() => localStorage.setItem("motion", "paused"));

@@ -55,20 +55,50 @@ test.describe("home page", () => {
     await expect(resume).toHaveAttribute("download", "");
   });
 
-  test("runs Hero, Projects, Experience, About and skills, Contact, in that order", async ({ page }) => {
+  test("runs Hero, Projects, More projects, Experience, About, Contact, in that order", async ({ page }) => {
     await page.goto("/");
-    // Compared without case: the visible titles are set in capitals by CSS, the text is as written.
-    const headings = (await page.locator("main h2").allTextContents()).map((h) => h.toLowerCase());
-    expect(headings).toEqual(["Selected work", "More projects", "Experience", "About and skills", "Contact"].map((h) => h.toLowerCase()));
+    const headings = await page.locator("main h2").allTextContents();
+    expect(headings).toEqual(["Selected work", "More projects", "Experience", "About", "Contact"]);
   });
 
-  test("section titles are set in the display face", async ({ page }) => {
+  test("headings are sentence case; only the name is set in capitals", async ({ page }) => {
     await page.goto("/");
-    const titles = await page.locator("main h2:not(.sr-only), #more-title").evaluateAll((hs) =>
-      hs.map((h) => ({ text: h.textContent, transform: getComputedStyle(h).textTransform, stretch: getComputedStyle(h).fontStretch })),
+    const heads = await page.locator("main h2, main h3, main h4").evaluateAll((hs) =>
+      hs.filter((h) => h.getClientRects().length && !h.closest(".sr-only")).map((h) => ({ text: h.textContent!.trim(), transform: getComputedStyle(h).textTransform })),
     );
-    expect(titles.map((t) => t.text)).toEqual(["More projects", "Experience", "About and skills"]);
-    for (const t of titles) expect([t.text, t.transform, t.stretch]).toEqual([t.text, "uppercase", "75%"]);
+    expect(heads.length).toBeGreaterThan(8);
+    for (const h of heads) {
+      expect(h.transform, h.text).toBe("none");
+      if (/[a-z].*[a-z]/i.test(h.text)) expect(h.text === h.text.toUpperCase(), h.text).toBe(false);
+    }
+    expect(await page.locator("section.hero h1").evaluate((h) => getComputedStyle(h).textTransform)).toBe("uppercase");
+  });
+
+  test("section titles are calm and chapter headlines are the large moments, at 1440", async ({ page }) => {
+    test.skip(isPhone(page), "desktop width");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    const h2 = await page.locator("main h2:not(.sr-only)").evaluateAll((hs) => hs.map((h) => parseFloat(getComputedStyle(h).fontSize)));
+    for (const size of h2) expect(size).toBeLessThanOrEqual(35);
+    const headlines = await page.locator(".chapter-headline").evaluateAll((hs) => hs.map((h) => parseFloat(getComputedStyle(h).fontSize)));
+    expect(headlines).toHaveLength(2);
+    for (const size of headlines) {
+      expect(size).toBeGreaterThan(50);
+      expect(size).toBeLessThanOrEqual(56.62);
+    }
+    // Reading text keeps a measure of about 62 characters or fewer.
+    const measures = await page.locator("main p").evaluateAll((ps) =>
+      ps
+        .filter((p) => p.getClientRects().length && !p.closest(".sr-only, [data-try-marked]"))
+        .map((p) => {
+          // The longest line actually set, not the box: a short line in a wide column is fine.
+          const range = document.createRange();
+          range.selectNodeContents(p);
+          const widest = Math.max(...[...range.getClientRects()].map((r) => r.width));
+          return { t: p.textContent!.slice(0, 30), m: widest / parseFloat(getComputedStyle(p).fontSize) };
+        }),
+    );
+    for (const x of measures) expect(x.m, x.t).toBeLessThanOrEqual(62 * 0.6);
   });
 
   test("the intro appears once", async ({ page }) => {
@@ -80,7 +110,7 @@ test.describe("home page", () => {
 
   test("About explains interests and approach, names no company, and lists skills once", async ({ page }) => {
     await page.goto("/");
-    const about = page.locator("#skills");
+    const about = page.locator("#about");
     await expect(about.getByRole("heading", { level: 3 })).toHaveText(["What I’m interested in", "How I work", "Skills"]);
     await expect(about).toContainText(interests);
     for (const a of approach) await expect(about).toContainText(a.point);
@@ -291,12 +321,11 @@ test.describe("after the Apple audit", () => {
     expect(panels).toBeGreaterThanOrEqual(3);
   });
 
-  test("no notes are left but the timeline years and the ring", async ({ page }) => {
+  test("ink marks only evidence in the work: the crops' marks and the checker's underlines", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator(".note")).toHaveCount(0);
-    // The ink that stays: the timeline's spine and years, the rings on its figures and on Resume
-    // Analyzer's score, and the checker's underlines.
-    const ink = await page.locator("main svg[data-ink]").evaluateAll((svgs) => svgs.map((s) => s.closest("#experience") ? "experience" : s.closest("[data-crop]") ? "crop" : "other"));
+    const ink = await page.locator("main svg[data-ink]").evaluateAll((svgs) => svgs.map((s) => (s.closest("[data-crop]") ? "crop" : "other")));
+    expect(ink.length).toBeGreaterThan(0);
     expect(ink.filter((k) => k === "other")).toEqual([]);
   });
 
@@ -362,13 +391,6 @@ test.describe("after the Apple audit", () => {
     expect(past).toEqual([]);
   });
 
-  test("resume figures are white, not amber", async ({ page }) => {
-    await page.goto("/");
-    const colours = await page.locator("#experience strong, #experience [data-figure]").evaluateAll((els) => els.map((e) => getComputedStyle(e).color));
-    expect(colours.length).toBeGreaterThan(0);
-    for (const c of colours) expect(c).toBe("rgb(245, 245, 247)");
-  });
-
   test("the top bar is see-through, so the sections show through it", async ({ page }) => {
     await page.goto("/");
     const bar = await page.locator("header").first().evaluate((el) => ({ filter: getComputedStyle(el).backdropFilter, bg: getComputedStyle(el).backgroundColor }));
@@ -416,42 +438,34 @@ test.describe("after the Apple audit", () => {
     await expect(dialog).toBeHidden();
   });
 
-  test("experience is a drawn timeline: three roles and the degree, newest first, every bullet word for word", async ({ page }) => {
+  test("experience is a plain list: three roles and the degree, newest first, every bullet word for word", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("#experience h3")).toHaveText(["Developer, AiKnod", "BSc, Software Engineering", "Front end developer, SafeTrack", "Developer, Immensa Tech"]);
     for (const r of roles) for (const point of r.points) await expect(page.locator("#experience")).toContainText(point);
-    const years = await page.locator("#experience .timeline-year").evaluateAll((ys) => ys.map((y) => y.textContent!.trim()).filter(Boolean));
-    expect(years).toEqual(["2026", "2025", "2024"]);
-    // The spine sits beside the list, not in it: an <ol> may only hold list items.
-    const spine = await page.locator("#experience .timeline").evaluate((t) => {
-      const svg = t.querySelector(":scope > svg[data-ink]");
-      return svg ? svg.getBoundingClientRect().height / t.querySelector(":scope > ol")!.getBoundingClientRect().height : 0;
-    });
-    expect(spine).toBeGreaterThanOrEqual(0.9);
-  });
-
-  test("figures are ringed by hand and stay white", async ({ page }) => {
-    await page.goto("/");
-    const strong = page.locator("#experience strong");
-    await expect(strong).toHaveText(["75%", "50%"]);
-    const rings = await strong.evaluateAll((els) => els.map((e) => ({ ring: !!e.closest(".ink-ring")?.querySelector("svg[data-ink]"), colour: getComputedStyle(e).color })));
-    for (const r of rings) {
-      expect(r.ring).toBe(true);
-      expect(r.colour).toBe("rgb(245, 245, 247)");
+    await expect(page.locator("#experience")).toContainText("University of New Brunswick");
+    await expect(page.locator("#experience [data-ink], #experience strong, #experience .timeline-year")).toHaveCount(0);
+    await expect(page.locator("#experience .experience-dates").first()).toHaveText(roles[0].period);
+    if (!isPhone(page)) {
+      const cols = await page.locator("#experience .experience-entry").first().evaluate((li) => {
+        const d = li.querySelector(".experience-dates")!.getBoundingClientRect();
+        const h = li.querySelector("h3")!.getBoundingClientRect();
+        return { datesLeft: d.right <= h.left, sameTop: Math.abs(d.top - h.top) < 12 };
+      });
+      expect(cols).toEqual({ datesLeft: true, sameTop: true });
     }
   });
 
   test("education lives in the timeline, not in About", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("#experience")).toContainText("University of New Brunswick");
-    expect(await page.locator("#skills").innerText()).not.toContain("University of New Brunswick");
+    expect(await page.locator("#about").innerText()).not.toContain("University of New Brunswick");
   });
 
   test("about and skills names no company I worked at", async ({ page }) => {
     await page.goto("/");
-    const text = await page.locator("#skills").innerText();
+    const text = await page.locator("#about").innerText();
     for (const name of ["AiKnod", "SafeTrack", "Immensa Tech", "Used in"]) expect(text).not.toContain(name);
-    await expect(page.locator("#skills")).toContainText(interests);
+    await expect(page.locator("#about")).toContainText(interests);
   });
 });
 
@@ -784,7 +798,7 @@ test.describe("navigation", () => {
   test("the bar shows the monogram, the section pills and the resume", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator('header a[aria-label="Luvneet Bamrah, home"]')).toHaveText("LB");
-    if (!isPhone(page)) await expect(page.locator("header nav[aria-label=Main] .nav-pill a")).toHaveText(["Projects", "Experience", "Skills", "Contact"]);
+    if (!isPhone(page)) await expect(page.locator("header nav[aria-label=Main] .nav-pill a")).toHaveText(["Projects", "Experience", "About", "Contact"]);
     await expect(page.locator("header a[download]").first()).toHaveAttribute("href", site.resume!);
     if (isPhone(page)) {
       // On a phone the resume lives in the menu, and the bar keeps the monogram and Menu on one row.
@@ -836,12 +850,12 @@ test.describe("navigation", () => {
 
   test("section links land below the sticky header", async ({ page }) => {
     await page.goto("/");
-    for (const id of ["experience", "skills", "contact", "projects"]) {
+    for (const id of ["experience", "about", "contact", "projects"]) {
       if (isPhone(page)) {
         await page.getByRole("button", { name: "Menu" }).click();
-        await page.locator("header nav:not([hidden])").getByRole("link", { name: { experience: "Experience", skills: "Skills", contact: "Contact", projects: "Projects" }[id] }).click();
+        await page.locator("header nav:not([hidden])").getByRole("link", { name: { experience: "Experience", about: "About", contact: "Contact", projects: "Projects" }[id] }).click();
       } else {
-        await page.locator("header nav").getByRole("link", { name: { experience: "Experience", skills: "Skills", contact: "Contact", projects: "Projects" }[id], exact: true }).click();
+        await page.locator("header nav").getByRole("link", { name: { experience: "Experience", about: "About", contact: "Contact", projects: "Projects" }[id], exact: true }).click();
       }
       await expect(page).toHaveURL(new RegExp(`#${id}$`));
       // The heading ends up fully in view, not tucked under the header (polled while smooth scrolling settles).
@@ -1133,8 +1147,8 @@ test.describe("motion", () => {
     for (const id of ["scam-detection", "resume-analyzer"]) await expect(page.locator(`#${id} [data-crop]`).first()).toBeVisible();
     await expect(page.locator("#immensa-inquiry-app")).toBeVisible();
     await expect(page.locator("#demo [data-try-score]")).toHaveText("94");
-    await expect(page.locator("#experience .timeline-entry").first()).toBeVisible();
-    await expect(page.locator("#skills")).toContainText(interests);
+    await expect(page.locator("#experience .experience-entry").first()).toBeVisible();
+    await expect(page.locator("#about")).toContainText(interests);
     await expect(page.locator("#contact").getByRole("link", { name: /Write an email/ })).toBeVisible();
     await context.close();
   });
@@ -1257,7 +1271,7 @@ test.describe("motion control, and nothing decorative", () => {
   test("no text fades", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/");
-    for (const id of ["projects", "experience", "skills", "contact"]) {
+    for (const id of ["projects", "experience", "about", "contact"]) {
       await page.evaluate((id) => {
         const el = document.getElementById(id)!;
         window.scrollTo({ top: el.getBoundingClientRect().top + scrollY - innerHeight * 0.85, behavior: "instant" });
@@ -1307,8 +1321,8 @@ test.describe("one column", () => {
         ...pick("#scam-detection .chapter-name"),
         ...pick("#demo h2"),
         ...pick("#more-title"),
-        ...pick(".timeline"),
-        ...pick("#skills h2"),
+        ...pick(".experience-list"),
+        ...pick("#about h2"),
         ...pick("footer .footer-meta"),
       ];
     });
@@ -1326,7 +1340,7 @@ test.describe("one column", () => {
     for (const id of ["scam-detection", "resume-analyzer"]) {
       expect(await page.locator(`#${id}`).evaluate((el) => getComputedStyle(el).paddingTop), id).toBe("144px");
     }
-    for (const id of ["experience", "skills"]) {
+    for (const id of ["experience", "about"]) {
       expect(await page.locator(`#${id}`).evaluate((el) => getComputedStyle(el).paddingTop), id).toBe("89px");
     }
   });

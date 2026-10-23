@@ -326,7 +326,8 @@ describe("experience and skills", () => {
 
 describe("site", () => {
   it("navigates to the four sections, in page order", () => {
-    expect(nav.map((n) => n.id)).toEqual(["projects", "experience", "skills", "contact"]);
+    expect(nav.map((n) => n.id)).toEqual(["projects", "experience", "about", "contact"]);
+    expect(nav.map((n) => n.label)).toEqual(["Projects", "Experience", "About", "Contact"]);
     for (const n of nav) expect(n.href).toBe(`/#${n.id}`);
   });
 

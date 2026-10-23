@@ -28,7 +28,6 @@
 
   --font-sans: var(--font-plex-sans), "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, Menlo, Consolas, monospace;
-  --font-hand: var(--font-gochi), "Comic Sans MS", cursive;
 
   /* The gutter, Fibonacci at both ends; spacing steps are the Fibonacci
      numbers (mt-f21, gap-f13…), whose neighbours approach φ. */
@@ -108,12 +107,12 @@
 
 /* ── Type ─────────────────────────────────────────────────────
    At most eight sizes on the home page at desktop width: the display
-   face for the name (189) and, at 57, the section titles and the
-   checker's score; 35 (statements, the timeline's
-   years), 28 (titles), 21 (lede), 17 (body), 14 (small print). Case
-   studies add 63 for their headlines. Most reading happens at 17–21px
-   in IBM Plex Sans; Plex Mono is for code only, and Gochi Hand for
-   the ink only (see "Ink"). */
+   face, in capitals, for the name only (117); 57 for the chapters'
+   headlines and the checker's score; 35 (the headline, section titles,
+   the contact statement), 28 (titles), 21 (ledes), 17 (body), 13
+   (small print). Case studies add 72 for their titles. Headings are
+   sentence case. Most reading happens at 17–21px in IBM Plex Sans;
+   Plex Mono is for code only. */
 @utility type-hero {
   font-size: clamp(34.99px, min(5vw, 8svh), 72.01px);
   line-height: 1.272;
@@ -173,13 +172,12 @@
 
 /* ── Ink ───────────────────────────────────────────────────────
    The amber marker (src/lib/ink.ts, components/ink): a few
-   hand-drawn marks on the page's real evidence: the timeline's
-   spine and years, rings on its figures and on Resume Analyzer's
-   score, and the checker's underlines. Amber is for the main
-   action, the ink ([data-ink]) and the signals ([data-signal]). At
-   rest every mark is fully drawn; it is only drawn in when motion
-   is allowed (see the end of this block). Gochi Hand is for the
-   ink only. */
+   hand-drawn marks on the work's real evidence only: the phrases the
+   scam tool quoted, the ring round Resume Analyzer's score, and the
+   checker's underlines. Amber is for the main action, the ink
+   ([data-ink]) and the signals ([data-signal]). At rest every mark is
+   fully drawn; it is only drawn in when motion is allowed and not
+   paused (see the end of this block). */
 [data-ink] {
   color: var(--color-amber);
 }
@@ -588,9 +586,15 @@ svg[data-ink] {
 }
 
 /* ── Selected work (components/sections/Projects.tsx) ──────────
-   Section titles, More projects among them. */
+   Section titles (More projects, Experience, About): sentence case and
+   calm, 34.99px on a desktop; the chapters' headlines are the large
+   moments. */
 .section-title {
-  font-size: clamp(34.99px, 3.94vw, 56.61px);
+  font-size: clamp(27.51px, 2.43vw, 34.99px);
+  line-height: 1.272;
+  font-weight: 600;
+  font-stretch: 95%;
+  letter-spacing: -0.01em;
 }
 
 /* Resume Analyzer's two crops: side by side from 1200px (the score the
@@ -713,62 +717,33 @@ svg[data-ink] {
   cursor: default;
 }
 
-/* Experience (components/sections/Experience.tsx): a timeline drawn
-   by hand. The year in the margin, the spine between it and the
-   entry, the entries hanging off it. */
-.timeline {
-  --year: 55px;
-  --gap: 34px;
-  position: relative;
-}
-@media (min-width: 834px) {
-  .timeline {
-    --year: 89px;
-    --gap: 55px;
-  }
-}
-/* The entries keep to the golden section of the width. */
-@media (min-width: 1024px) {
-  .timeline {
-    max-width: 61.8%;
-  }
-}
-.timeline-spine {
-  position: absolute;
-  top: 6px;
-  left: calc(var(--year) + var(--gap) / 2 - 10px);
-  width: 20px;
-  height: calc(100% - 6px);
-}
-.timeline-entry {
+/* Experience (components/sections/Experience.tsx): a plain list, easy
+   to scan. From 834px each entry is a row: the dates in the first
+   column, the role and its points in the second, at 1 : 3.236. */
+.experience-list {
   display: grid;
-  grid-template-columns: var(--year) minmax(0, 1fr);
-  column-gap: var(--gap);
+  gap: 55px;
 }
-.timeline-year {
-  font-family: var(--font-hand);
-  font-size: 27.51px;
-  line-height: 1.272;
-  text-align: right;
+.experience-entry {
+  display: grid;
+  gap: 5px;
 }
 @media (min-width: 834px) {
-  .timeline-year {
-    font-size: 34.99px;
-    line-height: 1;
+  .experience-entry {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 3.236fr);
+    column-gap: 55px;
   }
 }
-/* A figure circled by hand where it stands in its sentence. */
-.ink-ring {
-  position: relative;
-  display: inline-block;
-  padding-inline: 0.3em;
+.experience-dates {
+  font-size: 17px;
+  line-height: 1.618;
+  color: var(--color-text-3);
+  font-variant-numeric: tabular-nums;
 }
-.ink-ring > svg {
-  position: absolute;
-  left: -0.12em;
-  top: -0.3em;
-  width: calc(100% + 0.24em);
-  height: calc(100% + 0.6em);
+@media (min-width: 834px) {
+  .experience-dates {
+    padding-top: 3px;
+  }
 }
 
 /* ── Case studies (components/CaseStudy.tsx) ───────────────────

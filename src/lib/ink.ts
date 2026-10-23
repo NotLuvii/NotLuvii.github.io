@@ -33,8 +33,3 @@ export function underline(w: number, seed: number): string[] {
     ),
   );
 }
-
-/** The timeline's spine: a near-vertical line at x=10 in a 20×h frame. */
-export function spine(h: number, seed: number): string[] {
-  return paths(generator.line(10, 2, 10, h - 2, steady(seed)));
-}

@@ -164,13 +164,12 @@ describe("ink", () => {
     for (const { path, text } of client) expect(/@\/lib\/ink|roughjs/.test(text), path).toBe(false);
   });
 
-  it("writes notes in Gochi Hand, self-hosted with its licence, and nowhere but the ink", () => {
-    expect(existsSync(join(SRC, "fonts/gochi-hand-latin-400.woff2"))).toBe(true);
-    expect(readFileSync(join(SRC, "fonts/Gochi-Hand-LICENSE.txt"), "utf8")).toContain("SIL Open Font License");
-    const uses = offenders(/--font-hand|font-hand\b/, (path) => /app\/(fonts\.ts|layout\.tsx)$/.test(path));
-    expect(uses.length).toBeGreaterThan(0);
-    for (const line of uses) expect(line.startsWith("src/app/globals.css"), line).toBe(true);
+  it("no Gochi Hand: the handwriting went with the drawn timeline", () => {
+    expect(existsSync(join(SRC, "fonts/gochi-hand-latin-400.woff2"))).toBe(false);
+    expect(existsSync(join(SRC, "fonts/Gochi-Hand-LICENSE.txt"))).toBe(false);
+    expect(offenders(/gochi|--font-hand|font-hand\b/i)).toEqual([]);
   });
+
 });
 
 describe("type, continued", () => {
@@ -214,6 +213,9 @@ describe("shape and labels", () => {
     // In globals.css, only the display utility (the name and section titles) is set in capitals.
     const caps = [...css.matchAll(/([^{}]*)\{[^{}]*text-transform:\s*uppercase[^{}]*\}/g)].map((m) => m[1].replace(/\/\*[\s\S]*?\*\//g, "").trim());
     expect(caps).toEqual(["@utility type-display"]);
+    // And the display face is set on one thing only: the name on the first screen.
+    const users = sources.filter(({ path, text }) => !path.endsWith(".css") && /\btype-display\b/.test(text)).map(({ path }) => path);
+    expect(users).toEqual(["src/components/sections/Hero.tsx"]);
   });
 });
 

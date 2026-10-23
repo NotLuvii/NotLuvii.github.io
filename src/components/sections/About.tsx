@@ -3,16 +3,16 @@ import { alsoUsed, approach, interests, skills } from "@/content/experience";
 import { projectHref } from "@/content/projects";
 
 /**
- * About and skills, from what the site already shows: what I'm interested in, and how I work, each
+ * About, and skills, from what the site already shows: what I'm interested in, and how I work, each
  * point with where it comes from (a case study, linked, or the reports work); then the skills, once.
  * It names no company: the work history, and the degree, are in Experience.
  */
 export function About() {
   return (
-    <section id="skills" aria-labelledby="skills-title" className="pt-f55 md:pt-f89">
+    <section id="about" aria-labelledby="about-title" className="pt-f55 md:pt-f89">
       <div className="mx-auto max-w-[1200px] px-gutter">
-        <h2 id="skills-title" className="type-display section-title text-text">
-          About and skills
+        <h2 id="about-title" className="section-title text-text">
+          About
         </h2>
 
         <div className="mt-f34 grid gap-x-f55 gap-y-f34 min-[834px]:grid-cols-2">
@@ -44,7 +44,7 @@ export function About() {
 
         <div className="mt-f55 rounded-xl bg-panel p-f21 md:p-f55">
           <h3 className="type-lede text-text">Skills</h3>
-          <dl className="mt-f13 grid gap-x-f55 gap-y-f34 min-[834px]:grid-cols-2">
+          <dl className="mt-f13 grid gap-x-f34 gap-y-f21 min-[640px]:grid-cols-2 min-[1024px]:grid-cols-4">
             {skills.map((s) => (
               <div key={s.group}>
                 <dt className="text-[17px] font-semibold text-text">{s.group}</dt>

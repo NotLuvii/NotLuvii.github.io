@@ -5,12 +5,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ring, spine, underline } from "@/lib/ink";
+import { ring, underline } from "@/lib/ink";
 
 const kinds: Record<string, () => string[]> = {
   ring: () => ring(100, 50, 3),
   underline: () => underline(200, 4),
-  spine: () => spine(1000, 31),
 };
 
 describe("ink", () => {

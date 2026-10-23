@@ -50,7 +50,7 @@ function CardPicture({ p }: { p: FeaturedProject }) {
 /** One project: its picture, its name (a link to the case study), one line, three tools and the two links. */
 function WorkCard({ p }: { p: FeaturedProject }) {
   return (
-    <article className="work-card">
+    <article id={p.slug} className="work-card">
       <CardPicture p={p} />
       <div className="card-body">
         <h3 className="type-title text-text">

@@ -25,6 +25,17 @@ export type Screenshot = {
 /** A figure from a project's result, shown large on the home page with a line saying what it measures. */
 export type Stat = { value: string; label: string };
 
+/** A rectangle in a capture's 1x pixels. */
+export type Rect = { x: number; y: number; w: number; h: number };
+
+/**
+ * A window onto a real capture, cut in CSS (components/ui/Crop.tsx): `rect` is what shows,
+ * `narrow` what shows below 640px, `marks` are ink underlines (each at its rect's bottom edge) and
+ * `ring` an ink ring, all in the capture's 1x pixels. Nothing is redrawn: the pixels are the
+ * capture's own, and the whole capture opens full screen.
+ */
+export type Crop = { shot: Screenshot; rect: Rect; narrow?: Rect; alt: string; marks?: Rect[]; ring?: Rect };
+
 export type CodeExcerpt = {
   /** File path inside the repository, shown above the code. */
   file: string;
@@ -80,6 +91,25 @@ export type MoreProject = {
 };
 
 const GH = "https://github.com/NotLuvii";
+
+/** The scam tool's email check on the README's sample (captured October 2026): the source of its crops. */
+const scamApp: Screenshot = {
+  src: "/images/scam-detection/app",
+  width: 592,
+  height: 899,
+  alt: "The Scam & Fraud Detection page with the Phishing email tab open. The sample email is in the text box. The result shows a risk score of 100 percent, High risk, and five issues: two urgency phrases, a generic greeting, the text paypal-secure, and a request to click or verify.",
+  caption: "Email check on the README’s sample phishing email: 100, High, with five red flags.",
+};
+
+/** Resume Analyzer's result for my resume against a sample posting (captured October 2026). */
+const resumeResults: Screenshot = {
+  src: "/images/resume-analyzer/results",
+  width: 872,
+  height: 1191,
+  alt: "The Resume Analyzer web page. A sample job description is in the text box and Luvneet_Bamrah_Resume.pdf is selected. The relevance score is 55.6 percent, shown with a bar. Gap analysis lists teamwork and communication as missing soft skills and Docker and Kubernetes as missing technical skills; matched technical skills are AWS, TypeScript, React, SQL and Python.",
+  caption:
+    "My resume scored 55.6% against a sample posting: “Software developer. You will build web applications in React and TypeScript, write SQL and Python to validate data, and deploy services on AWS. Experience with Docker and Kubernetes is an asset. We value communication, teamwork and problem-solving.”",
+};
 
 const scam: FeaturedProject = {
   slug: "scam-detection",
@@ -145,13 +175,7 @@ const scam: FeaturedProject = {
     ],
     figuresNote: "Screenshots of the tool running locally, October 2026, using the example inputs from its README.",
     figures: [
-      {
-        src: "/images/scam-detection/app",
-        width: 592,
-        height: 899,
-        alt: "The Scam & Fraud Detection page with the Phishing email tab open. The sample email is in the text box. The result shows a risk score of 100 percent, High risk, and five issues: two urgency phrases, a generic greeting, the text paypal-secure, and a request to click or verify.",
-        caption: "Email check on the README’s sample phishing email: 100, High, with five red flags.",
-      },
+      scamApp,
       {
         src: "/images/scam-detection/listing",
         width: 592,
@@ -355,14 +379,7 @@ const resume: FeaturedProject = {
     ],
     figuresNote: "Screenshot of the web version running locally, October 2026.",
     figures: [
-      {
-        src: "/images/resume-analyzer/results",
-        width: 872,
-        height: 1191,
-        alt: "The Resume Analyzer web page. A sample job description is in the text box and Luvneet_Bamrah_Resume.pdf is selected. The relevance score is 55.6 percent, shown with a bar. Gap analysis lists teamwork and communication as missing soft skills and Docker and Kubernetes as missing technical skills; matched technical skills are AWS, TypeScript, React, SQL and Python.",
-        caption:
-          "My resume scored 55.6% against a sample posting: “Software developer. You will build web applications in React and TypeScript, write SQL and Python to validate data, and deploy services on AWS. Experience with Docker and Kubernetes is an asset. We value communication, teamwork and problem-solving.”",
-      },
+      resumeResults,
     ],
     files: [
       { label: "Skill lists and matching: backend/analyzer.py", href: `${GH}/Resume-Analyze/blob/main/backend/analyzer.py` },
@@ -434,3 +451,50 @@ export const more: MoreProject[] = [
 ];
 
 export const projectHref = (slug: string) => `/projects/${slug}/`;
+
+/** The crops the home page and case studies show, measured from the captures (1x pixels). */
+export type CropName = "scamResult" | "scamMessage" | "scamSigns" | "scamVerdict" | "resumeScore" | "resumeGap";
+
+export const crops: Record<CropName, Crop> = {
+  scamResult: {
+    shot: scamApp,
+    rect: { x: 20, y: 595, w: 552, h: 281 },
+    alt: "The scam detection tool’s result for the README’s sample phishing email: the risk score bar full at 100 percent, the verdict “High risk — treat as suspicious and avoid clicking links or sharing info.”, and five issues: two urgency phrases, a generic greeting, the text paypal-secure, and a request to click or verify.",
+  },
+  scamMessage: {
+    shot: scamApp,
+    rect: { x: 33, y: 208, w: 526, h: 184 },
+    alt: "The sample phishing email in the tool’s text box: “Dear Customer, Your account has been suspended due to unusual activity. Verify your identity immediately: https://paypal-secure.com/verify-now Click here to restore access. Do not ignore this message.” The phrases the tool quotes are underlined.",
+    // Under "Dear Customer", "immediately", "paypal-secure" (across a line break) and "Click here to restore".
+    marks: [
+      { x: 71, y: 282, w: 100, h: 4 },
+      { x: 208, y: 328, w: 80, h: 4 },
+      { x: 357, y: 328, w: 45, h: 4 },
+      { x: 71, y: 351, w: 46, h: 4 },
+      { x: 71, y: 376, w: 138, h: 4 },
+    ],
+  },
+  scamSigns: {
+    shot: scamApp,
+    rect: { x: 33, y: 714, w: 340, h: 146 },
+    alt: "The five issues the tool lists: Urgency language: “immediately”; Urgency language: “click here to restore”; Generic greeting (e.g. “Dear Customer”); Suspicious domain-like text: “paypal-secure”; Asks for sensitive info or to click/verify.",
+  },
+  scamVerdict: {
+    shot: scamApp,
+    rect: { x: 33, y: 606, w: 527, h: 112 },
+    alt: "The tool’s risk score bar, full at 100 percent, and its verdict: High risk — treat as suspicious and avoid clicking links or sharing info.",
+  },
+  resumeScore: {
+    shot: resumeResults,
+    rect: { x: 50, y: 422, w: 772, h: 192 },
+    narrow: { x: 50, y: 422, w: 470, h: 140 },
+    alt: "Resume Analyzer’s relevance score: 55.6 percent, with a bar and the note that it is the share of the job description’s skills the resume mentions, weighted by how often the description names each one.",
+    // Around "55.6%".
+    ring: { x: 62, y: 492, w: 114, h: 38 },
+  },
+  resumeGap: {
+    shot: resumeResults,
+    rect: { x: 50, y: 623, w: 420, h: 264 },
+    alt: "Resume Analyzer’s gap analysis: missing soft skills, teamwork and communication; missing technical skills, docker and kubernetes.",
+  },
+};

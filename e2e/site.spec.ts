@@ -126,7 +126,7 @@ test.describe("first screen", () => {
     for (const sel of ["[data-recording]", ".hero-frame", ".more-row", "[data-figure]", "video", ".role-grid", ".sketch", ".data-check"]) await expect(page.locator(sel), sel).toHaveCount(0);
   });
 
-  test("says who and what: the clock, the name, the headline, the intro, two buttons and the diagram, with no status pill", async ({ page }) => {
+  test("says who and what: the clock, the name, the headline, the intro, two buttons and the work, with no status pill", async ({ page }) => {
     await page.goto("/");
     const hero = page.locator("section.hero");
     // No status pill: the first screen opens on the clock line and the name.
@@ -138,9 +138,24 @@ test.describe("first screen", () => {
     await expect(hero.getByText(site.intro)).toBeVisible();
     await expect(hero.getByRole("link", { name: "See the work" })).toHaveAttribute("href", "#projects");
     await expect(hero.getByRole("link", { name: /Download resume/ })).toHaveAttribute("download", "");
-    await expect(hero.locator("figure.reconcile svg")).toHaveAttribute("aria-hidden", "true");
-    await expect(hero.locator("img, video, picture")).toHaveCount(0);
-    for (const p of featured) await expect(hero).not.toContainText(p.title);
+    await expect(hero.locator(".reconcile, .rc-row, video")).toHaveCount(0);
+  });
+
+  test("the hero's hierarchy: name, then positioning, then the work", async ({ page }) => {
+    await page.goto("/");
+    const sizes = await page.evaluate(() => {
+      const size = (sel: string) => parseFloat(getComputedStyle(document.querySelector(sel)!).fontSize);
+      return { name: size("section.hero h1"), headline: size(".hero-copy .type-statement"), intro: size(".hero-copy .type-lede") };
+    });
+    expect(sizes.name).toBeGreaterThan(sizes.headline);
+    expect(sizes.headline).toBeGreaterThan(sizes.intro);
+    if (!isPhone(page)) expect(sizes.name).toBeLessThanOrEqual(116.6);
+    const figure = page.locator("section.hero figure.hero-visual");
+    await expect(figure.locator("[data-crop]")).toHaveCount(1);
+    await expect(figure.locator("figcaption")).toContainText("The scam detection tool on the README’s sample phishing email: 100%, High risk, and the five warning signs behind it.");
+    await expect(figure.getByRole("link", { name: "See how it works" })).toHaveAttribute("href", "#scam-detection");
+    const scale = await figure.locator(".crop-window").evaluate((w) => w.getBoundingClientRect().width / 552);
+    expect(scale).toBeGreaterThanOrEqual(isPhone(page) ? 0.6 : 0.9);
   });
 
   test("without JavaScript the clock shows the city", async ({ browser }) => {
@@ -151,7 +166,7 @@ test.describe("first screen", () => {
     await context.close();
   });
 
-  test("the first screen fits: the name, the words and the diagram on screen, clear of the bar", async ({ page }) => {
+  test("the first screen fits: the name, the words and the work on screen, clear of the bar", async ({ page }) => {
     for (const [w, h] of [[1440, 900], [1280, 720]] as const) {
       await page.setViewportSize({ width: w, height: h });
       await page.goto("/");
@@ -159,13 +174,12 @@ test.describe("first screen", () => {
         const n = s.querySelector("h1")!.getBoundingClientRect();
         const c = s.querySelector(".hero-copy")!.getBoundingClientRect();
         const d = s.querySelector(".hero-visual")!.getBoundingClientRect();
-        return { top: n.top, bottom: c.bottom, dTop: d.top, dBottom: d.bottom, dWidth: d.width, vh: innerHeight };
+        return { top: n.top, bottom: c.bottom, dTop: d.top, dBottom: d.bottom, vh: innerHeight };
       });
       expect(box.top, `${w}x${h}`).toBeGreaterThanOrEqual(56);
       expect(box.bottom, `${w}x${h}`).toBeLessThanOrEqual(box.vh);
-      expect(box.dTop, `${w}x${h} diagram`).toBeGreaterThanOrEqual(56);
-      expect(box.dBottom, `${w}x${h} diagram`).toBeLessThanOrEqual(box.vh);
-      expect(box.dWidth, `${w}x${h} diagram`).toBeGreaterThanOrEqual(360);
+      expect(box.dTop, `${w}x${h} visual`).toBeGreaterThanOrEqual(56);
+      expect(box.dBottom, `${w}x${h} visual`).toBeLessThanOrEqual(box.vh);
     }
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto("/");
@@ -181,64 +195,42 @@ test.describe("first screen", () => {
   test("with reduced motion the hero is still and complete", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
-    const state = await page.evaluate(() => ({
-      hero: document.querySelector(".hero")!.getAnimations({ subtree: true }).length,
-      ticks: document.querySelectorAll(".rc-tick").length,
-      flags: document.querySelectorAll(".rc-flag").length,
-    }));
-    expect(state).toEqual({ hero: 0, ticks: 7, flags: 1 });
+    expect(await page.locator(".hero").evaluate((el) => el.getAnimations({ subtree: true }).length)).toBe(0);
+    await expect(page.locator(".hero-visual img")).toBeVisible();
   });
 
-  test("no scan line anywhere", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "no-preference" });
+  test("a crop opens the whole capture and gives focus back", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator(".dc-line, .rc-scan")).toHaveCount(0);
+    const open = page.locator(".hero-visual .crop-open");
+    await expect(open).toHaveAttribute("aria-label", /^View the whole screenshot: /);
+    await open.focus();
+    await page.keyboard.press("Enter");
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator("img")).toHaveAttribute("src", /app@2x\.webp$/);
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(open).toBeFocused();
+    await open.click();
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "Close" }).click();
+    await expect(dialog).toBeHidden();
   });
 
-  test("the hero shows the reconciliation: 8 rows, 7 checked, 1 traced", async ({ page }) => {
-    await page.goto("/");
-    const figure = page.locator("section.hero figure.reconcile");
-    await expect(figure.locator("figcaption")).toHaveText("Report figures checked against the source system, row by row; the one that doesn't match is traced to its root cause.");
-    await expect(figure.locator(".rc-row")).toHaveCount(8);
-    await expect(figure.locator(".rc-tick")).toHaveCount(7);
-    await expect(figure.locator(".rc-flag")).toHaveCount(1);
-    await expect(figure.locator(".rc-trace")).toHaveCount(1);
-    await expect(figure.locator("svg")).toHaveAttribute("aria-hidden", "true");
-    for (const label of ["Report", "Source", "Root cause"]) await expect(figure.getByText(label, { exact: true })).toBeVisible();
-    // No numbers: the drawing invents no data.
-    expect(await figure.evaluate((f) => /\d/.test(f.querySelector(".rc-board")!.textContent!))).toBe(false);
-  });
-
-  test("with reduced motion or motion paused the check shows finished", async ({ browser }) => {
-    for (const mode of ["reduce", "paused"] as const) {
-      const context = await browser.newContext({ reducedMotion: mode === "reduce" ? "reduce" : "no-preference" });
-      if (mode === "paused") await context.addInitScript(() => localStorage.setItem("motion", "paused"));
-      const page = await context.newPage();
+  test("crops stay aligned at odd widths", async ({ page }) => {
+    test.skip(isPhone(page), "widths set here");
+    for (const width of [1023, 1100, 639, 320]) {
+      await page.setViewportSize({ width, height: 900 });
       await page.goto("/");
-      const state = await page.locator("figure.reconcile").evaluate((f) => ({
-        running: f.getAnimations({ subtree: true }).length,
-        ticks: [...f.querySelectorAll(".rc-tick, .rc-flag")].map((el) => getComputedStyle(el).opacity),
-        trace: parseFloat(getComputedStyle(f.querySelector(".rc-trace")!).strokeDashoffset),
-      }));
-      expect(state.running, mode).toBe(0);
-      expect(state.ticks, mode).toEqual(Array(8).fill("1"));
-      expect(state.trace, mode).toBe(0);
-      await context.close();
+      const off = await page.locator(".hero-visual [data-crop]").evaluate((c) => {
+        const win = c.querySelector(".crop-window")!.getBoundingClientRect();
+        const img = c.querySelector(".crop-window img")!.getBoundingClientRect();
+        const s = win.width / 552;
+        return { left: img.left - win.left + 20 * s, top: img.top - win.top + 595 * s, width: img.width - 592 * s };
+      });
+      for (const v of Object.values(off)) expect(Math.abs(v), `${width}: ${JSON.stringify(off)}`).toBeLessThanOrEqual(1);
     }
   });
-
-  test("with motion allowed the check runs once and ends finished", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "no-preference" });
-    await page.goto("/");
-    await page.waitForTimeout(2600);
-    const state = await page.locator("figure.reconcile").evaluate((f) => ({
-      running: f.getAnimations({ subtree: true }).filter((a) => a.playState === "running").length,
-      ticks: [...f.querySelectorAll(".rc-tick, .rc-flag")].map((el) => getComputedStyle(el).opacity),
-      trace: parseFloat(getComputedStyle(f.querySelector(".rc-trace")!).strokeDashoffset),
-    }));
-    expect(state).toEqual({ running: 0, ticks: Array(8).fill("1"), trace: 0 });
-  });
-
 });
 
 /** Visible text in main, as { size, family, words, inCode } per text node. */
@@ -345,11 +337,11 @@ test.describe("after the Apple audit", () => {
     expect(stray).toEqual([]);
   });
 
-  test("the headline fits on two lines, on a desktop and on a 390px phone", async ({ page }) => {
+  test("the headline keeps to three short lines on a desktop and two on a 390px phone", async ({ page }) => {
     await page.setViewportSize(isPhone(page) ? { width: 390, height: 844 } : { width: 1440, height: 900 });
     await page.goto("/");
     const lines = await page.getByText(site.headline).evaluate((el) => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)));
-    expect(lines).toBeLessThanOrEqual(2);
+    expect(lines).toBeLessThanOrEqual(isPhone(page) ? 2 : 3);
   });
 
 
@@ -1270,8 +1262,8 @@ test.describe("motion", () => {
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
     await page.goto("/");
-    await expect(page.locator("figure.reconcile figcaption")).toBeVisible();
-    await expect(page.locator("figure.reconcile .rc-tick")).toHaveCount(7);
+    await expect(page.locator(".hero-visual img")).toBeVisible();
+    await expect(page.locator(".hero-visual figcaption")).toBeVisible();
     await expect(page.locator("#projects .carousel > li")).toHaveCount(3);
     for (const p of featured) await expect(page.locator("#projects .carousel").getByRole("heading", { name: p.title })).toBeVisible();
     await expect(page.locator("#demo [data-try-score]")).toHaveText("94");
@@ -1328,11 +1320,11 @@ test.describe("golden ratio", () => {
     });
   }
 
-  test("the first screen splits 1.618 : 1", async ({ page }) => {
+  test("the first screen splits evenly between the words and the work", async ({ page }) => {
     test.skip(isPhone(page), "the split is from 1024px");
     await page.goto("/");
     const ratio = await page.evaluate(() => document.querySelector(".hero-copy")!.getBoundingClientRect().width / document.querySelector(".hero-visual")!.getBoundingClientRect().width);
-    expect(Math.abs(ratio - PHI) / PHI).toBeLessThan(0.02);
+    expect(Math.abs(ratio - 1)).toBeLessThan(0.02);
   });
 
   test("reading text is set at line height φ", async ({ page }) => {

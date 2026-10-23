@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { featured, more, projectHref, type Screenshot } from "@/content/projects";
+import { crops, featured, more, projectHref, type Rect, type Screenshot } from "@/content/projects";
 import { alsoUsed, approach, education, interests, roles, skills, timeline } from "@/content/experience";
 import { nav, site } from "@/content/site";
 import { checkScam, SAMPLES } from "@/lib/scam-rules";
@@ -157,6 +157,40 @@ describe("screenshots", () => {
       expect(s.alt.length).toBeGreaterThan(40);
       expect(s.caption.length).toBeGreaterThan(20);
     }
+  });
+});
+
+describe("crops of real captures", () => {
+  const inside = (r: Rect, w: number, h: number) => r.x >= 0 && r.y >= 0 && r.x + r.w <= w && r.y + r.h <= h;
+
+  it("every crop lies inside its capture, and its marks and ring inside the crop", () => {
+    for (const [name, c] of Object.entries(crops)) {
+      expect(inside(c.rect, c.shot.width, c.shot.height), name).toBe(true);
+      if (c.narrow) expect(inside(c.narrow, c.shot.width, c.shot.height), `${name} narrow`).toBe(true);
+      for (const m of c.marks ?? []) {
+        expect(m.x >= c.rect.x && m.x + m.w <= c.rect.x + c.rect.w, `${name} mark x`).toBe(true);
+        expect(m.y >= c.rect.y && m.y + m.h <= c.rect.y + c.rect.h + 4, `${name} mark y`).toBe(true);
+      }
+      if (c.ring) expect(inside({ ...c.ring, x: c.ring.x - c.rect.x, y: c.ring.y - c.rect.y }, c.rect.w, c.rect.h), `${name} ring`).toBe(true);
+      for (const file of [`${c.shot.src}.webp`, `${c.shot.src}@2x.webp`]) expect(existsSync(join(PUBLIC, file)), file).toBe(true);
+      expect(c.alt.length, name).toBeGreaterThan(20);
+    }
+  });
+
+  it("the crops are the spec's, cut from the scam tool's and Resume Analyzer's own captures", () => {
+    expect(Object.keys(crops)).toEqual(["scamResult", "scamMessage", "scamSigns", "scamVerdict", "resumeScore", "resumeGap"]);
+    expect(crops.scamResult.rect).toEqual({ x: 20, y: 595, w: 552, h: 281 });
+    expect(crops.scamMessage.rect).toEqual({ x: 33, y: 208, w: 526, h: 184 });
+    expect(crops.scamSigns.rect).toEqual({ x: 33, y: 714, w: 340, h: 146 });
+    expect(crops.scamVerdict.rect).toEqual({ x: 33, y: 606, w: 527, h: 112 });
+    expect(crops.resumeScore.rect).toEqual({ x: 50, y: 422, w: 772, h: 192 });
+    expect(crops.resumeScore.narrow).toEqual({ x: 50, y: 422, w: 470, h: 140 });
+    expect(crops.resumeScore.ring).toEqual({ x: 62, y: 492, w: 114, h: 38 });
+    expect(crops.resumeGap.rect).toEqual({ x: 50, y: 623, w: 420, h: 264 });
+    expect(crops.scamMessage.marks).toHaveLength(5);
+    for (const k of ["scamResult", "scamMessage", "scamSigns", "scamVerdict"] as const) expect(crops[k].shot).toBe(featured[0].caseStudy.figures[0]);
+    const resume = featured.find((p) => p.slug === "resume-analyzer")!;
+    for (const k of ["resumeScore", "resumeGap"] as const) expect(crops[k].shot).toBe(resume.caseStudy.figures[0]);
   });
 });
 

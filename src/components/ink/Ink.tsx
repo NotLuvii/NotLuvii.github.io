@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, SVGAttributes } from "react";
 
 /**
  * Renders marks from src/lib/ink.ts (paths drawn for a w×h box) as an SVG that stretches to its
@@ -14,6 +14,7 @@ export function Ink({
   draw = "view",
   className,
   style,
+  ...rest
 }: {
   paths: string[];
   w: number;
@@ -21,9 +22,9 @@ export function Ink({
   draw?: "view" | "load" | "none";
   className?: string;
   style?: CSSProperties;
-}) {
+} & Omit<SVGAttributes<SVGSVGElement>, "style" | "className">) {
   return (
-    <svg aria-hidden focusable="false" data-ink data-draw={draw} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className={className} style={style}>
+    <svg {...rest} aria-hidden focusable="false" data-ink data-draw={draw} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className={className} style={style}>
       {paths.map((d, i) => (
         <path key={i} d={d} pathLength={1} fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" style={{ "--i": i } as CSSProperties} />
       ))}

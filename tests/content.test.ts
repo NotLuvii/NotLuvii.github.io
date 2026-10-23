@@ -23,7 +23,7 @@ function webpSize(file: string) {
   throw new Error(`Unknown WebP chunk ${chunk} in ${file}`);
 }
 
-const allShots: Screenshot[] = [...featured.flatMap((p) => [...p.caseStudy.figures, ...(p.homeShot ? [p.homeShot] : [])])];
+const allShots: Screenshot[] = featured.flatMap((p) => p.caseStudy.figures);
 
 /** Every repository and page a project links to, checked by hand in October 2026. */
 const VERIFIED_LINKS = new Set([
@@ -109,25 +109,6 @@ describe("featured projects", () => {
   });
 
 
-  it("gives each card its one line, true of what its picture shows", () => {
-    // The scam card shows the tool itself, whose tabs are email, text, listing and link.
-    expect(featured.map((p) => p.tileLine)).toEqual([
-      "Checks emails, texts, listings and links for common scam patterns.",
-      "Scores a resume against a job posting.",
-      "An Android form, sent as one structured email.",
-    ]);
-  });
-
-  it("rings Resume Analyzer's score inside its picture", () => {
-    const resume = featured.find((p) => p.slug === "resume-analyzer")!;
-    expect(resume.homeShot!.caption).toContain("relevance score 55.6%");
-    const r = resume.ring!;
-    expect(r.x).toBeGreaterThan(0);
-    expect(r.y).toBeGreaterThan(0);
-    expect(r.x + r.w).toBeLessThanOrEqual(100);
-    expect(r.y + r.h).toBeLessThanOrEqual(100);
-  });
-
   it("builds case-study paths with a trailing slash, for the static export", () => {
     expect(projectHref("scam-detection")).toBe("/projects/scam-detection/");
   });
@@ -185,7 +166,7 @@ describe("crops of real captures", () => {
     expect(crops.scamVerdict.rect).toEqual({ x: 33, y: 606, w: 527, h: 112 });
     expect(crops.resumeScore.rect).toEqual({ x: 50, y: 422, w: 772, h: 192 });
     expect(crops.resumeScore.narrow).toEqual({ x: 50, y: 422, w: 470, h: 140 });
-    expect(crops.resumeScore.ring).toEqual({ x: 62, y: 492, w: 114, h: 38 });
+    expect(crops.resumeScore.ring).toEqual({ x: 56, y: 488, w: 126, h: 46 });
     expect(crops.resumeGap.rect).toEqual({ x: 50, y: 623, w: 420, h: 264 });
     expect(crops.scamMessage.marks).toHaveLength(5);
     for (const k of ["scamResult", "scamMessage", "scamSigns", "scamVerdict"] as const) expect(crops[k].shot).toBe(featured[0].caseStudy.figures[0]);
@@ -214,6 +195,27 @@ describe("project chapters", () => {
       "Each rule that matched, in the tool’s own words: urgent wording, a generic greeting, a lookalike domain and a request to click or verify.",
       "The points add up to a score from 0 to 100, with the level spelled out: 100%, High risk.",
     ]);
+  });
+});
+
+describe("the other chapters", () => {
+  it("the resume chapter, as the spec words it", () => {
+    const resume = featured.find((p) => p.slug === "resume-analyzer")!;
+    expect(resume.chapter).toEqual({
+      headline: "Match a resume to a job posting, skill by skill.",
+      lede: "Upload a resume and paste a posting. It scores the weighted share of the posting’s skills the resume mentions, lists the shared and missing ones, and suggests interview questions.",
+      limitation: "Text is split into single words before matching, so skills with spaces or punctuation, like Power BI, C++ and problem-solving, can’t match yet.",
+      visual: ["resumeScore", "resumeGap"],
+      caption: "My resume against a sample posting: 55.6%, with communication, teamwork, Docker and Kubernetes missing.",
+    });
+    // The limitation restates the case study's own first limitation.
+    expect(resume.caseStudy.limitations[0]).toMatch(/Power BI, C\+\+ and scikit-learn/);
+  });
+
+  it("Immensa has no chapter and no pictures, until real screenshots exist", () => {
+    const immensa = featured.find((p) => p.slug === "immensa-inquiry-app")!;
+    expect(immensa.chapter).toBeUndefined();
+    expect(immensa.caseStudy.figures).toEqual([]);
   });
 });
 
@@ -345,10 +347,8 @@ describe("site", () => {
 
 
 describe("first screen", () => {
-  it("the checker opens on the text-message sample, not the email in the scam card's picture", () => {
-    const lead = featured[0];
+  it("the checker opens on the text-message sample, not the email the hero shows", () => {
     expect(SAMPLES.find((s) => s.kind === "text")!.text).not.toMatch(/Dear Customer/);
-    expect(lead.homeShot).toBeUndefined();
   });
 
   it("no longer ships the opening recording", () => {

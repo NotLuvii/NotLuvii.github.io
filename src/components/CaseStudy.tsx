@@ -71,11 +71,7 @@ export function CaseStudy({ project: p }: { project: FeaturedProject }) {
               <Screenshot shot={lead} sizes="(min-width: 1024px) 400px, (min-width: 480px) 420px, 90vw" />
               {c.figuresNote && <p className="type-small mt-f8 text-text-3">{c.figuresNote}</p>}
             </div>
-          ) : (
-            <div className="cs-lead card-picture card-picture-pending">
-              <p>Android screenshots to come</p>
-            </div>
-          )}
+          ) : null}
 
           <section id="glance" aria-labelledby="glance-title">
             <h2 id="glance-title" className="sr-only">

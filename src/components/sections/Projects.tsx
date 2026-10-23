@@ -1,72 +1,42 @@
-import Link from "next/link";
-import { featured, projectHref, type FeaturedProject } from "@/content/projects";
+import { crops, featured, projectHref, type FeaturedProject } from "@/content/projects";
 import { MoreProjects } from "@/components/sections/MoreProjects";
-import { ScamChecker } from "@/components/sections/ScamChecker";
-import { WorkCarousel } from "@/components/sections/WorkCarousel";
-import { checkScam, SAMPLES } from "@/lib/scam-rules";
-import { ButtonLink, TextLink } from "@/components/ui/links";
 import { ProjectChapter } from "@/components/sections/ProjectChapter";
+import { ScamChecker } from "@/components/sections/ScamChecker";
 import { ScamSteps } from "@/components/sections/ScamSteps";
-import { Screenshot } from "@/components/ui/Screenshot";
-import { Ink } from "@/components/ink/Ink";
-import { ring } from "@/lib/ink";
+import { checkScam, SAMPLES } from "@/lib/scam-rules";
+import { Crop } from "@/components/ui/Crop";
+import { ButtonLink, TextLink } from "@/components/ui/links";
 
-/**
- * A card's picture, in one frame for all three: a real screenshot, held at its foot, where the
- * evidence is (the scam tool's result, Resume Analyzer's score, ringed by hand). Immensa has no
- * screenshots yet, so its frame says so and shows nothing made up; its code is in its case study.
- * The window is a golden rectangle and cuts the rest off (CSS: .card-picture).
- */
-function CardPicture({ p }: { p: FeaturedProject }) {
-  const shot = p.slug === "scam-detection" ? p.caseStudy.figures[0] : p.homeShot;
-  if (shot)
-    return (
-      <div className="card-picture card-picture-foot">
-        <Screenshot
-          shot={shot}
-          captionHidden
-          sizes="(min-width: 768px) 620px, 85vw"
-          annotation={
-            p.ring && (
-              // Drawn at rest: inside the picture's clipped window, a scroll timeline would never finish.
-              <Ink
-                paths={ring(120, 64, 11)}
-                w={120}
-                h={64}
-                draw="none"
-                className="absolute"
-                style={{ left: `${p.ring.x}%`, top: `${p.ring.y}%`, width: `${p.ring.w}%`, height: `${p.ring.h}%` }}
-              />
-            )
-          }
-        />
-      </div>
-    );
+/** Resume Analyzer's visual: its score (ringed) and its gap analysis, two crops of one capture. */
+function ResumeVisual({ p }: { p: FeaturedProject }) {
+  const [score, gap] = p.chapter!.visual!;
   return (
-    <div className="card-picture card-picture-pending">
-      <p>Android screenshots to come</p>
-    </div>
+    <figure>
+      <div className="resume-visual">
+        <Crop crop={crops[score]} sizes="(min-width: 1200px) 640px, 90vw" />
+        <Crop crop={crops[gap]} sizes="(min-width: 1200px) 420px, 90vw" />
+      </div>
+      <figcaption className="type-small mt-f13 max-w-[62ch] text-text-3">{p.chapter!.caption}</figcaption>
+    </figure>
   );
 }
 
-/** One project: its picture, its name (a link to the case study), one line, three tools and the two links. */
-function WorkCard({ p }: { p: FeaturedProject }) {
+/**
+ * A project with a case study but no pictures yet (Immensa): one compact row, its name, what it is,
+ * what kind and when, and its two links. No frame, and nothing made up to fill one.
+ */
+function CompactEntry({ p }: { p: FeaturedProject }) {
   return (
-    <article className="work-card">
-      <CardPicture p={p} />
-      <div className="card-body">
-        <h3 className="type-title text-text">
-          <Link href={projectHref(p.slug)} className="decoration-2 underline-offset-[6px] hover:underline">
-            {p.title}
-          </Link>
-        </h3>
-        <p className="mt-f8 text-[17px] text-text-2">{p.tileLine}</p>
-        <ul aria-label="Built with" className="card-tags">
-          {p.stack.slice(0, 3).map((t) => (
-            <li key={t}>{t}</li>
-          ))}
-        </ul>
-        <div className="mt-f21 flex flex-wrap gap-f13">
+    <div className="mx-auto max-w-[1200px] px-gutter">
+      <div id={p.slug} className="compact-entry">
+        <div>
+          <h3 className="type-title text-text">{p.title}</h3>
+          <p className="mt-f8 max-w-[62ch] text-[17px] leading-[1.618] text-text-2">{p.summary}</p>
+          <p className="type-small mt-f8 text-text-3">
+            {p.kind} · {p.stack.slice(0, 2).join(", ")} · {p.year}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-f13 min-[834px]:justify-end">
           <ButtonLink href={projectHref(p.slug)} variant="light">
             Read the case study<span className="sr-only">: {p.title}</span>
           </ButtonLink>
@@ -76,52 +46,44 @@ function WorkCard({ p }: { p: FeaturedProject }) {
           </ButtonLink>
         </div>
       </div>
-    </article>
+    </div>
   );
 }
 
 /**
- * The selected work: a heading, then the three projects with public code and a case study as a
- * row of cards (WorkCarousel); then the scam checker to try, in its own section (#demo); then the
- * rest as a plain list.
+ * The selected work, told as chapters: the scam detection tool (its story in three crops, then the
+ * live checker), Resume Analyzer (its score and its gap analysis), and Immensa as a compact entry
+ * until real screenshots exist. Then the rest, as a plain list, in a section of its own.
  */
 export function Projects() {
   const sample = SAMPLES.find((s) => s.kind === "text")!;
-  const scam = featured.find((p) => p.slug === "scam-detection")!;
+  const bySlug = (slug: string) => featured.find((p) => p.slug === slug)!;
+  const scam = bySlug("scam-detection");
+  const resume = bySlug("resume-analyzer");
+  const immensa = bySlug("immensa-inquiry-app");
   return (
-    <section id="projects" aria-labelledby="projects-title" className="pb-f34 pt-f55 md:pt-f89">
-      <WorkCarousel
-        label="Selected work"
-        names={featured.map((p) => p.title)}
-        header={
-          <>
-            <h2 id="projects-title" className="type-display section-title text-text">
-              Selected work
-            </h2>
-            <p className="type-lede mt-f13 text-text-3">Three with public code and a case study each, then the rest.</p>
-          </>
-        }
-      >
-        {featured.map((p) => (
-          <li key={p.slug}>
-            <WorkCard p={p} />
-          </li>
-        ))}
-      </WorkCarousel>
-
-      <ProjectChapter
-        p={scam}
-        links={
-          <TextLink href="#demo" className="chapter-try">
-            Try it on your own text
-          </TextLink>
-        }
-        after={<ScamChecker initial={checkScam(sample.kind, sample.text)!} />}
-      >
-        <ScamSteps p={scam} />
-      </ProjectChapter>
-
+    <>
+      <section id="projects" aria-labelledby="projects-title">
+        <h2 id="projects-title" className="sr-only">
+          Selected work
+        </h2>
+        <ProjectChapter
+          p={scam}
+          links={
+            <TextLink href="#demo" className="chapter-try">
+              Try it on your own text
+            </TextLink>
+          }
+          after={<ScamChecker initial={checkScam(sample.kind, sample.text)!} />}
+        >
+          <ScamSteps p={scam} />
+        </ProjectChapter>
+        <ProjectChapter p={resume}>
+          <ResumeVisual p={resume} />
+        </ProjectChapter>
+        <CompactEntry p={immensa} />
+      </section>
       <MoreProjects />
-    </section>
+    </>
   );
 }

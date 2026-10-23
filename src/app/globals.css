@@ -308,9 +308,8 @@ svg[data-ink] {
 .chapter-limit {
   max-width: 62ch;
   margin-top: 55px;
-  font-size: 13.36px;
+  font-size: 17px;
   line-height: 1.618;
-  letter-spacing: 0.01em;
   color: var(--color-text-3);
 }
 .chapter-limit-label {
@@ -588,185 +587,40 @@ svg[data-ink] {
   grid-column: 1 / -1;
 }
 
-/* ── Selected work (components/sections/Projects.tsx, WorkCarousel.tsx)
-   Three cards in a row. From 1100px they share the column, a third
-   each; narrower, the row scrolls sideways and snaps to each card, the
-   first lined up with the heading and the row running on to the right
-   edge of the screen, so the next card shows that there's more. */
-/* Section titles, More projects among them: the display face at 56.61px
-   on a desktop, down to 34.99px on a phone. */
+/* ── Selected work (components/sections/Projects.tsx) ──────────
+   Section titles, More projects among them. */
 .section-title {
   font-size: clamp(34.99px, 3.94vw, 56.61px);
 }
-/* The row and each card are positioned, so the hidden text inside the
-   cards' links (.sr-only, absolutely placed) scrolls and clips with
-   them instead of widening the page. */
-.carousel {
-  --edge: max(var(--spacing-gutter), calc((100% - 1200px) / 2 + var(--spacing-gutter)));
-  position: relative;
-  display: flex;
-  gap: 21px;
-  margin-top: 34px;
-  padding: 21px var(--edge);
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline: var(--edge);
-  scrollbar-width: none;
-}
-.carousel::-webkit-scrollbar {
-  display: none;
-}
-.carousel > li {
-  flex: none;
-  width: min(400px, 82vw);
-  scroll-snap-align: start;
-}
-@media (min-width: 1100px) {
-  .carousel > li {
-    width: calc((100% - 42px) / 3);
-  }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .carousel {
-    scroll-behavior: smooth;
-  }
-}
-.carousel-controls {
-  display: none;
-}
-@media (min-width: 768px) {
-  .carousel-controls {
-    display: flex;
-    flex: none;
-    gap: 8px;
-  }
-}
-.carousel-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--color-raised);
-  color: var(--color-text);
-  transition:
-    background-color 0.2s var(--ease-out-soft),
-    opacity 0.2s var(--ease-out-soft);
-}
-.carousel-button:hover {
-  background: #2c2c2e;
-}
-.carousel-button[aria-disabled="true"] {
-  opacity: 0.35;
-  cursor: default;
-}
-/* Where the row is, under it: "2 of 3" and a dot per card, each a 44px
-   target; the one in view is white and wider. */
-.carousel-count {
-  font-size: 13.36px;
-  line-height: 1.618;
-  color: var(--color-text-2);
-  font-variant-numeric: tabular-nums;
-}
-.carousel-dots {
-  display: flex;
-}
-.carousel-dots button {
+
+/* Resume Analyzer's two crops: side by side from 1200px (the score the
+   wider, at 1.618 : 1), one above the other below that. */
+.resume-visual {
   display: grid;
-  place-items: center;
-  width: 34px;
-  height: 44px;
+  gap: 21px;
+  align-items: start;
 }
-.carousel-dots button::before {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #48484a;
-  transition:
-    width 0.2s var(--ease-out-soft),
-    background-color 0.2s var(--ease-out-soft);
+@media (min-width: 1200px) {
+  .resume-visual {
+    grid-template-columns: minmax(0, 1.618fr) minmax(0, 1fr);
+    gap: 34px;
+  }
 }
-.carousel-dots button:hover::before {
-  background: var(--color-text-3);
-}
-.carousel-dots button[aria-current="true"]::before {
-  width: 21px;
-  background: var(--color-text);
-}
-.work-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+
+/* A project with a case study but no pictures yet: one compact row. */
+.compact-entry {
+  display: grid;
+  gap: 21px;
+  margin-top: 89px;
+  padding: 34px;
   border-radius: 12px;
-  overflow: clip;
   background: var(--color-panel);
 }
-/* The picture window: a golden rectangle, cutting off what runs past
-   it. Screenshots are held at their foot, where the result is. A
-   project with no screenshots yet says so in the same frame. */
-.card-picture {
-  position: relative;
-  aspect-ratio: 1.618 / 1;
-  overflow: clip;
-}
-.card-picture > * {
-  position: absolute;
-  inset: 13px 13px auto;
-}
-/* Held at its foot: the screenshot sits in the flow at the bottom of the
-   window and its top runs out of view, so its full-screen button, which
-   fills the nearest positioned box, covers exactly the window that shows
-   and its magnifier sits in the middle of it. */
-.card-picture-foot {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  /* Keep the ratio however tall the screenshot is. */
-  min-height: 0;
-  padding-inline: 13px;
-}
-.card-picture-foot > * {
-  position: static;
-  flex: none;
-}
-.card-picture-foot .group {
-  position: static;
-}
-.card-picture-pending > p {
-  inset: 13px 13px 0;
-  display: grid;
-  place-items: center;
-  border-radius: 8px 8px 0 0;
-  background: var(--color-raised);
-  font-size: 13.36px;
-  line-height: 1.618;
-  color: var(--color-text-3);
-}
-.card-body {
-  flex: 1;
-  padding: 21px 21px 34px;
-}
-@media (min-width: 768px) {
-  .card-body {
-    padding: 34px 34px 34px;
+@media (min-width: 834px) {
+  .compact-entry {
+    grid-template-columns: minmax(0, 1.618fr) minmax(0, 1fr);
+    align-items: center;
   }
-}
-.card-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 13px;
-}
-.card-tags li {
-  padding: 3px 13px;
-  border-radius: 999px;
-  background: var(--color-raised);
-  font-size: 13.36px;
-  color: var(--color-text-2);
 }
 
 /* The scam checker (components/sections/ScamChecker.tsx): what you're

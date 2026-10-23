@@ -53,12 +53,8 @@ export type FeaturedProject = {
   team: string;
   /** Who it's for and the problem, in one or two sentences. */
   summary: string;
-  /** One line under the title on the home page's tile. */
-  tileLine: string;
   /** Two or three figures from the result, each true of the project; the case study states them in prose. */
   stats: Stat[];
-  /** The screenshot the home page shows, if not the first case-study figure (or the code, if none). */
-  homeShot?: Screenshot;
   /**
    * The home page's chapter for this project: a benefit headline, a lede, one known limitation, and
    * either steps (each with a crop) or a visual (crops shown together, with a caption).
@@ -71,8 +67,6 @@ export type FeaturedProject = {
     visual?: CropName[];
     caption?: string;
   };
-  /** Where the home screenshot's evidence is, ringed in ink: percent of the image, from its top left. */
-  ring?: { x: number; y: number; w: number; h: number };
   stack: string[];
   repo: Link;
   /** Whether there's a live demo, said plainly. */
@@ -131,7 +125,6 @@ const scam: FeaturedProject = {
   team: "Solo",
   summary:
     "A browser tool that checks a suspicious email, text message, listing or link, scores it from 0 to 100 and lists the red flags behind the score.",
-  tileLine: "Checks emails, texts, listings and links for common scam patterns.",
   // From the outcome below: the README's sample inputs, scored by the tool.
   stats: [
     { value: "100", label: "The README’s sample phishing email, flagged High" },
@@ -243,7 +236,6 @@ const immensa: FeaturedProject = {
   team: "Solo",
   summary:
     "An Android app for sales inquiries about 3D-printed industrial parts: one form for the part, material, files, criticality and testing, sent as one structured email.",
-  tileLine: "An Android form, sent as one structured email.",
   // From the case study: the required fields, and the tools screen's currencies and alloys.
   stats: [
     { value: "3", label: "Fields required before an inquiry can be sent: client, part and material" },
@@ -339,24 +331,22 @@ const resume: FeaturedProject = {
   team: "Solo",
   summary:
     "Compares a resume (PDF or Word) with a job description and gives a relevance score, the shared and missing skills, and interview questions for the role.",
-  tileLine: "Scores a resume against a job posting.",
   // From the outcome: my resume against the sample posting shown in the screenshot.
   stats: [
     { value: "55.6%", label: "Relevance score for my resume against a sample posting" },
     { value: "5 of 9", label: "Skills from the posting found in the resume" },
     { value: "2", label: "Technical skills flagged as missing: Docker and Kubernetes" },
   ],
-  homeShot: {
-    src: "/images/resume-analyzer/score",
-    width: 872,
-    height: 625,
-    alt: "The Resume Analyzer web page with a sample job description entered and Luvneet_Bamrah_Resume.pdf chosen. Under Analysis Results, the relevance score is 55.6 percent, shown with a bar and a note that it is the weighted share of the posting’s skills the resume mentions.",
-    caption: "The top of the result for my resume against a sample posting: relevance score 55.6%.",
-  },
-  // Around "55.6%" in the screenshot (872×625): x 72–165, y 495–530.
-  ring: { x: 6, y: 76.5, w: 15, h: 11 },
   stack: ["Python", "Flask", "PyMuPDF", "python-docx", "Tkinter", "Matplotlib", "pytest", "JavaScript"],
   repo: { label: "Code on GitHub", href: `${GH}/Resume-Analyze` },
+  chapter: {
+    headline: "Match a resume to a job posting, skill by skill.",
+    lede: "Upload a resume and paste a posting. It scores the weighted share of the posting’s skills the resume mentions, lists the shared and missing ones, and suggests interview questions.",
+    // The case study's first limitation, shortened.
+    limitation: "Text is split into single words before matching, so skills with spaces or punctuation, like Power BI, C++ and problem-solving, can’t match yet.",
+    visual: ["resumeScore", "resumeGap"],
+    caption: "My resume against a sample posting: 55.6%, with communication, teamwork, Docker and Kubernetes missing.",
+  },
   availability: "No live demo; it runs locally with Flask.",
   caseStudy: {
     context: [
@@ -518,7 +508,7 @@ export const crops: Record<CropName, Crop> = {
     narrow: { x: 50, y: 422, w: 470, h: 140 },
     alt: "Resume Analyzer’s relevance score: 55.6 percent, with a bar and the note that it is the share of the job description’s skills the resume mentions, weighted by how often the description names each one.",
     // Around "55.6%".
-    ring: { x: 62, y: 492, w: 114, h: 38 },
+    ring: { x: 56, y: 488, w: 126, h: 46 },
   },
   resumeGap: {
     shot: resumeResults,

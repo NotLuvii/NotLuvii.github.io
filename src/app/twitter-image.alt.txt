@@ -1,1 +1,0 @@
-Luvneet Bamrah, software engineer building reliable web apps and data tools, notluvii.github.io. Beside it, a real screenshot of his scam detection tool scoring a sample phishing email: risk score 100 percent, high risk, with the red flags listed, and an amber scan line passing over it.

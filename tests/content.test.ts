@@ -1,413 +1,107 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { crops, featured, more, projectHref, type Rect, type Screenshot } from "@/content/projects";
-import { alsoUsed, approach, education, interests, roles, skills, timeline } from "@/content/experience";
-import { nav, site } from "@/content/site";
-import { checkScam, SAMPLES } from "@/lib/scam-rules";
+import { chapters, more, openingWords, roles, site, thread } from "../src/content";
 
-const PUBLIC = join(process.cwd(), "public");
+const manifest = (name: string) => JSON.parse(readFileSync(`public/sequences/${name}/manifest.json`, "utf8"));
+const chapter = (id: string) => chapters.find((c) => c.id === id)!;
 
-/** Width and height of a WebP file, read from its header (VP8, VP8L or VP8X). */
-function webpSize(file: string) {
-  const b = readFileSync(file);
-  expect(b.toString("ascii", 0, 4)).toBe("RIFF");
-  expect(b.toString("ascii", 8, 12)).toBe("WEBP");
-  const chunk = b.toString("ascii", 12, 16);
-  if (chunk === "VP8 ") return { width: b.readUInt16LE(26) & 0x3fff, height: b.readUInt16LE(28) & 0x3fff };
-  if (chunk === "VP8L") {
-    const bits = b.readUInt32LE(21);
-    return { width: (bits & 0x3fff) + 1, height: ((bits >> 14) & 0x3fff) + 1 };
-  }
-  if (chunk === "VP8X") return { width: b.readUIntLE(24, 3) + 1, height: b.readUIntLE(27, 3) + 1 };
-  throw new Error(`Unknown WebP chunk ${chunk} in ${file}`);
-}
-
-const allShots: Screenshot[] = featured.flatMap((p) => p.caseStudy.figures);
-
-/** Every repository and page a project links to, checked by hand in October 2026. */
-const VERIFIED_LINKS = new Set([
-  "https://github.com/NotLuvii/Fraud-Detection-Tool",
-  "https://github.com/NotLuvii/Mobile-app",
-  "https://github.com/NotLuvii/Resume-Analyze",
-  "https://github.com/NotLuvii/Traffic-Detection",
-  "https://github.com/NotLuvii/StockPredictor",
-  "https://github.com/NotLuvii/CS3035-Individual-Graphing-Project",
-  "https://youtu.be/qHmMMeWLiNo",
-]);
-
-describe("featured projects", () => {
-  it("features exactly three, scam detection first", () => {
-    expect(featured).toHaveLength(3);
-    // In the order of the approved home-page design: the scam tool, then Resume Analyzer, then Immensa.
-    expect(featured.map((p) => p.slug)).toEqual(["scam-detection", "resume-analyzer", "immensa-inquiry-app"]);
+describe("the captions say what the recordings show", () => {
+  it("scam detection: 100 out of 100, high risk, and the five rules in the tool's words", () => {
+    const m = manifest("scam").result;
+    expect(m.score).toBe("100");
+    expect(m.level).toBe("High risk");
+    const [, verdict, reasons] = chapter("scam-detection").moments;
+    expect(verdict.text).toBe("100 out of 100: high risk.");
+    expect(m.issues).toHaveLength(5);
+    // "urgent wording, a generic greeting, a lookalike domain and a request to click or verify"
+    expect(m.issues.filter((i: string) => i.startsWith("Urgency language")).length).toBeGreaterThan(0);
+    expect(m.issues.some((i: string) => i.startsWith("Generic greeting"))).toBe(true);
+    expect(m.issues.some((i: string) => i.startsWith("Suspicious domain-like text"))).toBe(true);
+    expect(m.issues.some((i: string) => i.startsWith("Asks for sensitive info or to click/verify"))).toBe(true);
+    expect(reasons.text).toContain("urgent wording, a generic greeting, a lookalike domain and a request to click or verify");
   });
 
-  it("each links to its own verified repository, never the bare profile", () => {
-    for (const p of featured) {
-      expect(VERIFIED_LINKS.has(p.repo.href), p.repo.href).toBe(true);
-      expect(p.repo.href).not.toBe(site.github.url);
+  it("the thread's phrases are the ones the scam tool marked", () => {
+    expect(thread.phrases).toEqual(manifest("scam").result.marks);
+  });
+
+  it("resume analyzer: the score and the missing skills are the recorded run's", () => {
+    const m = manifest("resume").result;
+    const [, score, missing] = chapter("resume-analyzer").moments;
+    expect(score.text.startsWith(m.score + ":")).toBe(true);
+    for (const s of m.missing) expect(missing.text).toContain(s);
+    expect(missing.text).toContain(`${m.missing.slice(0, -1).join(", ")} and ${m.missing.at(-1)} are missing`);
+  });
+
+  it("the thread's skills are skills the resume matched in that run", () => {
+    const matched = manifest("resume").result.matched;
+    for (const s of thread.skills) expect(matched).toContain(s);
+  });
+
+  it("the vehicle counter credits its clip and states how it counts", () => {
+    const c = chapter("vehicle-counter");
+    expect(c.credit).toContain("Thomas1313");
+    expect(c.credit).toContain("CC BY-SA 4.0");
+    expect(c.credit).toContain("same licence");
+    expect(c.limitation).toContain("counted twice");
+  });
+});
+
+describe("the content", () => {
+  it("has three chapters, in story order, each with three moments and a limitation", () => {
+    expect(chapters.map((c) => c.id)).toEqual(["scam-detection", "resume-analyzer", "vehicle-counter"]);
+    for (const c of chapters) {
+      expect(c.moments).toHaveLength(3);
+      expect(c.limitation.length).toBeGreaterThan(40);
+      expect(c.recorded).toContain("redesign-2026");
     }
   });
 
-  it("each answers the brief: problem, figures from the result, stack and availability", () => {
-    for (const p of featured) {
-      expect(p.summary.length).toBeGreaterThan(30);
-      // Two or three figures, each with a label that says what it measures.
-      expect(p.stats.length).toBeGreaterThanOrEqual(2);
-      expect(p.stats.length).toBeLessThanOrEqual(3);
-      for (const s of p.stats) {
-        expect(s.value.length).toBeGreaterThan(0);
-        expect(s.value.length).toBeLessThanOrEqual(6);
-        expect(s.label.length).toBeGreaterThan(15);
-      }
-      expect(p.availability.length).toBeGreaterThan(10);
-      expect(p.stack.length).toBeGreaterThan(0);
-      const c = p.caseStudy;
-      expect(c.context.length).toBeGreaterThan(0);
-      expect(c.role).toMatch(/Solo|team/i);
-      expect(c.built.length).toBeGreaterThanOrEqual(2);
-      expect(c.decision.body.length).toBeGreaterThan(0);
-      expect(c.outcome.length).toBeGreaterThan(0);
-      expect(c.files.length).toBeGreaterThan(0);
-    }
+  it("links each chapter's code to the redesign branch", () => {
+    for (const c of chapters) expect(c.links[0].href).toMatch(/^https:\/\/github\.com\/NotLuvii\/[\w-]+\/tree\/redesign-2026$/);
   });
 
-  it("links to specific files inside the project's own repository", () => {
-    for (const p of featured) {
-      const links = [...p.caseStudy.files, ...(p.caseStudy.decision.code ? [p.caseStudy.decision.code] : [])];
-      for (const l of links) expect(l.href.startsWith(`${p.repo.href}/blob/`), l.href).toBe(true);
-    }
+  it("takes the opening's words from the three apps' real inputs", () => {
+    const sources = [
+      "Dear Customer, Your account has been suspended due to unusual activity. Verify your identity immediately: https://paypal-secure.com/verify-now Click here to restore access.",
+      "Software Developer. We are looking for a developer with experience in Python, JavaScript, React and SQL. Experience with Docker and Kubernetes is a plus. Strong communication and teamwork skills required. You will build REST APIs and work with AWS.",
+      "car bus truck frame track count",
+    ].join(" ").toLowerCase();
+    for (const w of openingWords) expect(sources, w.text).toContain(w.text.toLowerCase());
   });
 
-  it("the scam tool's limitations name the regex defect, as engineering work left in the tool", () => {
-    const limits = featured[0].caseStudy.limitations;
-    const defect = limits.find((l) => l.includes("global"));
-    expect(defect).toBeDefined();
-    expect(defect).toContain("the fix belongs in the tool");
-    expect(defect).toContain("32, then 12");
-    expect(limits).toContain("There are no automated tests.");
-    // Found while building the checker: Chrome's URL parser lets spaces through, so the tool scores them.
-    expect(limits.some((l) => /Chrome/.test(l) && /spaces/.test(l))).toBe(true);
+  it("only uses figures that come from the resume or the recordings", () => {
+    const text = JSON.stringify({ chapters, more, roles, site });
+    const figures = new Set(text.match(/\b\d+(\.\d+)?%/g));
+    // 75%, 50% and 40% are on the resume; 60% is the recorded Resume Analyzer run.
+    expect([...figures].sort()).toEqual(["40%", "50%", "60%", "75%"]);
   });
 
-  it("case-study copy doesn't point at a screenshot below the text: the screenshot leads", () => {
-    for (const p of featured) for (const t of [...p.caseStudy.context, ...p.caseStudy.outcome]) expect(t, p.slug).not.toMatch(/screenshot below/i);
-    // The glance sits beside the screenshot on a desktop and under it on a phone: no "above" there either.
-    for (const p of featured) for (const t of [p.caseStudy.context[0], p.caseStudy.outcome[0]]) expect(t, p.slug).not.toMatch(/screenshot (above|below)/i);
+  it("keeps the resume file the links point to", () => {
+    expect(existsSync(`public/${site.resume}`)).toBe(true);
   });
 
-  it("reports the scores the checker computes from the README's samples", () => {
-    const lead = featured[0];
-    const score = (id: string) => {
-      const s = SAMPLES.find((x) => x.id === id)!;
-      return checkScam(s.kind, s.text)!.risk;
-    };
-    expect(score("text")).toBe(94);
-    expect(lead.caseStudy.outcome.join(" ")).toContain("the scam text 94");
-    expect(lead.stats.map((s) => s.value)).toEqual([String(score("email")), String(score("lookalike")), String(score("official"))]);
-  });
-
-
-  it("builds case-study paths with a trailing slash, for the static export", () => {
-    expect(projectHref("scam-detection")).toBe("/projects/scam-detection/");
+  it("keeps the old site's address for the resume, so links to it still work", () => {
+    expect(site.resume).toBe("Luvneet_Bamrah_Resume.pdf");
   });
 });
 
-describe("screenshots", () => {
-  it("every screenshot exists at 1x and 2x with the declared size", () => {
-    expect(allShots.length).toBeGreaterThan(0);
-    for (const s of allShots) {
-      const one = join(PUBLIC, `${s.src}.webp`);
-      const two = join(PUBLIC, `${s.src}@2x.webp`);
-      expect(existsSync(one), one).toBe(true);
-      expect(existsSync(two), two).toBe(true);
-      expect(webpSize(one)).toEqual({ width: s.width, height: s.height });
-      const big = webpSize(two);
-      expect(big.width).toBe(s.width * 2);
-      expect(Math.abs(big.height - s.height * 2)).toBeLessThanOrEqual(1);
-    }
+describe("the vehicle counter's numbers are the run's", () => {
+  const m = JSON.parse(readFileSync("public/sequences/traffic/manifest.json", "utf8"));
+  it("credits the clip as its manifest records it", () => {
+    const c = chapters.find((c) => c.id === "vehicle-counter")!;
+    expect(c.credit).toContain(m.source.author);
+    expect(c.credit).toContain(m.source.licence);
+    expect(c.credit).toContain(m.source.title);
   });
-
-  it("are small enough to load quickly (under 100 KB each)", () => {
-    for (const s of allShots) for (const f of [`${s.src}.webp`, `${s.src}@2x.webp`]) expect(statSync(join(PUBLIC, f)).size).toBeLessThan(100_000);
+  it("only ever counts up, frame by frame", () => {
+    const counts = m.desktop.counts as { car: number; bus: number; truck: number }[];
+    for (let i = 1; i < counts.length; i++) for (const k of ["car", "bus", "truck"] as const) expect(counts[i][k]).toBeGreaterThanOrEqual(counts[i - 1][k]);
+    expect(counts[0]).toEqual({ car: 0, bus: 0, truck: 0 });
   });
-
-  it("each has alt text and a caption", () => {
-    for (const s of allShots) {
-      expect(s.alt.length).toBeGreaterThan(40);
-      expect(s.caption.length).toBeGreaterThan(20);
-    }
-  });
-});
-
-describe("crops of real captures", () => {
-  const inside = (r: Rect, w: number, h: number) => r.x >= 0 && r.y >= 0 && r.x + r.w <= w && r.y + r.h <= h;
-
-  it("every crop lies inside its capture, and its marks and ring inside the crop", () => {
-    for (const [name, c] of Object.entries(crops)) {
-      expect(inside(c.rect, c.shot.width, c.shot.height), name).toBe(true);
-      if (c.narrow) expect(inside(c.narrow, c.shot.width, c.shot.height), `${name} narrow`).toBe(true);
-      for (const m of c.marks ?? []) {
-        expect(m.x >= c.rect.x && m.x + m.w <= c.rect.x + c.rect.w, `${name} mark x`).toBe(true);
-        expect(m.y >= c.rect.y && m.y + m.h <= c.rect.y + c.rect.h + 4, `${name} mark y`).toBe(true);
-      }
-      if (c.ring) expect(inside({ ...c.ring, x: c.ring.x - c.rect.x, y: c.ring.y - c.rect.y }, c.rect.w, c.rect.h), `${name} ring`).toBe(true);
-      for (const file of [`${c.shot.src}.webp`, `${c.shot.src}@2x.webp`]) expect(existsSync(join(PUBLIC, file)), file).toBe(true);
-      expect(c.alt.length, name).toBeGreaterThan(20);
-    }
-  });
-
-  it("the score's phone crop ends above the score bar, so it never shows the bar cut short (fuller than 55.6%)", () => {
-    // In results.webp the bar runs from y 539 to 549 and spans past x 798; a 470px-wide window that
-    // reached it would show a bar mostly blue under "55.6%".
-    const { narrow, ring } = crops.resumeScore;
-    expect(narrow!.y + narrow!.h).toBeLessThanOrEqual(539);
-    expect(ring!.y >= narrow!.y && ring!.y + ring!.h <= narrow!.y + narrow!.h, "the ring stays inside the phone crop").toBe(true);
-  });
-
-  it("the crops are the spec's, cut from the scam tool's and Resume Analyzer's own captures", () => {
-    expect(Object.keys(crops)).toEqual(["scamResult", "scamMessage", "scamSigns", "scamVerdict", "resumeScore", "resumeGap"]);
-    expect(crops.scamResult.rect).toEqual({ x: 20, y: 595, w: 552, h: 281 });
-    expect(crops.scamMessage.rect).toEqual({ x: 33, y: 208, w: 526, h: 184 });
-    expect(crops.scamSigns.rect).toEqual({ x: 33, y: 714, w: 340, h: 146 });
-    expect(crops.scamVerdict.rect).toEqual({ x: 33, y: 606, w: 527, h: 112 });
-    expect(crops.resumeScore.rect).toEqual({ x: 50, y: 422, w: 772, h: 192 });
-    expect(crops.resumeScore.narrow).toEqual({ x: 50, y: 422, w: 470, h: 116 });
-    expect(crops.resumeScore.ring).toEqual({ x: 56, y: 488, w: 126, h: 46 });
-    expect(crops.resumeGap.rect).toEqual({ x: 50, y: 623, w: 420, h: 264 });
-    expect(crops.scamMessage.marks).toHaveLength(5);
-    for (const k of ["scamResult", "scamMessage", "scamSigns", "scamVerdict"] as const) expect(crops[k].shot).toBe(featured[0].caseStudy.figures[0]);
-    const resume = featured.find((p) => p.slug === "resume-analyzer")!;
-    for (const k of ["resumeScore", "resumeGap"] as const) expect(crops[k].shot).toBe(resume.caseStudy.figures[0]);
-  });
-});
-
-describe("project chapters", () => {
-  it("the scam chapter, as the spec words it", () => {
-    const scam = featured.find((p) => p.slug === "scam-detection")!;
-    const c = scam.chapter!;
-    expect(c.headline).toBe("A risk score that shows its reasons.");
-    expect(c.lede).toBe(
-      "Paste a suspicious email, text message, listing or link. Rule-based detectors score it from 0 to 100 and list each warning sign behind the score, so the result can be checked rather than trusted.",
-    );
-    expect(c.limitation).toBe(scam.caseStudy.limitations[0]);
-    expect(c.limitation).toMatch(/^Rule-based only/);
-    expect(c.steps!.map((s) => [s.title, s.crop])).toEqual([
-      ["The message", "scamMessage"],
-      ["The warning signs", "scamSigns"],
-      ["The verdict", "scamVerdict"],
-    ]);
-    expect(c.steps!.map((s) => s.text)).toEqual([
-      "The README’s sample phishing email, pasted into the tool.",
-      "Each rule that matched, in the tool’s own words: urgent wording, a generic greeting, a lookalike domain and a request to click or verify.",
-      "The points add up to a score from 0 to 100, with the level spelled out: 100%, High risk.",
-    ]);
-  });
-});
-
-describe("the other chapters", () => {
-  it("the resume chapter, as the spec words it", () => {
-    const resume = featured.find((p) => p.slug === "resume-analyzer")!;
-    expect(resume.chapter).toEqual({
-      headline: "Match a resume to a job posting, skill by skill.",
-      lede: "Upload a resume and paste a posting. It scores the weighted share of the posting’s skills the resume mentions, lists the shared and missing ones, and suggests interview questions.",
-      limitation: "Text is split into single words before matching, so skills with spaces or punctuation, like Power BI, C++ and problem-solving, can’t match yet.",
-      visual: ["resumeScore", "resumeGap"],
-      caption: "My resume against a sample posting: 55.6%, with communication, teamwork, Docker and Kubernetes missing.",
-    });
-    // The limitation restates the case study's own first limitation.
-    expect(resume.caseStudy.limitations[0]).toMatch(/Power BI, C\+\+ and scikit-learn/);
-  });
-
-  it("Immensa has no chapter and no pictures, until real screenshots exist", () => {
-    const immensa = featured.find((p) => p.slug === "immensa-inquiry-app")!;
-    expect(immensa.chapter).toBeUndefined();
-    expect(immensa.caseStudy.figures).toEqual([]);
-  });
-});
-
-describe("professional work", () => {
-  it("labels the Immensa app, the dashboards and the sensor system as professional", () => {
-    expect(featured.find((p) => p.slug === "immensa-inquiry-app")?.kind).toBe("Professional app");
-    for (const title of ["Monitoring and reporting dashboards", "Sensor management system"]) {
-      expect(more.find((p) => p.title === title)?.kind, title).toBe("Professional project");
-    }
-  });
-});
-
-describe("Resume Analyzer", () => {
-  const p = featured.find((f) => f.slug === "resume-analyzer")!;
-
-  it("describes the restored relevance score and the result in the screenshot", () => {
-    expect(p.summary).toMatch(/relevance score/);
-    expect(p.stats[0].value).toBe("55.6%");
-    expect(p.caseStudy.outcome.join(" ")).toContain("55.6%");
-    expect(p.caseStudy.figures[0].caption).toContain("55.6%");
-  });
-
-  it("no longer lists limitations that the October 2026 update fixed", () => {
-    const limits = p.caseStudy.limitations.join(" ");
-    expect(limits).not.toMatch(/no automated tests|only the web version runs/);
-  });
-});
-
-describe("more projects", () => {
-  it("only link where there is a verified destination, and say why when there isn't", () => {
-    for (const p of more) {
-      for (const l of p.links) expect(VERIFIED_LINKS.has(l.href), l.href).toBe(true);
-      if (p.links.length === 0) expect(p.note).toMatch(/Private repository|Code not public/);
-    }
-  });
-
-  it("don't repeat a featured project", () => {
-    const titles = new Set(featured.map((p) => p.title));
-    for (const p of more) expect(titles.has(p.title)).toBe(false);
-  });
-});
-
-describe("experience and skills", () => {
-  it("lists the three roles from the resume, newest first, with two or three distinct points each", () => {
-    expect(roles.map((r) => r.organization)).toEqual(["AiKnod", "SafeTrack", "Immensa Tech"]);
-    for (const r of roles) {
-      expect(r.points.length).toBeGreaterThanOrEqual(2);
-      expect(r.points.length).toBeLessThanOrEqual(3);
-      expect(new Set(r.points).size).toBe(r.points.length);
-    }
-  });
-
-  it("orders the timeline newest first, education between the roles, each year once", () => {
-    const t = timeline();
-    expect(t.map((e) => e.year)).toEqual(["2026", "2025", "2024", "2024"]);
-    expect(t.map((e) => e.showYear)).toEqual([true, true, true, false]);
-    expect(t.map((e) => e.kind)).toEqual(["role", "education", "role", "role"]);
-    expect(t.flatMap((e) => (e.kind === "role" ? [e.role.organization] : []))).toEqual(["AiKnod", "SafeTrack", "Immensa Tech"]);
-  });
-
-  it("groups skills under the four requested headings", () => {
-    expect(skills.map((s) => s.group)).toEqual(["Frontend", "Data and automation", "APIs and cloud", "Engineering practices"]);
-  });
-
-  it("says what I do without naming the companies I worked at", () => {
-    expect(site.intro).toBe("I build front ends in React and TypeScript, and write SQL and Python to automate reports and check data against its source.");
-    expect(interests).toBe(
-      "Most of my work sits where software meets data: validating it, finding the defects that let it go wrong, and writing things down so a fix stays fixed. Outside work I build my own tools: a vehicle counter for traffic video, an F1 lap-time predictor, a stock tracker with charts and a price prediction, and a music stem separator.",
-    );
-    const about = [site.intro, interests, ...approach.flatMap((a) => [a.point, a.from]), ...skills.flatMap((s) => [s.group, ...s.items]), ...alsoUsed];
-    for (const text of about) for (const company of ["AiKnod", "SafeTrack", "Immensa"]) expect(text).not.toContain(company);
-  });
-
-  it("About's approach points come from the work: one from the reports, three from the case studies", () => {
-    expect(approach.map((a) => a.point)).toEqual([
-      "Check figures against their source, and trace a discrepancy to its root cause.",
-      "Show the reasons behind a score, so it can be checked rather than trusted.",
-      "Make missing information visible instead of leaving a blank.",
-      "Add tests when I come back to code.",
-    ]);
-    expect(approach[0]).toEqual({ point: approach[0].point, from: "work on reports" });
-    expect(approach.slice(1).map((a) => a.slug)).toEqual(["scam-detection", "immensa-inquiry-app", "resume-analyzer"]);
-    for (const a of approach.slice(1)) expect(featured.map((p) => p.slug)).toContain(a.slug);
-    // Each point is something its source shows.
-    expect(roles.some((r) => r.points.some((b) => /check report figures against source systems/i.test(b)))).toBe(true);
-    const study = (slug: string) => featured.find((p) => p.slug === slug)!.caseStudy;
-    expect(study("scam-detection").context.join(" ")).toMatch(/checked rather than taken on trust/);
-    expect(study("immensa-inquiry-app").decision.title).toBe("Make missing information visible");
-    expect(study("resume-analyzer").built.join(" ")).toMatch(/tests added/);
-  });
-
-  it("availability matches the headline's roles", () => {
-    expect(site.availability).toBe("Open to software engineering roles building web apps and data tools.");
-    expect(site.headline).toContain("web apps and data tools");
-  });
-
-  it("doesn't claim tools only this site's build uses", () => {
-    const all = [...skills.flatMap((s) => s.items), ...alsoUsed];
-    expect(all).not.toContain("Next.js");
-    expect(all).not.toContain("Tailwind CSS");
-  });
-
-  it("keeps education and About short", () => {
-    expect(education.degree).toMatch(/Software Engineering/);
-    expect([interests, ...approach.map((a) => a.point)].join(" ").split(/\s+/).length).toBeLessThan(110);
-  });
-});
-
-describe("site", () => {
-  it("navigates to the four sections, in page order", () => {
-    expect(nav.map((n) => n.id)).toEqual(["projects", "experience", "about", "contact"]);
-    expect(nav.map((n) => n.label)).toEqual(["Projects", "Experience", "About", "Contact"]);
-    for (const n of nav) expect(n.href).toBe(`/#${n.id}`);
-  });
-
-  it("links to the right LinkedIn profile", () => {
-    expect(site.linkedin.url).toBe("https://www.linkedin.com/in/luvneet-bamrah-157281214");
-  });
-
-  it("uses the requested headline", () => {
-    expect(site.name).toBe("Luvneet Bamrah");
-    expect(site.headline).toBe("Software engineer building reliable web apps and data tools.");
-  });
-
-  it("publishes the resume that's in /public", () => {
-    expect(site.resume).toBeTruthy();
-    expect(existsSync(join(PUBLIC, site.resume!))).toBe(true);
-  });
-});
-
-
-describe("first screen", () => {
-  it("the checker opens on the text-message sample, not the email the hero shows", () => {
-    expect(SAMPLES.find((s) => s.kind === "text")!.text).not.toMatch(/Dear Customer/);
-  });
-
-  it("no longer ships the opening recording", () => {
-    expect(existsSync(join(PUBLIC, "images/scam-detection/recording-desktop.webm"))).toBe(false);
-  });
-});
-
-/** Every source file, for checks on what the page says. */
-function sources(dir = join(process.cwd(), "src")): string[] {
-  return readdirSync(dir).flatMap((f) => {
-    const p = join(dir, f);
-    if (statSync(p).isDirectory()) return sources(p);
-    return /\.(ts|tsx|css)$/.test(f) ? [p] : [];
-  });
-}
-
-describe("claims", () => {
-  const text = sources()
-    .map((f) => readFileSync(f, "utf8"))
-    .join("\n");
-
-  it("states each resume figure once, in the resume's own words", () => {
-    const figures = {
-      "75%": "Increased route data accuracy by 75% through systematic data validation and alignment of system logic.",
-      "50%": "Reduced delivery delays by 50% by optimizing front-end workflows and presenting data more clearly.",
-      "40%": "Reduced troubleshooting effort by 40% by improving monitoring views, interface clarity and system transparency",
-    };
-    // Claims live in src/content; CSS percentages elsewhere aren't claims.
-    const content = sources(join(process.cwd(), "src/content"))
-      .map((f) => readFileSync(f, "utf8"))
-      .join("\n");
-    for (const [figure, sentence] of Object.entries(figures)) {
-      expect(content).toContain(sentence);
-      expect(content.split(figure).length - 1, figure).toBe(1);
-    }
-  });
-
-  it("presents no illustrated interfaces or sample data as evidence", () => {
-    for (const leftover of ["Illustrative data", "Illustration", "Sample client", "<svg viewBox=\"0 0 1200"]) expect(text).not.toContain(leftover);
-  });
-
-  it("spells resume without accents", () => {
-    expect(text).not.toMatch(/r\u00e9sum\u00e9/i);
-  });
-
-  it("leaves no editorial placeholders on the page", () => {
-    for (const marker of ["TODO", "TBD", "Lorem", "[placeholder", "XXX"]) expect(text).not.toContain(marker);
-  });
-
-  it("never links to another portfolio", () => {
-    for (const other of ["luvneetbamrah.com", "wind tunnel", "Wind tunnel", "luvneet-portfolio"]) expect(text).not.toContain(other);
+  it("was counted the way the app counts", () => {
+    expect(m.result.model).toBe("yolov8l.pt");
+    expect(m.result.tracker).toBe("DeepSORT max_age=30");
+    expect(m.result.counting).toBe("each confirmed track ID once");
   });
 });

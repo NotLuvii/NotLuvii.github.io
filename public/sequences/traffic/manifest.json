@@ -1,0 +1,777 @@
+{
+ "app": "traffic",
+ "source": {
+  "title": "Intersection Pie-IX-Sherbrooke",
+  "author": "Thomas1313",
+  "licence": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Intersection_Pie-IX-Sherbrooke.webm"
+ },
+ "fps": 9.99000999000999,
+ "sourceFrames": [
+  0,
+  3,
+  6,
+  9,
+  12,
+  15,
+  18,
+  21,
+  24,
+  27,
+  30,
+  33,
+  36,
+  39,
+  42,
+  45,
+  48,
+  51,
+  54,
+  57,
+  60,
+  63,
+  66,
+  69,
+  72,
+  75,
+  78,
+  81,
+  84,
+  87,
+  90,
+  93,
+  96,
+  99,
+  102,
+  105,
+  108,
+  111,
+  114,
+  117,
+  120,
+  123,
+  126,
+  129,
+  132,
+  135,
+  138,
+  141,
+  144,
+  147,
+  150,
+  153,
+  156,
+  159,
+  162,
+  165,
+  168,
+  171,
+  174,
+  177,
+  180,
+  183,
+  186,
+  189,
+  192,
+  195,
+  198,
+  201,
+  204,
+  207,
+  210,
+  213,
+  216,
+  219,
+  222,
+  225,
+  228,
+  231,
+  234,
+  237,
+  240,
+  243,
+  246,
+  249,
+  252,
+  255,
+  258,
+  261,
+  264,
+  267,
+  270,
+  273,
+  276,
+  279,
+  282,
+  285,
+  288,
+  291,
+  294,
+  297,
+  300,
+  303,
+  306,
+  309,
+  312,
+  315,
+  318,
+  321,
+  324,
+  327,
+  330,
+  333,
+  336,
+  339,
+  342,
+  345,
+  348,
+  351,
+  354,
+  357
+ ],
+ "desktop": {
+  "width": 1280,
+  "height": 720,
+  "frames": 120,
+  "moments": [
+   [
+    0,
+    40
+   ],
+   [
+    40,
+    80
+   ],
+   [
+    80,
+    120
+   ]
+  ],
+  "counts": [
+   {
+    "car": 0,
+    "bus": 0,
+    "truck": 0
+   },
+   {
+    "car": 6,
+    "bus": 1,
+    "truck": 0
+   },
+   {
+    "car": 6,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 7,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 7,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 8,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 9,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 9,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 9,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 9,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 9,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 9,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 9,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 9,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 9,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 9,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 9,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 10,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 10,
+    "bus": 1,
+    "truck": 1
+   },
+   {
+    "car": 10,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 10,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 10,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 11,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 11,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 12,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 12,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 12,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 12,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 12,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 12,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 14,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 15,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 15,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 16,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 16,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 17,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 18,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 18,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 18,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 18,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 18,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 18,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 18,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 18,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 18,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 18,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 18,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 18,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 19,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 19,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 21,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 21,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 21,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 21,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 21,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 23,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 23,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 23,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 23,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 23,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 24,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 24,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 24,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 24,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 24,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 24,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 24,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 24,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 24,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 24,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 24,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 24,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 25,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 25,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 26,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 27,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 27,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 28,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 28,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 28,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 28,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 2,
+    "truck": 1
+   },
+   {
+    "car": 29,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 30,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 30,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 31,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 31,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 31,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 31,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 31,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 31,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 31,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 31,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 31,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 31,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 31,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 31,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 31,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 31,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 31,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 32,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 32,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 32,
+    "bus": 3,
+    "truck": 1
+   },
+   {
+    "car": 32,
+    "bus": 3,
+    "truck": 1
+   }
+  ],
+  "stills": [
+   [
+    1600,
+    900
+   ],
+   [
+    1600,
+    900
+   ],
+   [
+    1600,
+    900
+   ]
+  ]
+ },
+ "result": {
+  "final": {
+   "car": 32,
+   "bus": 3,
+   "truck": 1
+  },
+  "model": "yolov8l.pt",
+  "tracker": "DeepSORT max_age=30",
+  "counting": "each confirmed track ID once"
+ }
+}

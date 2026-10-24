@@ -1,0 +1,1031 @@
+/* The story: a black stage, the system typeface, sizes in rem (they follow the reader's text size),
+   and one signal colour, #d4ff3a, used only for evidence: what each tool caught, matched or boxed.
+   The same colour is the apps' own highlight, so the thread between chapters is the real one. */
+
+:root {
+  color-scheme: dark;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "Inter Display", Inter, system-ui, sans-serif;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --bg: #000;
+  --surface: #161617;
+  --raised: #1d1d1f;
+  --line: rgba(255, 255, 255, 0.12);
+  --fill: rgba(255, 255, 255, 0.1);
+  --text: #f5f5f7;
+  --text-2: #a1a1a6;
+  --text-3: #86868b;
+  --signal: #d4ff3a;
+  --focus: #2997ff;
+  --high: #ff6961;
+  --medium: #ffb340;
+  --low: #4ade80;
+  --gutter: clamp(1.25rem, 4vw, 3rem);
+  --wide: 80rem;
+  --read: 72rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+[hidden] {
+  display: none !important;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+  background: var(--bg);
+  scroll-padding-top: 4.5rem;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: clip;
+}
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+dl,
+dd {
+  margin: 0;
+}
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+img,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+a {
+  color: inherit;
+}
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.skip {
+  position: fixed;
+  left: 1rem;
+  top: -4rem;
+  z-index: 50;
+  padding: 0.625rem 1rem;
+  border-radius: 999px;
+  background: var(--text);
+  color: #000;
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip:focus {
+  top: 0.75rem;
+}
+
+/* ── Type ── */
+.eyebrow {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: -0.005em;
+}
+.display {
+  font-family: var(--font-display);
+  font-size: clamp(3.25rem, 1.6rem + 7vw, 9rem);
+  font-weight: 700;
+  line-height: 1.01;
+  letter-spacing: -0.038em;
+  text-wrap: balance;
+}
+.signal-word {
+  color: var(--signal);
+}
+.lede {
+  font-size: clamp(1.1875rem, 1rem + 0.6vw, 1.5rem);
+  line-height: 1.42;
+  color: var(--text-2);
+  letter-spacing: -0.008em;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 1.6rem + 2.4vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+}
+.small-title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Links and pills ── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: 2.75rem;
+  padding: 0 1.375rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: scale 0.1s var(--ease), background-color 0.2s var(--ease), opacity 0.2s var(--ease);
+}
+.pill.primary {
+  background: var(--text);
+  color: #000;
+}
+.pill.small {
+  min-height: 2.25rem;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+}
+.pill-note {
+  font-weight: 400;
+  opacity: 0.75;
+}
+@media (hover: hover) {
+  .pill:hover {
+    opacity: 0.85;
+  }
+}
+.pill:active {
+  scale: 0.97;
+}
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  min-height: 2.75rem;
+  color: var(--text);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.35);
+  text-underline-offset: 0.25em;
+  transition: opacity 0.15s var(--ease), text-decoration-color 0.2s var(--ease);
+}
+@media (hover: hover) {
+  .text-link:hover {
+    text-decoration-color: currentColor;
+  }
+}
+.text-link:active {
+  opacity: 0.6;
+}
+.arrow {
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+.link-button:active {
+  opacity: 0.6;
+}
+
+/* ── Bar ── */
+.bar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.72);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .bar {
+    background: #000;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+.bar-inner {
+  max-width: var(--wide);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  min-height: 3.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.wordmark {
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  letter-spacing: -0.01em;
+  margin-right: auto;
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+}
+.nav {
+  display: flex;
+  gap: 0.25rem;
+}
+.nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-2);
+  text-decoration: none;
+  transition: color 0.2s var(--ease), opacity 0.15s var(--ease);
+}
+@media (hover: hover) {
+  .nav a:hover {
+    color: var(--text);
+  }
+}
+.nav a:active {
+  opacity: 0.6;
+}
+@media (max-width: 40rem) {
+  .nav li:not(:last-child) {
+    display: none;
+  }
+  .nav a {
+    padding: 0 0.5rem;
+  }
+}
+
+/* ── Opening ── */
+.opening {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  align-items: center;
+  padding: 6rem var(--gutter) 5rem;
+  overflow: hidden;
+}
+.opening-words {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.word {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: calc(var(--s) * 0.9375rem);
+  color: var(--text-3);
+  opacity: var(--o);
+  white-space: nowrap;
+  translate: -50% -50%;
+}
+.word::before {
+  content: attr(data-w);
+}
+/* Fewer, fainter words on small screens, so the line itself stays clear. */
+@media (max-width: 40rem) {
+  /* Here the copy fills the width: only the words placed clear of it stay. */
+  .word:not(.on-phone) {
+    display: none;
+  }
+  .word {
+    opacity: calc(var(--o) * 0.6);
+  }
+}
+.opening-copy {
+  position: relative;
+  max-width: 62rem;
+  margin: 0 auto;
+  text-align: center;
+}
+.opening-copy .display {
+  margin-top: 1.25rem;
+}
+.opening-copy .lede {
+  margin: 1.75rem auto 0;
+  max-width: 30em;
+}
+.opening-links {
+  margin-top: 2.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+.scroll-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 1.5rem;
+  translate: -50% 0;
+  font-size: 0.8125rem;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+
+/* ── Chapters ── */
+.work {
+  position: relative;
+}
+.chapter {
+  max-width: var(--wide);
+  margin: 0 auto;
+  padding: clamp(6rem, 12vh, 10rem) var(--gutter) 0;
+}
+.chapter-head {
+  max-width: 52rem;
+  margin: 0 auto;
+  text-align: center;
+}
+.chapter-index {
+  font-variant-numeric: tabular-nums;
+  margin-right: 0.375rem;
+}
+.chapter-title {
+  margin-top: 0.75rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 1.4rem + 5.2vw, 6.5rem);
+  font-weight: 700;
+  line-height: 1.03;
+  letter-spacing: -0.036em;
+  text-wrap: balance;
+}
+.chapter-lede {
+  margin: 1.5rem auto 0;
+  max-width: 34em;
+  font-size: clamp(1.1875rem, 1rem + 0.5vw, 1.4375rem);
+  line-height: 1.42;
+  color: var(--text-2);
+}
+.chapter-links {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 1.5rem;
+}
+
+/* Without motion (reduced motion, no JavaScript, or before the script runs): each chapter shows its
+   three moments as stills with their captions. */
+.stage {
+  margin-top: clamp(3rem, 7vh, 5rem);
+}
+.device {
+  display: none;
+}
+.moments {
+  display: grid;
+  gap: 3rem;
+  max-width: 64rem;
+  margin: 0 auto;
+}
+/* Without motion each moment is a row: the still (a readable crop of the recording) and its caption. */
+@media (min-width: 52rem) {
+  .moment {
+    display: grid;
+    grid-template-columns: minmax(0, 1.618fr) minmax(0, 1fr);
+    gap: 2.5rem;
+    align-items: center;
+  }
+}
+.still {
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
+  height: auto;
+  border-radius: 0.875rem;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--line);
+}
+.moment-copy {
+  margin-top: 1rem;
+}
+@media (min-width: 52rem) {
+  .moment-copy {
+    margin-top: 0;
+  }
+}
+.moment-step {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--signal);
+  font-variant-numeric: tabular-nums;
+}
+.moment h3 {
+  margin-top: 0.25rem;
+  font-size: 1.3125rem;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+.moment p:last-child {
+  margin-top: 0.375rem;
+  color: var(--text-2);
+}
+.recorded {
+  max-width: var(--read);
+  margin: 1.5rem auto 0;
+  font-size: 0.8125rem;
+  color: var(--text-3);
+  letter-spacing: 0.005em;
+  text-align: center;
+}
+.limit {
+  max-width: 44rem;
+  margin: 3rem auto 0;
+  padding: 1.25rem 1.5rem;
+  border-radius: 1rem;
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 1rem;
+}
+.limit-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* With motion: the chapter's stage holds still while the recording scrubs through the three moments.
+   The device and its caption share the screen without overlapping: caption below on small screens,
+   in its own column on wide ones. */
+.motion .no-sequence .stage {
+  height: auto;
+}
+.motion .chapter:not(.no-sequence) .stage-track {
+  height: 360svh;
+}
+.motion .chapter:not(.no-sequence) .stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  margin: 0 auto;
+  padding: 4.25rem 0 1.25rem;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  align-items: center;
+  gap: 1rem;
+}
+.motion .chapter:not(.no-sequence) .device {
+  display: block;
+  position: relative;
+  /* The laptop's base is 12% wider than its screen: keep both inside the page. */
+  width: min(calc(100% / 1.12), 64rem, calc((100svh - 13rem) * 1.6));
+  will-change: transform;
+}
+.motion .device-laptop .screen {
+  aspect-ratio: 16 / 10;
+  padding: 0.75rem;
+  border-radius: 1.5rem 1.5rem 0.5rem 0.5rem;
+  background: #2c2c2e;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.motion .device-laptop::after {
+  content: "";
+  display: block;
+  height: 0.875rem;
+  margin: 0 -6%;
+  border-radius: 0 0 1.25rem 1.25rem;
+  background: linear-gradient(#3a3a3c, #1c1c1e);
+}
+.motion .chapter:not(.no-sequence) .device-wide {
+  width: min(100%, 76rem, calc((100svh - 13rem) * 1.78));
+}
+.motion .device-wide .screen {
+  aspect-ratio: 16 / 9;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: #0b0b0c;
+}
+.sequence {
+  width: 100%;
+  height: 100%;
+  border-radius: 0.75rem;
+  background: #0b0b0c;
+}
+.motion .device-wide .sequence {
+  border-radius: 0;
+}
+/* Phones get the phone-size recording, in a phone frame. */
+@media (max-width: 43.75rem) {
+  .motion .chapter:not(.no-sequence) .device-laptop {
+    width: min(72vw, calc((100svh - 15rem) * 0.462));
+  }
+  .motion .device-laptop .screen {
+    aspect-ratio: 390 / 844;
+    padding: 0.4375rem;
+    border-radius: 2.25rem;
+  }
+  .motion .device-laptop .sequence {
+    border-radius: 1.875rem;
+  }
+  .motion .device-laptop::after {
+    display: none;
+  }
+}
+.motion .chapter:not(.no-sequence) .side {
+  width: min(34rem, 100%);
+  display: grid;
+  gap: 1rem;
+}
+.motion .chapter:not(.no-sequence) .moments {
+  display: grid;
+  max-width: none;
+  margin: 0;
+  gap: 0;
+}
+.motion .chapter:not(.no-sequence) .moment {
+  grid-area: 1 / 1;
+  display: block;
+  padding: 0.875rem 1.25rem;
+  border-radius: 1rem;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--line);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+}
+.motion .chapter:not(.no-sequence) .moment .still,
+.motion .chapter:not(.no-sequence) .moment-step {
+  display: none;
+}
+.motion .chapter:not(.no-sequence) .moment-copy {
+  margin: 0;
+}
+.motion .chapter:not(.no-sequence) .moment h3 {
+  margin: 0;
+  font-size: 1.0625rem;
+}
+.motion .chapter:not(.no-sequence) .moment p:last-child {
+  margin-top: 0.125rem;
+  font-size: 0.9375rem;
+}
+@media (min-width: 75rem) {
+  .motion .chapter:not(.no-sequence) .stage {
+    grid-template-columns: minmax(0, 1fr) 17rem;
+    grid-template-rows: minmax(0, 1fr);
+    column-gap: 3rem;
+    padding-top: 4.75rem;
+  }
+  .motion .chapter:not(.no-sequence) .device {
+    justify-self: end;
+    width: min(calc(100% / 1.12), 60rem, calc((100svh - 9rem) * 1.6));
+  }
+  .motion .chapter:not(.no-sequence) .device-wide {
+    width: min(100%, 68rem, calc((100svh - 9rem) * 1.78));
+  }
+  .motion .chapter:not(.no-sequence) .side {
+    width: 100%;
+    align-self: center;
+  }
+  .motion .chapter:not(.no-sequence) .moment {
+    text-align: left;
+    padding: 1.125rem 1.25rem;
+  }
+  .motion .chapter:not(.no-sequence) .moment h3 {
+    font-size: 1.1875rem;
+  }
+  .motion .chapter:not(.no-sequence) .moment p:last-child {
+    font-size: 1rem;
+  }
+}
+
+/* The vehicle counter's running totals, read from the run's own per-frame counts. */
+.counts {
+  display: none;
+}
+.motion .chapter:not(.no-sequence) .counts {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin: 0;
+}
+@media (min-width: 75rem) {
+  .motion .chapter:not(.no-sequence) .counts {
+    justify-content: flex-start;
+  }
+}
+.counts dt {
+  font-size: 0.875rem;
+  color: var(--text-2);
+}
+.counts dd {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 1.3rem + 1.6vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* ── The thread between chapters ── */
+.thread {
+  padding: clamp(5rem, 12vh, 8rem) var(--gutter) 0;
+}
+.thread-stage {
+  max-width: 52rem;
+  margin: 0 auto;
+  text-align: center;
+}
+.thread-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.625rem;
+}
+.thread-chip {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  min-height: 2.75rem;
+  padding: 0 1.125rem;
+  border-radius: 999px;
+  background: var(--signal);
+  color: #000;
+  font-weight: 600;
+  font-size: 1.125rem;
+}
+.thread-chip > span {
+  grid-area: 1 / 1;
+}
+.thread-chip .to {
+  opacity: 0;
+}
+.thread-boxes .thread-chip .to {
+  display: none;
+}
+.thread-line {
+  margin-top: 1.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 1.2rem + 2vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+.motion .thread {
+  padding: 0;
+  height: 220svh;
+  /* A safety net: nothing scattered here may widen the page. Clip keeps the stage sticky. */
+  overflow-x: clip;
+}
+.motion .thread-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+}
+
+/* ── The checker ── */
+.try {
+  max-width: 44rem;
+  margin: clamp(4rem, 9vh, 6rem) auto 0;
+}
+.try-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  text-align: center;
+}
+.try-note {
+  margin-top: 0.5rem;
+  text-align: center;
+  color: var(--text-2);
+}
+.try-card {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border-radius: 1.375rem;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--line);
+}
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  padding: 2px;
+  border-radius: 0.75rem;
+  background: var(--fill);
+}
+.segmented button {
+  min-height: 2.5rem;
+  border: 0;
+  border-radius: 0.625rem;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s var(--ease), scale 0.1s var(--ease);
+}
+.segmented button[aria-selected="true"] {
+  background: #636366;
+  font-weight: 600;
+}
+.segmented button:active {
+  scale: 0.97;
+}
+.try-input {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+  min-height: 8rem;
+  resize: vertical;
+  padding: 0.875rem 1rem;
+  border: 0;
+  border-radius: 0.875rem;
+  background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+}
+.try-input:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+.try-input::placeholder {
+  color: var(--text-3);
+}
+.try-result {
+  margin-top: 1.25rem;
+  min-height: 3rem;
+}
+.try-empty {
+  color: var(--text-2);
+}
+.try-score {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+}
+.try-num {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.try-level {
+  font-size: 1.3125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.try-level.high {
+  color: var(--high);
+}
+.try-level.medium {
+  color: var(--medium);
+}
+.try-level.low {
+  color: var(--low);
+}
+.try-issues {
+  margin-top: 1rem;
+}
+.try-issues li {
+  position: relative;
+  padding: 0.625rem 0 0.625rem 1.375rem;
+  border-top: 1px solid var(--line);
+  font-size: 1rem;
+}
+.try-issues li::before {
+  content: "";
+  position: absolute;
+  left: 0.125rem;
+  top: 1.05rem;
+  width: 0.5625rem;
+  height: 0.5625rem;
+  border-radius: 50%;
+  background: var(--signal);
+}
+.try-issues li.legit::before {
+  background: var(--low);
+}
+
+/* ── Supporting sections ── */
+.section {
+  max-width: var(--read);
+  margin: 0 auto;
+  padding: clamp(6rem, 14vh, 10rem) var(--gutter) 0;
+}
+.more-list {
+  margin-top: 2.5rem;
+  display: grid;
+  gap: 2rem 3rem;
+}
+@media (min-width: 48rem) {
+  .more-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.more-list h3,
+.entry h3 {
+  font-size: 1.3125rem;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+.meta {
+  margin-top: 0.125rem;
+  font-size: 0.9375rem;
+  color: var(--text-3);
+}
+.more-list p:not(.meta):not(.more-links) {
+  margin-top: 0.5rem;
+  color: var(--text-2);
+  max-width: 34em;
+}
+.more-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.25rem;
+  margin-top: 0.25rem;
+}
+.entries {
+  margin-top: 2.5rem;
+}
+.entry {
+  display: grid;
+  gap: 0.5rem 3rem;
+  padding: 1.75rem 0;
+  border-top: 1px solid var(--line);
+}
+@media (min-width: 52rem) {
+  .entry {
+    grid-template-columns: 13rem 1fr;
+  }
+}
+.when {
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.points {
+  margin-top: 0.875rem;
+  display: grid;
+  gap: 0.5rem;
+  max-width: 40em;
+}
+.points li {
+  color: var(--text-2);
+  padding-left: 1rem;
+  position: relative;
+}
+.points li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.7em;
+  width: 0.3125rem;
+  height: 0.3125rem;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+.coursework {
+  margin-top: 0.75rem;
+  color: var(--text-2);
+  max-width: 40em;
+}
+.about-grid {
+  margin-top: 2.5rem;
+  display: grid;
+  gap: 2rem 4rem;
+}
+@media (min-width: 56rem) {
+  .about-grid {
+    grid-template-columns: 1.4fr 1fr;
+  }
+}
+.about-text {
+  font-size: clamp(1.1875rem, 1rem + 0.4vw, 1.375rem);
+  line-height: 1.45;
+  max-width: 34em;
+}
+.approach {
+  display: grid;
+  gap: 0.75rem;
+}
+.approach li {
+  color: var(--text);
+}
+.approach .from {
+  color: var(--text-3);
+}
+.skills {
+  display: grid;
+  gap: 1rem;
+}
+.skills dt {
+  font-weight: 600;
+}
+.skills dd {
+  color: var(--text-2);
+}
+.also-used {
+  margin-top: 1.25rem;
+  font-size: 0.9375rem;
+  color: var(--text-3);
+}
+
+/* ── Contact ── */
+.contact {
+  max-width: var(--read);
+  margin: clamp(6rem, 14vh, 10rem) auto 0;
+  padding: clamp(4rem, 9vh, 6rem) var(--gutter);
+  text-align: center;
+}
+.contact-line {
+  max-width: 18em;
+  margin: 0 auto;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 1.3rem + 3vw, 3.75rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+.contact-email {
+  margin-top: 1.5rem;
+  font-size: clamp(1.1875rem, 1rem + 0.6vw, 1.5rem);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.contact-email a {
+  text-decoration: none;
+}
+.contact-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+.copy-status {
+  min-height: 1.5em;
+  margin-top: 0.75rem;
+  font-size: 0.9375rem;
+  color: var(--text-2);
+}
+.contact-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 1.75rem;
+}
+.foot {
+  max-width: var(--read);
+  margin: 0 auto;
+  padding: 2rem var(--gutter) 3rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 2rem;
+  font-size: 0.8125rem;
+  color: var(--text-3);
+  border-top: 1px solid var(--line);
+}
+.foot .text-link {
+  font-size: 0.8125rem;
+  color: var(--text-2);
+}

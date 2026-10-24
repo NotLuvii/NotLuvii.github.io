@@ -1,0 +1,93 @@
+{
+ "app": "resume",
+ "recordedAt": "2026-10-24T03:36:18.229Z",
+ "desktop": {
+  "width": 1600,
+  "height": 1000,
+  "frames": 75,
+  "moments": [
+   [
+    0,
+    36
+   ],
+   [
+    36,
+    61
+   ],
+   [
+    61,
+    75
+   ]
+  ],
+  "views": [
+   [
+    0,
+    0,
+    1600,
+    1000
+   ],
+   [
+    400,
+    0,
+    1200,
+    750
+   ],
+   [
+    400,
+    225,
+    1200,
+    750
+   ]
+  ],
+  "stills": [
+   [
+    1200,
+    1144
+   ],
+   [
+    1062,
+    524
+   ],
+   [
+    966,
+    526
+   ]
+  ]
+ },
+ "result": {
+  "score": "60%",
+  "matched": [
+   "JavaScript",
+   "Python",
+   "React",
+   "SQL",
+   "Communication",
+   "Teamwork"
+  ],
+  "missing": [
+   "AWS",
+   "Docker",
+   "Kubernetes",
+   "REST"
+  ]
+ },
+ "phone": {
+  "width": 585,
+  "height": 1266,
+  "frames": 87,
+  "moments": [
+   [
+    0,
+    36
+   ],
+   [
+    36,
+    69
+   ],
+   [
+    69,
+    87
+   ]
+  ]
+ }
+}

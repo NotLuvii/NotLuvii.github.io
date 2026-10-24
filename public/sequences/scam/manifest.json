@@ -1,0 +1,93 @@
+{
+ "app": "scam",
+ "recordedAt": "2026-10-24T03:35:50.597Z",
+ "desktop": {
+  "width": 1600,
+  "height": 1000,
+  "frames": 74,
+  "moments": [
+   [
+    0,
+    36
+   ],
+   [
+    36,
+    60
+   ],
+   [
+    60,
+    74
+   ]
+  ],
+  "views": [
+   [
+    0,
+    0,
+    1600,
+    1000
+   ],
+   [
+    400,
+    75,
+    1200,
+    750
+   ],
+   [
+    0,
+    0,
+    1600,
+    1000
+   ]
+  ],
+  "stills": [
+   [
+    1200,
+    1014
+   ],
+   [
+    1062,
+    524
+   ],
+   [
+    1062,
+    1198
+   ]
+  ]
+ },
+ "result": {
+  "score": "100",
+  "level": "High risk",
+  "issues": [
+   "Urgency language: \"immediately\"",
+   "Urgency language: \"click here to restore\"",
+   "Generic greeting (e.g. \"Dear Customer\")",
+   "Suspicious domain-like text: \"paypal-secure\"",
+   "Asks for sensitive info or to click/verify"
+  ],
+  "marks": [
+   "Dear Customer",
+   "immediately",
+   "paypal-secure",
+   "Click here to restore"
+  ]
+ },
+ "phone": {
+  "width": 585,
+  "height": 1266,
+  "frames": 92,
+  "moments": [
+   [
+    0,
+    36
+   ],
+   [
+    36,
+    66
+   ],
+   [
+    66,
+    92
+   ]
+  ]
+ }
+}

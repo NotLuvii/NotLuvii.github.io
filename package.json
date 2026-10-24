@@ -1,37 +1,27 @@
 {
-  "name": "luvneet-quality",
-  "version": "1.0.0",
+  "name": "notluvii.github.io",
+  "description": "Luvneet Bamrah's portfolio: three tools that show their work, told by scroll.",
   "private": true,
-  "description": "Luvneet Bamrah's portfolio: web apps and data tools, with case studies.",
+  "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "node scripts/serve-out.mjs 3000",
-    "lint": "eslint .",
-    "typecheck": "next typegen && tsc --noEmit",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4173 --strictPort",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "check": "npm run typecheck && npm run lint && npm test"
-  },
-  "dependencies": {
-    "next": "^16.4.3",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "roughjs": "^4.6.6"
+    "check": "tsc --noEmit && vitest run"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0",
-    "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^26.6.4",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "eslint": "^9.39.5",
-    "eslint-config-next": "^16.4.3",
-    "tailwindcss": "^4.3.3",
-    "typescript": "~5.9.3",
-    "vitest": "^5.0.3"
+    "@playwright/test": "1.56",
+    "@types/node": "^22.20.5",
+    "axe-core": "^4.14.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.7",
+    "vitest": "^3.2.7"
   },
-  "engines": {
-    "node": ">=22.12.0"
+  "dependencies": {
+    "gsap": "^3.15.0"
   }
 }

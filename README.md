@@ -25,9 +25,16 @@ carries the evidence from one tool to the next, and the scam detector's own rule
   each phrase in turn (`src/greeting.ts`). Every phrase sits hidden in the same grid cell, so the
   headline keeps the height of the longest and nothing below it moves. Screen readers get one fixed label.
 - **The field of dots.** Behind every section, dots drift slowly and draw faint lines to their near
-  neighbours, and, with a mouse, to the pointer (`src/field.ts`). The pause button in the bar stops the
+  neighbours, and, with a mouse, to the pointer (`src/field.ts`). They stay put as the page scrolls. The pause button in the bar stops the
   dots and the greeting, and the choice is remembered on that device. With reduced motion the dots are
   drawn still and the greeting stays on the name.
+- **Scroll animations** (`src/reveal.ts`), each tied to the scroll position so scrolling back
+  reverses it: headings rise into place word by word, the greeting recedes as the work begins,
+  chapter intros and About light up word by word as you read down, the experience line draws down as
+  each role arrives and its figures count up, and cards slide up into place. Without motion (or
+  without JavaScript) everything is simply in place.
+- **Large screens.** From 2048px wide the root size grows, to 125% at 2560, so a large monitor gets
+  a larger page rather than a laptop's page in a sea of black.
 - **The checker.** `public/vendor/detectors.js` is a verbatim copy of the scam detector's rules,
   so the "try it" box scores text exactly as the tool does.
 

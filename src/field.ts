@@ -1,6 +1,6 @@
 /* A field of dots behind the whole page. They drift slowly and draw a faint line to any dot close by,
-   fading with distance; near the mouse they reach for it too. The field is fixed to the screen and
-   shifts a little with the scroll, so the page passes over it. With reduced motion it is drawn once and
+   fading with distance; near the mouse they reach for it too. The field is fixed to the screen and stays
+   put as the page scrolls over it. With reduced motion it is drawn once and
    holds still. Decoration only: hidden from screen readers, never in front of the content. */
 
 const INK = "245, 245, 247";
@@ -27,7 +27,6 @@ export function links(dots: { x: number; y: number }[], reach: number): [number,
 
 type Dot = { x: number; y: number; vx: number; vy: number };
 const MARGIN = 40;
-const PARALLAX = 0.06;
 const POINTER_REACH = 180;
 const BUCKETS = 5;
 
@@ -72,8 +71,7 @@ export function startField({ still }: { still: boolean }) {
 
   const draw = () => {
     ctx.clearRect(0, 0, w, h);
-    const shift = still ? 0 : scrollY * PARALLAX;
-    const at = dots.map((d) => ({ x: d.x, y: wrap(d.y - shift, h) }));
+    const at = dots;
     // Lines, batched by strength so each batch is one stroke.
     const batches: number[][] = Array.from({ length: BUCKETS }, () => []);
     for (const [i, j, s] of links(at, reach)) batches[Math.min(BUCKETS - 1, Math.floor(s * BUCKETS))].push(at[i].x, at[i].y, at[j].x, at[j].y);
@@ -157,7 +155,6 @@ export function startField({ still }: { still: boolean }) {
       if (paused) draw();
     });
   }
-  if (!still) addEventListener("scroll", () => paused && draw(), { passive: true });
   run();
 
   return {

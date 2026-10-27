@@ -197,8 +197,30 @@ test.describe("the story", () => {
     }
   });
 
+  test("large screens get a larger page; laptops keep theirs", async ({ browser }) => {
+    const at = async (width: number, height: number) => {
+      const ctx = await browser.newContext({ viewport: { width, height } });
+      const page = await ctx.newPage();
+      await page.goto("/", { waitUntil: "networkidle" });
+      await expect(page.locator("#vehicle-counter")).toHaveClass(/has-sequence/);
+      const r = await page.evaluate(() => ({
+        root: parseFloat(getComputedStyle(document.documentElement).fontSize),
+        device: document.querySelector("#scam-detection .device")!.getBoundingClientRect().width,
+        sideways: document.documentElement.scrollWidth - innerWidth,
+      }));
+      await ctx.close();
+      return r;
+    };
+    const laptop = await at(1440, 900);
+    const big = await at(2560, 1300);
+    expect(laptop.root).toBe(16);
+    expect(big.root).toBe(20);
+    expect(big.device).toBeGreaterThan(laptop.device * 1.2);
+    expect(big.sideways).toBe(0);
+  });
+
   test("no sideways scrolling, at any width", async ({ page }) => {
-    for (const width of [320, 390, 768, 1024, 1440]) {
+    for (const width of [320, 390, 768, 1024, 1440, 2560]) {
       await page.setViewportSize({ width, height: 860 });
       await page.goto("/");
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), `${width}`).toBe(0);
@@ -436,6 +458,18 @@ test.describe("the greeting and the field of dots", () => {
     if (isPhone(page)) expect(count).toBeLessThan(50);
   });
 
+  test("the dots stay put when the page scrolls", async ({ page }) => {
+    await page.goto("/", { waitUntil: "networkidle" });
+    // Paused, the only thing that could change them is the scroll.
+    await page.getByRole("button", { name: "Pause motion" }).click();
+    await page.mouse.move(5, 300);
+    await page.waitForTimeout(200);
+    const a = await print(page);
+    await page.evaluate(() => scrollTo({ top: 2400, behavior: "instant" }));
+    await page.waitForTimeout(300);
+    expect((await print(page)).h).toBe(a.h);
+  });
+
   test("the dots reach for the mouse", async ({ page }) => {
     test.skip(isPhone(page), "touch screens have no pointer");
     await page.goto("/", { waitUntil: "networkidle" });
@@ -482,6 +516,113 @@ test.describe("the greeting and the field of dots", () => {
     expect((await print(page)).h).toBe(a.h);
     await expect(page.locator(".cycle-now")).toHaveText(greeting.phrases[0]);
     await expect(page.getByRole("button", { name: /motion/ })).toBeHidden();
+    await ctx.close();
+  });
+});
+
+test.describe("scroll animations", () => {
+  /** Scroll so the element's top sits at a fraction of the screen's height (0 = top edge, 1 = bottom). */
+  const placeTop = async (page: Page, sel: string, frac: number) => {
+    await page.evaluate(
+      ([sel, frac]) => {
+        const el = document.querySelector(sel as string)!;
+        scrollTo({ top: el.getBoundingClientRect().top + scrollY - innerHeight * (frac as number), behavior: "instant" });
+      },
+      [sel, frac] as const
+    );
+    await page.waitForTimeout(250);
+  };
+  const ready = async (page: Page) => {
+    await page.goto("/", { waitUntil: "networkidle" });
+    await expect(page.locator("#vehicle-counter")).toHaveClass(/has-sequence/);
+  };
+  /** Vertical offset of each element's transform, in px. */
+  const lifts = (page: Page, sel: string) => page.locator(sel).evaluateAll((els) => els.map((e) => new DOMMatrix(getComputedStyle(e).transform).m42));
+  const colours = (page: Page, sel: string) => page.locator(sel).evaluateAll((els) => els.map((e) => getComputedStyle(e).color));
+  const LIT = "rgb(245, 245, 247)";
+  const DIM = "rgb(134, 134, 139)";
+
+  test("headings rise into place word by word as they scroll in, and still read whole", async ({ page }) => {
+    await ready(page);
+    const c = chapters[1];
+    const h = `#${c.id} .chapter-title`;
+    await placeTop(page, h, 0.99);
+    const low = await lifts(page, `${h} .rise-in`);
+    expect(low.length).toBe(c.headline.split(" ").length);
+    for (const y of low) expect(y).toBeGreaterThan(20);
+    await placeTop(page, h, 0.35);
+    for (const y of await lifts(page, `${h} .rise-in`)) expect(Math.abs(y)).toBeLessThan(0.5);
+    await expect(page.getByRole("heading", { name: c.headline })).toBeVisible();
+  });
+
+  test("the greeting zooms back and fades as you scroll into the work", async ({ page }) => {
+    await ready(page);
+    const look = () => page.locator(".opening-copy").evaluate((e) => ({ scale: new DOMMatrix(getComputedStyle(e).transform).a, opacity: Number(getComputedStyle(e).opacity) }));
+    expect(await look()).toEqual({ scale: 1, opacity: 1 });
+    await page.evaluate(() => scrollTo({ top: document.querySelector(".opening")!.clientHeight * 0.5, behavior: "instant" }));
+    await page.waitForTimeout(250);
+    const away = await look();
+    expect(away.scale).toBeLessThan(0.97);
+    expect(away.opacity).toBeLessThan(1);
+  });
+
+  test("chapter intros light up word by word as you read down", async ({ page }) => {
+    await ready(page);
+    const p = "#scam-detection .chapter-lede";
+    await placeTop(page, p, 0.95);
+    let c = await colours(page, `${p} .read`);
+    expect(c.length).toBeGreaterThan(10);
+    expect(c[0]).toBe(DIM);
+    expect(c.at(-1)).toBe(DIM);
+    await placeTop(page, p, 0.66);
+    c = await colours(page, `${p} .read`);
+    expect(c[0]).toBe(LIT);
+    expect(c.at(-1)).toBe(DIM);
+    await placeTop(page, p, 0.3);
+    c = await colours(page, `${p} .read`);
+    expect(c.every((x) => x === LIT)).toBe(true);
+  });
+
+  test("the experience line draws down, each role arrives, and the figures count up", async ({ page }) => {
+    await ready(page);
+    const list = "#experience .entries";
+    const drawn = () => page.locator(list).evaluate((e) => Number(getComputedStyle(e).getPropertyValue("--drawn")));
+    const figures = () => page.locator(`${list} .figure`).evaluateAll((els) => els.map((e) => [e.textContent, (e as HTMLElement).dataset.to + "%"]));
+    await placeTop(page, list, 0.97);
+    expect(await drawn()).toBeLessThan(0.05);
+    const before = await figures();
+    expect(before.length).toBeGreaterThan(0);
+    for (const [shown] of before) expect(shown).toBe("0%");
+    expect(Number(await page.locator(`${list} > .entry`).first().evaluate((e) => getComputedStyle(e).opacity))).toBeLessThan(0.5);
+    await page.evaluate((list) => {
+      const el = document.querySelector(list)!;
+      scrollTo({ top: el.getBoundingClientRect().bottom + scrollY - innerHeight * 0.4, behavior: "instant" });
+    }, list);
+    await page.waitForTimeout(250);
+    expect(await drawn()).toBeGreaterThan(0.99);
+    for (const [shown, final] of await figures()) expect(shown).toBe(final);
+    for (const o of await page.locator(`${list} > .entry`).evaluateAll((els) => els.map((e) => getComputedStyle(e).opacity))) expect(o).toBe("1");
+  });
+
+  test("cards slide up into place as they enter", async ({ page }) => {
+    await ready(page);
+    const first = "#more .more-list > li";
+    await placeTop(page, first, 1.02);
+    expect(Number(await page.locator(first).first().evaluate((e) => getComputedStyle(e).opacity))).toBeLessThan(0.2);
+    await placeTop(page, first, 0.45);
+    const card = await page.locator(first).first().evaluate((e) => ({ o: getComputedStyle(e).opacity, y: new DOMMatrix(getComputedStyle(e).transform).m42 }));
+    expect(card.o).toBe("1");
+    expect(Math.abs(card.y)).toBeLessThan(0.5);
+  });
+
+  test("with reduced motion, everything is simply in place", async ({ browser }) => {
+    const ctx = await browser.newContext({ reducedMotion: "reduce" });
+    const page = await ctx.newPage();
+    await page.goto("/", { waitUntil: "networkidle" });
+    await expect(page.locator(".rise-in, .read")).toHaveCount(0);
+    for (const [shown, to] of await page.locator(".figure").evaluateAll((els) => els.map((e) => [e.textContent, (e as HTMLElement).dataset.to + "%"]))) expect(shown).toBe(to);
+    await page.locator("#more").scrollIntoViewIfNeeded();
+    expect(await page.locator("#more .more-list > li").first().evaluate((e) => getComputedStyle(e).opacity)).toBe("1");
     await ctx.close();
   });
 });

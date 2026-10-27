@@ -73,3 +73,32 @@ describe("the field of dots", () => {
     }
   });
 });
+
+describe("scroll animation helpers", () => {
+  it("staggers items: the first starts at once, the last finishes at the end, each in order", async () => {
+    const { stagger } = await import("../src/reveal");
+    expect(stagger(0, 0, 4)).toBe(0);
+    expect(stagger(1, 3, 4)).toBe(1);
+    expect(stagger(0.2, 0, 4)).toBeGreaterThan(stagger(0.2, 1, 4));
+    expect(stagger(0.2, 3, 4)).toBe(0);
+    expect(stagger(0.5, 0, 1)).toBe(0.5);
+    // Many items still each get a real span of the scroll, never a jump.
+    for (let i = 0; i < 40; i++) expect(stagger(0.999, i, 40)).toBeGreaterThan(0.9);
+  });
+
+  it("counts a figure up from 0 to its value, ending exactly on it", async () => {
+    const { countTo } = await import("../src/reveal");
+    expect(countTo(75, 0)).toBe(0);
+    expect(countTo(75, 1)).toBe(75);
+    const mid = countTo(75, 0.5);
+    expect(mid).toBeGreaterThan(0);
+    expect(mid).toBeLessThan(75);
+  });
+
+  it("mixes the dim and the lit text colours", async () => {
+    const { mix } = await import("../src/reveal");
+    expect(mix([134, 134, 139], [245, 245, 247], 0)).toBe("rgb(134, 134, 139)");
+    expect(mix([134, 134, 139], [245, 245, 247], 1)).toBe("rgb(245, 245, 247)");
+    expect(mix([0, 0, 0], [100, 100, 100], 0.5)).toBe("rgb(50, 50, 50)");
+  });
+});

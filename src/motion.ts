@@ -1,5 +1,6 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { startReveals } from "./reveal";
 import { countsAt, Sequence, viewAt, type Manifest } from "./sequence";
 
 /**
@@ -33,6 +34,7 @@ export async function startMotion() {
     )
   );
   sections.forEach((el, i) => (el.dataset.chapter ? chapter(el, manifests[i]) : thread(el)));
+  startReveals();
   ScrollTrigger.refresh();
   const target = location.hash.length > 1 ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
   if (target) {
@@ -48,13 +50,18 @@ export async function startMotion() {
   }
 }
 
-/* ── Opening: the copy fades as the visitor scrolls on into the work ── */
+/* ── Opening: the greeting zooms back and fades as the visitor scrolls on into the work ── */
 function opening() {
   const section = document.querySelector<HTMLElement>(".opening");
   const copy = section?.querySelector<HTMLElement>(".opening-copy");
+  const hint = section?.querySelector<HTMLElement>(".scroll-hint");
   if (!section || !copy) return;
   const apply = (progress: number) => {
-    copy.style.opacity = String(1 - span(progress, 0.55, 0.95));
+    // It lags a little behind the scroll as it shrinks, so it seems to recede rather than slide away.
+    const e = ease(span(progress, 0, 0.8));
+    copy.style.transform = e > 0 ? `translateY(${12 * e}vh) scale(${1 - 0.14 * e})` : "";
+    copy.style.opacity = String(1 - span(progress, 0.1, 0.6));
+    if (hint) hint.style.opacity = String(1 - span(progress, 0, 0.15));
   };
   const st = ScrollTrigger.create({
     trigger: section,

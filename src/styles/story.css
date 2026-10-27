@@ -34,6 +34,9 @@
   display: none !important;
 }
 html {
+  /* The reader's own text size, and from 2048px wide a little more: 125% at 2560, so a large monitor
+     gets a larger page rather than a laptop's page in a sea of black. */
+  font-size: clamp(100%, 0.78125vw, 125%);
   -webkit-text-size-adjust: 100%;
   background: var(--bg);
   scroll-padding-top: 4.5rem;
@@ -737,6 +740,63 @@ a {
   display: grid;
   align-content: center;
   justify-items: center;
+}
+
+/* ── Scroll animations (src/reveal.ts) ──
+   Only with motion; without it every element is plainly in place. */
+/* Each heading word rises out of its own mask; the padding keeps descenders inside it. */
+.rise {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+.rise-in {
+  display: inline-block;
+  will-change: transform;
+}
+/* The experience line, drawn down the gap between the dates and the roles, with a dot that fills as
+   it reaches each role. On narrow screens it runs down the left edge. */
+.motion .entries {
+  position: relative;
+}
+.motion .entries::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  background: var(--text-3);
+  transform-origin: top;
+  transform: scaleY(var(--drawn, 0));
+}
+.motion .entry {
+  position: relative;
+  padding-left: 1.5rem;
+}
+.motion .entry::after {
+  content: "";
+  position: absolute;
+  top: 2.2rem;
+  left: -0.25rem;
+  width: 0.5625rem;
+  height: 0.5625rem;
+  border-radius: 50%;
+  background: var(--text);
+  transform: scale(var(--arrive, 0));
+}
+@media (min-width: 52rem) {
+  .motion .entries::before {
+    left: 14.5rem;
+  }
+  .motion .entry {
+    padding-left: 0;
+  }
+  .motion .entry::after {
+    left: calc(14.5rem - 0.25rem);
+  }
 }
 
 /* ── The field of dots ──

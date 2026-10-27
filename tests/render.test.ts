@@ -24,11 +24,19 @@ describe("the page as written at build time", () => {
     }
   });
 
-  it("keeps every role and its points", () => {
+  it("keeps every role and its points, word for word", () => {
+    // Compared as text: the percentages are wrapped in spans so they can count up.
+    const text = body.replace(/<[^>]+>/g, "");
     for (const r of roles) {
-      expect(body).toContain(`${esc(r.title)}, ${esc(r.organization)}`);
-      for (const p of r.points) expect(body).toContain(esc(p));
+      expect(text).toContain(`${esc(r.title)}, ${esc(r.organization)}`);
+      for (const p of r.points) expect(text).toContain(esc(p));
     }
+  });
+
+  it("marks each percentage in the roles so it can count up, with its true value", () => {
+    const marked = [...body.matchAll(/<span class="figure" data-to="(\d+)">(\d+)%<\/span>/g)];
+    expect(marked.length).toBeGreaterThan(0);
+    for (const [, to, shown] of marked) expect(shown).toBe(to);
   });
 
   it("opens outside links in a new tab, and says so", () => {

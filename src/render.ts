@@ -4,6 +4,9 @@ import { about, chapters, education, greeting, more, roles, site, thread, type C
 export const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
+/** Escape text, and mark each percentage so it can count up as it scrolls in (it reads as is without motion). */
+const figs = (s: string) => esc(s).replace(/(\d+)%/g, '<span class="figure" data-to="$1">$1%</span>');
+
 const ext = (href: string) => /^https?:/.test(href);
 const link = (label: string, href: string, cls = "text-link") =>
   `<a class="${cls}" href="${esc(href)}"${ext(href) ? ' target="_blank" rel="noopener"' : ""}>${esc(label)}${
@@ -128,7 +131,7 @@ function alsoBuilt() {
     <li>
       <h3>${esc(p.title)}</h3>
       <p class="meta">${esc([p.kind, p.year].filter(Boolean).join(", "))}${p.note ? ` · ${esc(p.note)}` : ""}</p>
-      <p>${esc(p.summary)}</p>
+      <p>${figs(p.summary)}</p>
       ${p.links ? `<p class="more-links">${p.links.map((l) => link(l.label, l.href)).join("")}</p>` : ""}
     </li>`
     )
@@ -146,7 +149,7 @@ function experience() {
       <div>
         <h3>${esc(r.title)}, ${esc(r.organization)}</h3>
         <p class="meta">${esc([r.about, r.place].filter(Boolean).join(" · "))}</p>
-        <ul class="points">${r.points.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>
+        <ul class="points">${r.points.map((p) => `<li>${figs(p)}</li>`).join("")}</ul>
       </div>
     </li>`
     )

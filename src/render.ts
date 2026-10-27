@@ -11,13 +11,16 @@ const link = (label: string, href: string, cls = "text-link") =>
   }</a>`;
 
 function opening() {
-  const words = openingWords
-    // Drawn as generated content: pure decoration, not text a reader or a screen reader meets.
-    .map((w) => `<span class="word${w.phone ? " on-phone" : ""}" data-w="${esc(w.text)}" style="--x:${w.x}%;--y:${w.y}%;--s:${w.s};--o:${w.o}"></span>`)
-    .join("");
+  // Drawn as generated content: pure decoration, not text a reader or a screen reader meets.
+  const words = (band: string) =>
+    `<div class="opening-words ${band}" aria-hidden="true">${openingWords
+      .filter((w) => w.band === band)
+      .map((w) => `<span class="word${w.phone ? " on-phone" : ""}" data-w="${esc(w.text)}" style="--x:${w.x}%;--y:${w.y}%;--s:${w.s};--o:${w.o}"></span>`)
+      .join("")}</div>`;
   return `
 <section class="opening" id="top" aria-labelledby="title">
-  <div class="opening-words" aria-hidden="true">${words}</div>
+  ${words("above")}
+  ${words("beside")}
   <div class="opening-copy">
     <p class="eyebrow">${esc(site.name)} · ${esc(site.role)} · ${esc(site.city)}, ${esc(site.regionShort)}</p>
     <h1 id="title" class="display">${esc(site.title).replace("shows its work.", 'shows its <span class="signal-word">work.</span>')}</h1>
@@ -27,6 +30,7 @@ function opening() {
       <a class="pill" href="${esc(site.resume)}" download>Resume <span class="pill-note">(PDF)</span></a>
     </p>
   </div>
+  ${words("below")}
   <p class="scroll-hint" aria-hidden="true">Scroll</p>
 </section>`;
 }

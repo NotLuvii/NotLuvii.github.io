@@ -56,7 +56,8 @@ describe("the page as written at build time", () => {
 
 describe("the opening's words", () => {
   it("are all drawn, as decoration a screen reader skips", () => {
-    expect(body).toMatch(/<div class="opening-words" aria-hidden="true">/);
+    // Three bands (above, beside and below the copy), each hidden from screen readers.
+    expect(body.match(/<div class="opening-words (above|beside|below)" aria-hidden="true">/g)).toHaveLength(3);
     expect(body.match(/<span class="word/g)).toHaveLength(openingWords.length);
     expect(body.match(/<span class="word on-phone"/g)).toHaveLength(openingWords.filter((w) => w.phone).length);
   });

@@ -282,25 +282,24 @@ export const about = {
 
 /** Words from the three apps' real inputs, scattered across the opening. */
 /**
- * The opening's words, each from one of the three apps' real inputs, placed by hand around the line
- * (x and y in % of the opening; s scales the size; o is the opacity). Those marked phone stay on small
- * screens, where the copy fills the width and the words beside it would sit on it.
+ * The opening's words, each from one of the three apps' real inputs. They sit in bands above and below
+ * the copy (x and y in % of the band) or, on wide screens, beside it (in % of the opening), so the copy
+ * never runs into them whatever its size in the visitor's fonts. s scales the size and o is the opacity.
+ * Those marked phone stay on small screens.
  */
-export const openingWords: { text: string; x: number; y: number; s: number; o: number; phone?: true }[] = [
-  // Above the line
-  { text: "paypal-secure", x: 16, y: 11, s: 1.15, o: 0.28 },
-  { text: "verify", x: 38, y: 16, s: 1.2, o: 0.32, phone: true },
-  { text: "immediately", x: 63, y: 17, s: 0.85, o: 0.26, phone: true },
-  { text: "Dear Customer", x: 82, y: 10, s: 1.05, o: 0.34, phone: true },
-  // Beside it, on wide screens
-  { text: "car", x: 6, y: 42, s: 1.1, o: 0.3 },
-  { text: "truck", x: 7, y: 64, s: 0.85, o: 0.22 },
-  { text: "track", x: 94, y: 34, s: 0.9, o: 0.26 },
-  { text: "bus", x: 94, y: 58, s: 1.2, o: 0.3 },
-  // Below it
-  { text: "Docker", x: 16, y: 88, s: 1.1, o: 0.26, phone: true },
-  { text: "Kubernetes", x: 33, y: 93, s: 0.85, o: 0.22 },
-  { text: "React", x: 50, y: 88, s: 0.95, o: 0.24 },
-  { text: "Python", x: 67, y: 93, s: 1, o: 0.28 },
-  { text: "SQL", x: 84, y: 88, s: 1.25, o: 0.32, phone: true },
+export type OpeningWord = { text: string; band: "above" | "below" | "beside"; x: number; y: number; s: number; o: number; phone?: true };
+export const openingWords: OpeningWord[] = [
+  { text: "paypal-secure", band: "above", x: 14, y: 38, s: 1.15, o: 0.28 },
+  { text: "verify", band: "above", x: 32, y: 66, s: 1.2, o: 0.32, phone: true },
+  { text: "immediately", band: "above", x: 60, y: 62, s: 0.85, o: 0.26 },
+  { text: "Dear Customer", band: "above", x: 78, y: 34, s: 1.05, o: 0.34, phone: true },
+  { text: "car", band: "beside", x: 5, y: 40, s: 1.1, o: 0.3 },
+  { text: "truck", band: "beside", x: 6, y: 62, s: 0.85, o: 0.22 },
+  { text: "track", band: "beside", x: 95, y: 36, s: 0.9, o: 0.26 },
+  { text: "bus", band: "beside", x: 94, y: 58, s: 1.2, o: 0.3 },
+  { text: "Docker", band: "below", x: 18, y: 40, s: 1.1, o: 0.26, phone: true },
+  { text: "Kubernetes", band: "below", x: 36, y: 70, s: 0.85, o: 0.22 },
+  { text: "React", band: "below", x: 52, y: 38, s: 0.95, o: 0.24, phone: true },
+  { text: "Python", band: "below", x: 68, y: 68, s: 1, o: 0.28 },
+  { text: "SQL", band: "below", x: 84, y: 44, s: 1.25, o: 0.32, phone: true },
 ];

@@ -44,23 +44,40 @@ function opening() {
   if (!section) return;
   const words = [...section.querySelectorAll<HTMLElement>(".word")];
   const copy = section.querySelector<HTMLElement>(".opening-copy");
-  ScrollTrigger.create({
+  // How far each word is from the middle of the copy, measured at rest (and again after every resize).
+  // Its resting opacity comes from the stylesheet, which dims the words further on phones.
+  let rest: { x: number; y: number; opacity: number }[] = [];
+  const measure = () => {
+    const c = (copy ?? section).getBoundingClientRect();
+    rest = words.map((w) => {
+      w.style.transform = "";
+      w.style.opacity = "";
+      const r = w.getBoundingClientRect();
+      return { x: c.left + c.width / 2 - (r.left + r.width / 2), y: c.top + c.height / 2 - (r.top + r.height / 2), opacity: parseFloat(getComputedStyle(w).opacity) };
+    });
+  };
+  const apply = (progress: number) => {
+    const t = ease(span(progress, 0, 0.7));
+    words.forEach((w, i) => {
+      const d = rest[i];
+      w.style.transform = `translate(${d.x * t * 0.9}px, ${d.y * t * 0.9}px) scale(${1 - t * 0.5})`;
+      w.style.opacity = String(d.opacity * (1 - t));
+    });
+    if (copy) copy.style.opacity = String(1 - span(progress, 0.55, 0.95));
+  };
+  measure();
+  const st = ScrollTrigger.create({
     trigger: section,
     start: "top top",
     end: "bottom top",
     scrub: true,
-    onUpdate: ({ progress }) => {
-      const t = ease(span(progress, 0, 0.7));
-      const box = section.getBoundingClientRect();
-      for (const w of words) {
-        const x = (parseFloat(w.style.getPropertyValue("--x")) / 100 - 0.5) * box.width;
-        const y = (parseFloat(w.style.getPropertyValue("--y")) / 100 - 0.5) * box.height;
-        w.style.transform = `translate(${-x * t * 0.9}px, ${-y * t * 0.9}px) scale(${1 - t * 0.5})`;
-        w.style.opacity = String(Number(w.style.getPropertyValue("--o")) * (1 - t));
-      }
-      if (copy) copy.style.opacity = String(1 - span(progress, 0.55, 0.95));
+    onRefresh: (self) => {
+      measure();
+      apply(self.progress);
     },
+    onUpdate: ({ progress }) => apply(progress),
   });
+  apply(st.progress);
 }
 
 /* ── Chapters: rise, hold, scrub ── */

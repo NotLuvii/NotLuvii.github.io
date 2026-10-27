@@ -13,7 +13,8 @@ permissions:
 jobs:
   check:
     name: Test and build
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is moving to Ubuntu 26.04, which Playwright 1.56 has no browser builds for.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4

@@ -53,40 +53,48 @@ test.describe("the story", () => {
     await expect(page.locator(`a[href="${site.resume}"][download]`).first()).toBeVisible();
   });
 
-  test("the opening's words keep clear of the copy and of each other, on every screen", async ({ browser }) => {
-    for (const opts of [
+  test("the opening's words keep clear of the copy and of each other, on every screen and in a wide font", async ({ browser }) => {
+    const screens = [
       { viewport: { width: 1440, height: 900 } },
+      { viewport: { width: 1280, height: 720 } },
       { viewport: { width: 1024, height: 700 } },
+      { viewport: { width: 768, height: 1024 }, isMobile: true, hasTouch: true },
       { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
-    ]) {
-      const ctx = await browser.newContext(opts);
-      const page = await ctx.newPage();
-      await page.goto("/", { waitUntil: "networkidle" });
-      const problems = await page.evaluate(() => {
-        const box = (e: Element) => e.getBoundingClientRect();
-        const hit = (a: DOMRect, b: DOMRect) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
-        const words = [...document.querySelectorAll<HTMLElement>(".opening .word")].filter((w) => getComputedStyle(w).display !== "none");
-        // The copy as drawn: each line of text, and each button and bar as a whole.
-        const copy: [string, DOMRect][] = [];
-        for (const e of document.querySelectorAll(".opening-copy > *, .scroll-hint")) {
-          const range = document.createRange();
-          range.selectNodeContents(e);
-          for (const r of range.getClientRects()) if (r.width && r.height) copy.push([e.className || e.tagName, r]);
-        }
-        for (const e of document.querySelectorAll(".opening-copy .pill, .bar")) copy.push([e.className, box(e)]);
-        const out: string[] = [];
-        words.forEach((w, i) => {
-          const r = box(w);
-          if (r.left < 0 || r.right > innerWidth) out.push(`${w.dataset.w} runs off the screen`);
-          for (const [name, c] of copy) if (hit(r, c)) out.push(`${w.dataset.w} on ${name}`);
-          for (const v of words.slice(i + 1)) if (hit(r, box(v))) out.push(`${w.dataset.w} on ${v.dataset.w}`);
+      { viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
+    ];
+    // The copy's size depends on the visitor's fonts; DejaVu Sans is far wider than San Francisco or Inter.
+    for (const wide of [false, true])
+      for (const opts of screens) {
+        const ctx = await browser.newContext(opts);
+        const page = await ctx.newPage();
+        await page.goto("/", { waitUntil: "networkidle" });
+        if (wide) await page.addStyleTag({ content: `.opening-copy, .opening-copy * { font-family: "DejaVu Sans", Verdana, sans-serif !important; }` });
+        const problems = await page.evaluate(() => {
+          const box = (e: Element) => e.getBoundingClientRect();
+          const hit = (a: DOMRect, b: DOMRect) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+          const words = [...document.querySelectorAll<HTMLElement>(".opening .word")].filter((w) => getComputedStyle(w).display !== "none" && box(w).width > 0);
+          // The copy as drawn: each line of text, and each button and bar as a whole.
+          const copy: [string, DOMRect][] = [];
+          for (const e of document.querySelectorAll(".opening-copy > *, .scroll-hint")) {
+            const range = document.createRange();
+            range.selectNodeContents(e);
+            for (const r of range.getClientRects()) if (r.width && r.height) copy.push([e.className || e.tagName, r]);
+          }
+          for (const e of document.querySelectorAll(".opening-copy .pill, .bar")) copy.push([e.className, box(e)]);
+          const out: string[] = [];
+          words.forEach((w, i) => {
+            const r = box(w);
+            if (r.left < 0 || r.right > innerWidth) out.push(`${w.dataset.w} runs off the screen`);
+            for (const [name, c] of copy) if (hit(r, c)) out.push(`${w.dataset.w} on ${name}`);
+            for (const v of words.slice(i + 1)) if (hit(r, box(v))) out.push(`${w.dataset.w} on ${v.dataset.w}`);
+          });
+          return { count: words.length, out };
         });
-        return { count: words.length, out };
-      });
-      expect(problems.out, JSON.stringify(opts.viewport)).toEqual([]);
-      expect(problems.count, JSON.stringify(opts.viewport)).toBeGreaterThanOrEqual(5);
-      await ctx.close();
-    }
+        const label = `${opts.viewport.width}x${opts.viewport.height}${wide ? " wide font" : ""}`;
+        expect(problems.out, label).toEqual([]);
+        expect(problems.count, label).toBeGreaterThanOrEqual(5);
+        await ctx.close();
+      }
   });
 
   test("the chapters come in order, and each scrubs its recording through three moments", async ({ page }) => {
@@ -208,6 +216,22 @@ test.describe("the story", () => {
       });
     });
     expect(over).toBe(false);
+  });
+
+  test("the bar keeps the name on one line, down to the narrowest phone", async ({ browser }) => {
+    for (const width of [320, 360, 390]) {
+      const ctx = await browser.newContext({ viewport: { width, height: 640 }, isMobile: true, hasTouch: true });
+      const page = await ctx.newPage();
+      await page.goto("/");
+      const lines = await page.locator(".wordmark").evaluate((e) => {
+        const range = document.createRange();
+        range.selectNodeContents(e);
+        return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+      });
+      expect(lines, `${width}`).toBe(1);
+      await expect(page.getByRole("link", { name: "Resume" }).first()).toBeVisible();
+      await ctx.close();
+    }
   });
 
   test("no sideways scrolling, at any width", async ({ page }) => {

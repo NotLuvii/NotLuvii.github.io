@@ -30,7 +30,12 @@ export function viewAt(form: Form, frame: number, settle = 8): View | null {
   const to = views[i];
   return from.map((v, k) => v + (to[k] - v) * e) as View;
 }
-export type Manifest = { desktop: Form; phone?: Form };
+export type Manifest = {
+  desktop: Form;
+  phone?: Form;
+  /** What the app showed in the recording: the scam tool's quoted phrases, the skills the resume matched. */
+  result?: { marks?: string[]; matched?: string[] };
+};
 
 /** The counter's running totals at a frame: the first frame's before the footage starts, the last frame's after it ends. */
 export function countsAt(form: Form, frame: number): { car: number; bus: number; truck: number } | null {

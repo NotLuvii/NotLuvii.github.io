@@ -23,6 +23,11 @@ if (copy && navigator.clipboard?.writeText) {
   });
 }
 
+/* In-page links glide only once the page has loaded (see html.settled in the stylesheet). */
+const settle = () => requestAnimationFrame(() => document.documentElement.classList.add("settled"));
+if (document.readyState === "complete") settle();
+else addEventListener("load", settle, { once: true });
+
 /* Motion only when it's welcome; otherwise the stills stay. */
 const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
 if (!reduce.matches) {

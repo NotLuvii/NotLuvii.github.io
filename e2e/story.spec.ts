@@ -109,7 +109,7 @@ test.describe("the story", () => {
       }
       expect(seen, c.id).toEqual([0, 1, 2]);
       // The canvas has a frame on it.
-      const painted = await page.locator(`#${c.id} canvas`).evaluate((cv: HTMLCanvasElement) => {
+      const painted = await page.locator(`#${c.id} canvas.sequence`).evaluate((cv: HTMLCanvasElement) => {
         const d = cv.getContext("2d")!.getImageData(cv.width / 2, cv.height / 2, 1, 1).data;
         return d[3] > 0;
       });
@@ -154,6 +154,8 @@ test.describe("the story", () => {
       // At the top of the screen, or as near as the page allows when the section is the last one.
       expect(top, id).toBeGreaterThanOrEqual(-0.01);
       expect(top < 0.2 || atEnd, `${id} at ${top.toFixed(2)} screens`).toBe(true);
+      // Links within the page still glide once it has settled.
+      await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior)).toBe("smooth");
       await page.close();
     }
   });
@@ -399,5 +401,132 @@ test.describe("the old site's addresses", () => {
     expect(await axe(page)).toEqual([]);
     await home.click();
     await expect(page.locator("h1")).toHaveText(site.title);
+  });
+});
+
+test.describe("the faint background", () => {
+  /** How many sampled pixels of a canvas have any ink, and whether a given page point has any. */
+  const ink = (page: Page, selector: string, at?: { x: number; y: number }) =>
+    page.locator(selector).evaluate((cv: HTMLCanvasElement, at) => {
+      const ctx = cv.getContext("2d")!;
+      const d = ctx.getImageData(0, 0, cv.width, cv.height).data;
+      let count = 0;
+      for (let i = 3; i < d.length; i += 4 * 7) if (d[i] > 0) count++;
+      let here: number | null = null;
+      if (at) {
+        const r = cv.getBoundingClientRect();
+        const x = Math.round(((at.x - r.left) * cv.width) / r.width);
+        const y = Math.round(((at.y - r.top) * cv.height) / r.height);
+        here = ctx.getImageData(x, y, 1, 1).data[3];
+      }
+      return { count, here };
+    }, at);
+
+  const throughThread = async (page: Page, id: string, f: number) => {
+    await expect(page.locator(`#${id}`)).toBeAttached();
+    await page.evaluate(
+      ([id, f]) => {
+        const t = document.getElementById(id as string)!;
+        scrollTo({ top: t.getBoundingClientRect().top + scrollY + (t.offsetHeight - innerHeight) * (f as number), behavior: "instant" });
+      },
+      [id, f] as const
+    );
+    await page.waitForTimeout(400);
+  };
+
+  test("the hand-offs carry the tools' own inputs, faintly, and keep clear of the sentence", async ({ page }) => {
+    await page.goto("/", { waitUntil: "networkidle" });
+    await expect(page.locator("#vehicle-counter")).toHaveClass(/has-sequence/);
+    for (const [id, input] of [["thread-1", "email posting"], ["thread-2", "posting log"]]) {
+      await throughThread(page, id, 0.85);
+      const canvas = page.locator(`#${id} canvas.source`);
+      await expect(canvas).toHaveAttribute("data-input", input);
+      const line = await page.locator(`#${id} .thread-line`).boundingBox();
+      const centre = { x: line!.x + line!.width / 2, y: line!.y + line!.height / 2 };
+      await expect.poll(async () => (await ink(page, `#${id} canvas.source`)).count, id).toBeGreaterThan(200);
+      expect((await ink(page, `#${id} canvas.source`, centre)).here, `${id}: behind the sentence`).toBe(0);
+      if (!isPhone(page)) {
+        // Even with the pointer on the sentence, the clearer layer under the lens stays out from behind it.
+        await page.mouse.move(centre.x, centre.y);
+        await page.waitForTimeout(150);
+        await expect(page.locator(`#${id} .source-lens`)).toHaveCSS("visibility", "visible");
+        expect((await ink(page, `#${id} .source-lens canvas`, centre)).here, `${id}: under the pointer`).toBe(0);
+        // Just beside the sentence the lens does show the clearer text.
+        const beside = { x: centre.x, y: line!.y - 90 };
+        await page.mouse.move(beside.x, beside.y);
+        await page.waitForTimeout(150);
+        await expect.poll(async () => (await ink(page, `#${id} .source-lens canvas`)).count, `${id}: the lens`).toBeGreaterThan(200);
+      }
+    }
+  });
+
+  test("the source text reaches both edges of the screen, with nothing trimming it", async ({ page }) => {
+    await page.goto("/", { waitUntil: "networkidle" });
+    await expect(page.locator("#vehicle-counter")).toHaveClass(/has-sequence/);
+    for (const id of ["thread-1", "scam-detection", "thread-2", "vehicle-counter"]) {
+      const reach = await page.locator(`#${id} canvas.source`).evaluate((cv) => {
+        const r = cv.getBoundingClientRect();
+        const clipped: string[] = [];
+        for (let n = cv.parentElement; n && n.tagName !== "MAIN"; n = n.parentElement)
+          if (getComputedStyle(n).overflowX !== "visible") clipped.push(n.className || n.tagName);
+        return { left: r.left, right: r.right, width: document.documentElement.clientWidth, clipped };
+      });
+      expect(reach.clipped, id).toEqual([]);
+      expect(reach.left, id).toBeLessThanOrEqual(0);
+      expect(reach.right, id).toBeGreaterThanOrEqual(reach.width);
+    }
+  });
+
+  test("each chapter's stage shows its tool's input until the recording rises", async ({ page }) => {
+    await page.goto("/", { waitUntil: "networkidle" });
+    for (const [id, input] of [["scam-detection", "email"], ["resume-analyzer", "posting"], ["vehicle-counter", "log"]]) {
+      const canvas = page.locator(`#${id} canvas.source`);
+      await into(page, id, 0);
+      await expect(canvas).toHaveAttribute("data-input", input);
+      await expect.poll(async () => Number(await canvas.evaluate((c) => getComputedStyle(c).opacity)), id).toBeGreaterThan(0.8);
+      await expect.poll(async () => (await ink(page, `#${id} canvas.source`)).count, id).toBeGreaterThan(200);
+      await into(page, id, 0.5);
+      expect(Number(await canvas.evaluate((c) => getComputedStyle(c).opacity)), id).toBeLessThan(0.01);
+    }
+  });
+
+  test("the reading sections stay plain", async ({ page }) => {
+    await page.goto("/", { waitUntil: "networkidle" });
+    await expect(page.locator("#vehicle-counter")).toHaveClass(/has-sequence/);
+    await expect(page.locator(".chapter-head canvas, #try canvas, #more canvas, #experience canvas, #about canvas, #contact canvas")).toHaveCount(0);
+  });
+
+  test("the pointer leaves a faint track, which fades away when the pointer rests", async ({ page }) => {
+    test.skip(isPhone(page), "touch screens have no pointer to track");
+    await page.goto("/", { waitUntil: "networkidle" });
+    await throughThread(page, "thread-1", 0.2);
+    const trail = page.locator("canvas.trail");
+    await expect(trail).toHaveCount(1);
+    for (let i = 0; i <= 40; i++) {
+      await page.mouse.move(300 + i * 18, 640 - Math.sin(i / 6) * 120);
+      await page.waitForTimeout(16);
+    }
+    expect((await ink(page, "canvas.trail")).count).toBeGreaterThan(20);
+    await expect(trail).toHaveAttribute("data-active", "true");
+    await page.waitForTimeout(2600);
+    await expect(trail).toHaveAttribute("data-active", "false");
+    expect((await ink(page, "canvas.trail")).count).toBe(0);
+  });
+
+  test("touch screens get no track", async ({ page }) => {
+    test.skip(!isPhone(page), "the phone project");
+    await page.goto("/", { waitUntil: "networkidle" });
+    await expect(page.locator("#vehicle-counter")).toHaveClass(/has-sequence/);
+    await expect(page.locator("canvas.trail")).toHaveCount(0);
+  });
+
+  test("with reduced motion there is neither", async ({ browser }) => {
+    const ctx = await browser.newContext({ reducedMotion: "reduce" });
+    const page = await ctx.newPage();
+    await page.goto("/", { waitUntil: "networkidle" });
+    await page.mouse.move(400, 400);
+    await page.mouse.move(600, 500);
+    await expect(page.locator("canvas.trail, canvas.source")).toHaveCount(0);
+    await ctx.close();
   });
 });

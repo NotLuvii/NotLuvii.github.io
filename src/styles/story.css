@@ -38,8 +38,10 @@ html {
   background: var(--bg);
   scroll-padding-top: 4.5rem;
 }
+/* Links within the page glide, once it has loaded. Not before: arriving at /#a-section, the browser's
+   own smooth scroll would race the jump to that section. */
 @media (prefers-reduced-motion: no-preference) {
-  html {
+  html.settled {
     scroll-behavior: smooth;
   }
 }
@@ -727,8 +729,6 @@ a {
 .motion .thread {
   padding: 0;
   height: 220svh;
-  /* A safety net: nothing scattered here may widen the page. Clip keeps the stage sticky. */
-  overflow-x: clip;
 }
 .motion .thread-stage {
   position: sticky;
@@ -739,6 +739,59 @@ a {
   justify-items: center;
 }
 
+/* ── The faint background ──
+   The pointer's track sits behind the whole page; each stage's source text sits behind that stage's
+   content (z-index -1 inside the sticky stage, which is its own stacking context), full-bleed. */
+.trail {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+main,
+.foot {
+  position: relative;
+  z-index: 1;
+}
+.source-lens {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  width: var(--near);
+  height: var(--near);
+  overflow: hidden;
+  pointer-events: none;
+  visibility: hidden;
+  will-change: transform;
+  -webkit-mask-image: radial-gradient(closest-side, #000 0, rgba(0, 0, 0, 0.55) 45%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 0, rgba(0, 0, 0, 0.55) 45%, transparent 100%);
+}
+.source-lens canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  will-change: transform;
+}
+/* A safety net: nothing scattered or full-bleed in the story may widen the page. Clip, unlike hidden,
+   keeps the stages sticky. */
+main {
+  overflow-x: clip;
+}
+.source {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 50%;
+  width: 100vw;
+  max-width: none;
+  height: 100%;
+  translate: -50% 0;
+  pointer-events: none;
+}
 /* ── The checker ── */
 .try {
   max-width: 44rem;

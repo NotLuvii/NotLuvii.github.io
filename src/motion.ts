@@ -1,6 +1,9 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { inputs } from "./inputs";
 import { countsAt, Sequence, viewAt, type Manifest } from "./sequence";
+import { logLine, pieces, runSources, SourceText, type Piece, type TrackLine, type TrackLog } from "./source";
+import { startTrail } from "./trail";
 
 /**
  * Scroll-linked motion. Nothing moves unless the visitor scrolls; scrolling stays native (no snapping,
@@ -32,10 +35,22 @@ export async function startMotion() {
         : Promise.resolve(null)
     )
   );
-  sections.forEach((el, i) => (el.dataset.chapter ? chapter(el, manifests[i]) : thread(el)));
+  const sources = backgrounds(sections, manifests);
+  sections.forEach((el, i) => (el.dataset.chapter ? chapter(el, manifests[i], sources.get(el) ?? null) : thread(el)));
   ScrollTrigger.refresh();
+  startTrail();
   const target = location.hash.length > 1 ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
-  if (target && !moved) target.scrollIntoView({ block: "start", behavior: "instant" });
+  if (target) {
+    // Layout can still settle after this (fonts, the page's load event, ScrollTrigger's own refresh on
+    // load), so go to the section again each time it does, until the visitor moves.
+    const go = () => {
+      if (!moved) target.scrollIntoView({ block: "start", behavior: "instant" });
+    };
+    go();
+    ScrollTrigger.addEventListener("refresh", go);
+    if (document.readyState !== "complete") addEventListener("load", go, { once: true });
+    document.fonts?.ready.then(go);
+  }
 }
 
 /* ── Opening: the scattered words drift into the line as you start to scroll ── */
@@ -81,7 +96,7 @@ function opening() {
 }
 
 /* ── Chapters: rise, hold, scrub ── */
-function chapter(el: HTMLElement, manifest: Manifest | null) {
+function chapter(el: HTMLElement, manifest: Manifest | null, source: SourceText | null) {
   const name = el.dataset.chapter!;
   const stage = el.querySelector<HTMLElement>("[data-stage]")!;
   const device = el.querySelector<HTMLElement>("[data-device-frame]")!;
@@ -126,6 +141,8 @@ function chapter(el: HTMLElement, manifest: Manifest | null) {
   const apply = (progress: number) => {
     const rise = ease(span(progress, 0, 0.12));
     device.style.transform = `translateY(${(1 - rise) * 24}vh) scale(${0.86 + 0.14 * rise})`;
+    // The tool's input, faint behind the stage, gives way as the recording rises.
+    source?.setOpacity(1 - rise);
     const p = span(progress, 0.12, 0.94);
     const frame = seq.seek(p, viewAt(form, seq.frameAt(p)));
     show(progress < 0.08 ? -1 : frame);
@@ -206,3 +223,66 @@ function thread(el: HTMLElement) {
   });
   apply(st.progress);
 }
+
+/* ── The faint background: each tool's own input behind the empty stretches ── */
+const GAP = "    ";
+const INPUT_OF: Record<string, string> = { scam: "email", resume: "posting", traffic: "log", "thread-1": "email posting", "thread-2": "posting log" };
+
+function backgrounds(sections: HTMLElement[], manifests: (Manifest | null)[]) {
+  const result = (name: string) => manifests[sections.findIndex((el) => el.dataset.chapter === name)]?.result;
+  const marks = result("scam")?.marks ?? [];
+  const matched = result("resume")?.matched ?? [];
+  const gap: Piece = { text: GAP, mark: false };
+  // The tracker log is fetched only when a stage that shows it comes near.
+  let log: TrackLine[] = [];
+  let asked = false;
+  const waiting: SourceText[] = [];
+  const logLines = (from: number, n: number) => log.slice(from, from + n).map(logLine).join(GAP);
+  const needLog = (s: SourceText) => {
+    if (log.length) return true;
+    waiting.push(s);
+    if (!asked) {
+      asked = true;
+      fetch("sequences/traffic/log.json")
+        .then((r) => (r.ok ? (r.json() as Promise<TrackLog>) : null))
+        .then((data) => {
+          if (!data) return;
+          log = data.lines;
+          for (const w of waiting) runner.refresh(w);
+        })
+        .catch(() => {});
+    }
+    return false;
+  };
+  const streams: Record<string, (s: SourceText) => Piece[]> = {
+    email: () => [...pieces(inputs.email, marks), gap],
+    posting: () => [...pieces(inputs.posting, matched), gap],
+    log: (s) => (needLog(s) ? [{ text: logLines(0, log.length), mark: false }] : []),
+    "email posting": () => [...pieces(inputs.email, marks), gap, ...pieces(inputs.posting, matched), gap],
+    "posting log": (s) => {
+      const out: Piece[] = [];
+      const withLog = needLog(s);
+      for (let k = 0; k < 12; k++) {
+        out.push(...pieces(inputs.posting, matched), gap);
+        if (withLog) out.push({ text: logLines(k * 10, 10), mark: false }, gap);
+      }
+      return out;
+    },
+  };
+
+  // Only a mouse gets the clearer lens; touch screens keep the faint layer alone.
+  const fine = matchMedia("(hover: hover) and (pointer: fine)").matches;
+  const made = new Map<HTMLElement, SourceText>();
+  for (const [i, el] of sections.entries()) {
+    const key = el.dataset.chapter ?? el.id;
+    const input = INPUT_OF[key];
+    const host = el.querySelector<HTMLElement>(el.dataset.chapter ? "[data-stage]" : ".thread-stage");
+    if (!input || !host || (el.dataset.chapter && !manifests[i])) continue;
+    const line = el.querySelector(".thread-line");
+    const s: SourceText = new SourceText(host, input, () => streams[input](s), () => (line ? [line] : []), fine);
+    made.set(el, s);
+  }
+  const runner = runSources([...made.values()]);
+  return made;
+}
+

@@ -150,6 +150,8 @@ export const chapters: Chapter[] = [
 ];
 
 /** The thread between chapters: the same signal, new evidence. */
+export { inputs } from "./inputs";
+
 export const thread = {
   phrases: ["Dear Customer", "immediately", "paypal-secure", "Click here to restore"],
   skills: ["JavaScript", "Python", "React", "SQL"],

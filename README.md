@@ -21,6 +21,12 @@ carries the evidence from one tool to the next, and the scam detector's own rule
   (the first, the last, then every 16th, 8th and so on), and phones get recordings made at phone size.
 - **Reduced motion and no JavaScript.** With `prefers-reduced-motion: reduce` or without
   JavaScript, every moment is a still with its caption, and nothing is sticky.
+- **The faint background.** Behind the hand-offs between chapters, and behind each stage until its
+  recording rises, the tools' own inputs are set very faintly on a canvas: the phishing email, the job
+  posting and the vehicle counter's tracker log (`public/sequences/traffic/log.json`, from the run).
+  With a mouse, a lens shows them more clearly around the pointer and the pointer leaves a faint track,
+  boxed and labelled the way the counter labels a car. Touch screens get the text without the lens or
+  the track; reduced motion and no JavaScript get neither.
 - **The checker.** `public/vendor/detectors.js` is a verbatim copy of the scam detector's rules,
   so the "try it" box scores text exactly as the tool does.
 
@@ -68,6 +74,7 @@ python tools/encode_sequence.py <scam|resume> <rawDir> public/sequences/<scam|re
 # Vehicle counter (Traffic-Detection): `python app.py --input clip.webm` writes tracks.json; then, in that repo,
 python render.py clip.webm tracks.json annotated.mp4 --frames-dir <framesDir> --every 3 --width 1600 --max-frames 360
 python tools/encode_traffic.py <framesDir> <tracks.json> public/sequences/traffic --every 3 --count 120
+python tools/track_log.py <tracks.json> public/sequences/traffic/manifest.json public/sequences/traffic/log.json
 ```
 
 ## Credits

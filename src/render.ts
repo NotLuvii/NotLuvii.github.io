@@ -1,4 +1,4 @@
-import { about, chapters, education, more, openingWords, roles, site, thread, type Chapter } from "./content";
+import { about, chapters, education, greeting, more, roles, site, thread, type Chapter } from "./content";
 
 /** Escape text for HTML. */
 export const esc = (s: string) =>
@@ -11,26 +11,20 @@ const link = (label: string, href: string, cls = "text-link") =>
   }</a>`;
 
 function opening() {
-  // Drawn as generated content: pure decoration, not text a reader or a screen reader meets.
-  const words = (band: string) =>
-    `<div class="opening-words ${band}" aria-hidden="true">${openingWords
-      .filter((w) => w.band === band)
-      .map((w) => `<span class="word${w.phone ? " on-phone" : ""}" data-w="${esc(w.text)}" style="--x:${w.x}%;--y:${w.y}%;--s:${w.s};--o:${w.o}"></span>`)
-      .join("")}</div>`;
+  // Every phrase sits, hidden, in the same grid cell, so the headline keeps the height of the longest
+  // one while the greeting cycles (generated content: no extra text for search or screen readers).
+  const ghosts = greeting.phrases.map((p) => `<span class="cycle-ghost" aria-hidden="true" data-w="${esc(p)}"></span>`).join("");
   return `
 <section class="opening" id="top" aria-labelledby="title">
-  ${words("above")}
-  ${words("beside")}
   <div class="opening-copy">
     <p class="eyebrow">${esc(site.name)} · ${esc(site.role)} · ${esc(site.city)}, ${esc(site.regionShort)}</p>
-    <h1 id="title" class="display">${esc(site.title).replace("shows its work.", 'shows its <span class="signal-word">work.</span>')}</h1>
+    <h1 id="title" class="display greeting" aria-label="${esc(greeting.label)}">${esc(greeting.lead)} <span class="cycle">${ghosts}<span class="cycle-now" data-cycle>${esc(greeting.phrases[0])}</span></span></h1>
     <p class="lede">${esc(site.lede)}</p>
     <p class="opening-links">
       <a class="pill primary" href="#work">See the work</a>
       <a class="pill" href="${esc(site.resume)}" download>Resume <span class="pill-note">(PDF)</span></a>
     </p>
   </div>
-  ${words("below")}
   <p class="scroll-hint" aria-hidden="true">Scroll</p>
 </section>`;
 }
@@ -221,6 +215,7 @@ export function renderBody() {
         <li><a href="#contact">Contact</a></li>
       </ul>
     </nav>
+    <button class="motion-toggle" type="button" data-motion-toggle hidden><span class="motion-toggle-icon" aria-hidden="true"></span><span class="visually-hidden" data-motion-label>Pause motion</span></button>
     <a class="pill small" href="${esc(site.resume)}" download>Resume</a>
   </div>
 </header>

@@ -123,9 +123,6 @@ a {
   letter-spacing: -0.038em;
   text-wrap: balance;
 }
-.signal-word {
-  color: var(--signal);
-}
 .lede {
   font-size: clamp(1.1875rem, 1rem + 0.6vw, 1.5rem);
   line-height: 1.42;
@@ -291,79 +288,82 @@ a {
     padding: 0 0.5rem;
   }
 }
-/* The narrowest phones keep the name and the resume; Contact is the page's last section either way. */
-@media (max-width: 22.5rem) {
-  .nav {
+/* Phones keep the name, the pause button and the resume; Contact is the page's last section either way. */
+@media (max-width: 30rem) {
+  .bar nav {
     display: none;
+  }
+  .bar-inner {
+    gap: 0.625rem;
+  }
+  .motion-toggle {
+    margin-right: 0;
+  }
+}
+/* The narrowest phones: a little less padding, so even a wide font fits the bar. */
+@media (max-width: 22.5rem) {
+  .bar-inner {
+    gap: 0.5rem;
+  }
+  .bar .pill.small {
+    padding: 0 0.75rem;
   }
 }
 
 /* ── Opening ── */
-/* Three rows: a band of words, the copy, a band of words. The bands share whatever height the copy
-   leaves and never shrink below a few lines, so the copy can't run into a word, whatever the fonts. */
 .opening {
-  --band: 5.5rem;
   position: relative;
   min-height: 100svh;
   display: grid;
-  grid-template-rows: minmax(var(--band), 1fr) auto minmax(var(--band), 1fr);
-  padding: 4.5rem var(--gutter) 3.5rem;
+  align-items: center;
+  padding: 6rem var(--gutter) 5rem;
   overflow: hidden;
-}
-.opening-words {
-  position: relative;
-  pointer-events: none;
-}
-.opening-words.above {
-  grid-row: 1;
-}
-.opening-words.below {
-  grid-row: 3;
-}
-/* Beside the copy only where the screen is wide enough to leave room at its sides. */
-.opening-words.beside {
-  position: absolute;
-  inset: 0;
-}
-@media (max-width: 75rem) {
-  .opening-words.beside {
-    display: none;
-  }
-}
-.word {
-  position: absolute;
-  left: var(--x);
-  top: var(--y);
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: calc(var(--s) * 0.9375rem);
-  color: var(--text-3);
-  opacity: var(--o);
-  white-space: nowrap;
-  translate: -50% -50%;
-}
-.word::before {
-  content: attr(data-w);
-}
-/* Fewer, fainter words on small screens, so the line itself stays clear. */
-@media (max-width: 40rem) {
-  /* Here the copy fills the width: only the words placed clear of it stay. */
-  .word:not(.on-phone) {
-    display: none;
-  }
-  .word {
-    opacity: calc(var(--o) * 0.6);
-  }
 }
 .opening-copy {
   position: relative;
-  grid-row: 2;
-  align-self: center;
-  max-width: 62rem;
+  width: 100%;
+  max-width: 76rem;
   margin: 0 auto;
   text-align: center;
 }
 .opening-copy .display {
   margin-top: 1.25rem;
+}
+/* The greeting: "Hi, I am" and, on the line below, the phrase that cycles. */
+.greeting {
+  font-size: clamp(2.75rem, 1.2rem + 5.4vw, 7rem);
+}
+/* Every phrase stacked, hidden, in one cell: the cell takes the height of the longest, and the phrase on
+   show sits over it, so the lines below never move as it changes. */
+.cycle {
+  position: relative;
+  display: grid;
+  /* Room for descenders, inside the box the phrase on show is kept within. */
+  padding-bottom: 0.12em;
+}
+.cycle-ghost {
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+.cycle-ghost::before {
+  content: attr(data-w);
+}
+/* Mid-scramble a phrase can run a little longer than either end; it stays inside the box, never over
+   the line below or off the screen. */
+.cycle-now {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+/* The characters mid-scramble: monospace, a little smaller, each narrower than the average letter it
+   stands in for, so a phrase mid-turn never needs more room than it will settle into. */
+.cycle-now .glyph {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.82em;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--text-3);
 }
 .opening-copy .lede {
   margin: 1.75rem auto 0;
@@ -739,10 +739,9 @@ a {
   justify-items: center;
 }
 
-/* ── The faint background ──
-   The pointer's track sits behind the whole page; each stage's source text sits behind that stage's
-   content (z-index -1 inside the sticky stage, which is its own stacking context), full-bleed. */
-.trail {
+/* ── The field of dots ──
+   Fixed behind every section; the page's content paints over it. */
+.field {
   position: fixed;
   inset: 0;
   z-index: 0;
@@ -755,43 +754,51 @@ main,
   position: relative;
   z-index: 1;
 }
-.source-lens {
-  position: absolute;
-  z-index: -1;
-  top: 0;
-  left: 0;
-  width: var(--near);
-  height: var(--near);
-  overflow: hidden;
-  pointer-events: none;
-  visibility: hidden;
-  will-change: transform;
-  -webkit-mask-image: radial-gradient(closest-side, #000 0, rgba(0, 0, 0, 0.55) 45%, transparent 100%);
-  mask-image: radial-gradient(closest-side, #000 0, rgba(0, 0, 0, 0.55) 45%, transparent 100%);
-}
-.source-lens canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  max-width: none;
-  will-change: transform;
-}
-/* A safety net: nothing scattered or full-bleed in the story may widen the page. Clip, unlike hidden,
-   keeps the stages sticky. */
+/* A safety net: nothing scattered in the story may widen the page. Clip, unlike hidden, keeps the
+   stages sticky. */
 main {
   overflow-x: clip;
 }
-.source {
-  position: absolute;
-  z-index: -1;
-  top: 0;
-  left: 50%;
-  width: 100vw;
-  max-width: none;
-  height: 100%;
-  translate: -50% 0;
-  pointer-events: none;
+
+/* The pause button for everything that moves on its own (the dots and the greeting), in the bar. */
+.motion-toggle {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-right: 0.5rem;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fill);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: scale 0.1s var(--ease), color 0.2s var(--ease);
 }
+@media (hover: hover) {
+  .motion-toggle:hover {
+    color: var(--text);
+  }
+}
+.motion-toggle:active {
+  scale: 0.92;
+}
+/* Pause: two bars. Play: a triangle. */
+.motion-toggle-icon {
+  width: 0.625rem;
+  height: 0.75rem;
+  box-shadow: inset 0.1875rem 0 currentColor, inset -0.1875rem 0 currentColor;
+}
+.motion-toggle.paused .motion-toggle-icon {
+  width: 0;
+  height: 0;
+  margin-left: 0.1875rem;
+  border-style: solid;
+  border-width: 0.4375rem 0 0.4375rem 0.6875rem;
+  border-color: transparent transparent transparent currentColor;
+  box-shadow: none;
+}
+
 /* ── The checker ── */
 .try {
   max-width: 44rem;

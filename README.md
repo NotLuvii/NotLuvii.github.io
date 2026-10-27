@@ -16,17 +16,18 @@ carries the evidence from one tool to the next, and the scam detector's own rule
 - **Scroll-scrubbed recordings.** Each chapter's stage is `position: sticky` inside a tall track.
   GSAP ScrollTrigger only reads how far through the track the visitor is, and `src/sequence.ts`
   draws the matching frame of a WebP image sequence on a canvas. Scrolling stays native: no
-  hijacking, no snapping, and nothing moves unless the visitor scrolls.
+  hijacking, no snapping; the stories move only as the visitor scrolls.
 - **Light first screen.** Frames load only as their chapter approaches, sparse frames first
   (the first, the last, then every 16th, 8th and so on), and phones get recordings made at phone size.
 - **Reduced motion and no JavaScript.** With `prefers-reduced-motion: reduce` or without
   JavaScript, every moment is a still with its caption, and nothing is sticky.
-- **The faint background.** Behind the hand-offs between chapters, and behind each stage until its
-  recording rises, the tools' own inputs are set very faintly on a canvas: the phishing email, the job
-  posting and the vehicle counter's tracker log (`public/sequences/traffic/log.json`, from the run).
-  With a mouse, a lens shows them more clearly around the pointer and the pointer leaves a faint track,
-  boxed and labelled the way the counter labels a car. Touch screens get the text without the lens or
-  the track; reduced motion and no JavaScript get neither.
+- **The greeting.** "Hi, I am Luvneet." The name scrambles into random characters and settles into
+  each phrase in turn (`src/greeting.ts`). Every phrase sits hidden in the same grid cell, so the
+  headline keeps the height of the longest and nothing below it moves. Screen readers get one fixed label.
+- **The field of dots.** Behind every section, dots drift slowly and draw faint lines to their near
+  neighbours, and, with a mouse, to the pointer (`src/field.ts`). The pause button in the bar stops the
+  dots and the greeting, and the choice is remembered on that device. With reduced motion the dots are
+  drawn still and the greeting stays on the name.
 - **The checker.** `public/vendor/detectors.js` is a verbatim copy of the scam detector's rules,
   so the "try it" box scores text exactly as the tool does.
 
@@ -74,7 +75,6 @@ python tools/encode_sequence.py <scam|resume> <rawDir> public/sequences/<scam|re
 # Vehicle counter (Traffic-Detection): `python app.py --input clip.webm` writes tracks.json; then, in that repo,
 python render.py clip.webm tracks.json annotated.mp4 --frames-dir <framesDir> --every 3 --width 1600 --max-frames 360
 python tools/encode_traffic.py <framesDir> <tracks.json> public/sequences/traffic --every 3 --count 120
-python tools/track_log.py <tracks.json> public/sequences/traffic/manifest.json public/sequences/traffic/log.json
 ```
 
 ## Credits

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
-import { chapters, site } from "../src/content";
+import { chapters, greeting, site } from "../src/content";
 
 const AXE = readFileSync("node_modules/axe-core/axe.min.js", "utf8");
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 0) < 700;
@@ -48,53 +48,9 @@ test.describe("the story", () => {
 
   test("opens on the line, with the way in and the resume", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("h1")).toHaveText(site.title);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName(greeting.label);
     await expect(page.getByRole("link", { name: "See the work" })).toHaveAttribute("href", "#work");
     await expect(page.locator(`a[href="${site.resume}"][download]`).first()).toBeVisible();
-  });
-
-  test("the opening's words keep clear of the copy and of each other, on every screen and in a wide font", async ({ browser }) => {
-    const screens = [
-      { viewport: { width: 1440, height: 900 } },
-      { viewport: { width: 1280, height: 720 } },
-      { viewport: { width: 1024, height: 700 } },
-      { viewport: { width: 768, height: 1024 }, isMobile: true, hasTouch: true },
-      { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
-      { viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
-    ];
-    // The copy's size depends on the visitor's fonts; DejaVu Sans is far wider than San Francisco or Inter.
-    for (const wide of [false, true])
-      for (const opts of screens) {
-        const ctx = await browser.newContext(opts);
-        const page = await ctx.newPage();
-        await page.goto("/", { waitUntil: "networkidle" });
-        if (wide) await page.addStyleTag({ content: `.opening-copy, .opening-copy * { font-family: "DejaVu Sans", Verdana, sans-serif !important; }` });
-        const problems = await page.evaluate(() => {
-          const box = (e: Element) => e.getBoundingClientRect();
-          const hit = (a: DOMRect, b: DOMRect) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
-          const words = [...document.querySelectorAll<HTMLElement>(".opening .word")].filter((w) => getComputedStyle(w).display !== "none" && box(w).width > 0);
-          // The copy as drawn: each line of text, and each button and bar as a whole.
-          const copy: [string, DOMRect][] = [];
-          for (const e of document.querySelectorAll(".opening-copy > *, .scroll-hint")) {
-            const range = document.createRange();
-            range.selectNodeContents(e);
-            for (const r of range.getClientRects()) if (r.width && r.height) copy.push([e.className || e.tagName, r]);
-          }
-          for (const e of document.querySelectorAll(".opening-copy .pill, .bar")) copy.push([e.className, box(e)]);
-          const out: string[] = [];
-          words.forEach((w, i) => {
-            const r = box(w);
-            if (r.left < 0 || r.right > innerWidth) out.push(`${w.dataset.w} runs off the screen`);
-            for (const [name, c] of copy) if (hit(r, c)) out.push(`${w.dataset.w} on ${name}`);
-            for (const v of words.slice(i + 1)) if (hit(r, box(v))) out.push(`${w.dataset.w} on ${v.dataset.w}`);
-          });
-          return { count: words.length, out };
-        });
-        const label = `${opts.viewport.width}x${opts.viewport.height}${wide ? " wide font" : ""}`;
-        expect(problems.out, label).toEqual([]);
-        expect(problems.count, label).toBeGreaterThanOrEqual(5);
-        await ctx.close();
-      }
   });
 
   test("the chapters come in order, and each scrubs its recording through three moments", async ({ page }) => {
@@ -232,6 +188,11 @@ test.describe("the story", () => {
       });
       expect(lines, `${width}`).toBe(1);
       await expect(page.getByRole("link", { name: "Resume" }).first()).toBeVisible();
+      // Everything in the bar, the pause button and the resume included, fits on the screen.
+      const over = await page.locator(".bar-inner > *").evaluateAll((els) =>
+        els.filter((e) => getComputedStyle(e).display !== "none" && e.getBoundingClientRect().right > innerWidth).map((e) => e.className)
+      );
+      expect(over, `${width}`).toEqual([]);
       await ctx.close();
     }
   });
@@ -321,7 +282,8 @@ test.describe("without motion", () => {
     const ctx = await browser.newContext({ javaScriptEnabled: false });
     const page = await ctx.newPage();
     await page.goto("/");
-    await expect(page.locator("h1")).toHaveText(site.title);
+    await expect(page.locator("h1")).toHaveText(`${greeting.lead} ${greeting.phrases[0]}`);
+    await expect(page.locator("canvas.field")).toHaveCount(0);
     for (const c of chapters) {
       await expect(page.locator(`#${c.id} .chapter-title`)).toHaveText(c.headline);
       for (const m of c.moments) await expect(page.locator(`#${c.id}`)).toContainText(m.text);
@@ -400,133 +362,126 @@ test.describe("the old site's addresses", () => {
     await expect(home).toHaveAttribute("href", "/");
     expect(await axe(page)).toEqual([]);
     await home.click();
-    await expect(page.locator("h1")).toHaveText(site.title);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName(greeting.label);
   });
 });
 
-test.describe("the faint background", () => {
-  /** How many sampled pixels of a canvas have any ink, and whether a given page point has any. */
-  const ink = (page: Page, selector: string, at?: { x: number; y: number }) =>
-    page.locator(selector).evaluate((cv: HTMLCanvasElement, at) => {
-      const ctx = cv.getContext("2d")!;
-      const d = ctx.getImageData(0, 0, cv.width, cv.height).data;
-      let count = 0;
-      for (let i = 3; i < d.length; i += 4 * 7) if (d[i] > 0) count++;
-      let here: number | null = null;
-      if (at) {
-        const r = cv.getBoundingClientRect();
-        const x = Math.round(((at.x - r.left) * cv.width) / r.width);
-        const y = Math.round(((at.y - r.top) * cv.height) / r.height);
-        here = ctx.getImageData(x, y, 1, 1).data[3];
+test.describe("the greeting and the field of dots", () => {
+  /** A fingerprint of a canvas's pixels, to tell whether it changed. */
+  const print = (page: Page, sel = "canvas.field") =>
+    page.locator(sel).evaluate((cv: HTMLCanvasElement) => {
+      const d = cv.getContext("2d")!.getImageData(0, 0, cv.width, cv.height).data;
+      let h = 0;
+      let ink = 0;
+      for (let i = 3; i < d.length; i += 4 * 5) {
+        if (d[i]) ink++;
+        h = (h * 31 + d[i] * (i % 9973)) % 1000000007;
       }
-      return { count, here };
-    }, at);
+      return { h, ink };
+    });
 
-  const throughThread = async (page: Page, id: string, f: number) => {
-    await expect(page.locator(`#${id}`)).toBeAttached();
-    await page.evaluate(
-      ([id, f]) => {
-        const t = document.getElementById(id as string)!;
-        scrollTo({ top: t.getBoundingClientRect().top + scrollY + (t.offsetHeight - innerHeight) * (f as number), behavior: "instant" });
-      },
-      [id, f] as const
-    );
+  test("the greeting turns the name into each phrase, and nothing below it moves or spills", async ({ page }) => {
+    await page.goto("/", { waitUntil: "networkidle" });
+    const now = page.locator(".cycle-now");
+    await expect(now).toHaveText(greeting.phrases[0]);
+    const lede = page.locator(".opening-copy .lede");
+    const at = async () => ({ lede: (await lede.boundingBox())!.y, h1: (await page.locator("h1").boundingBox())!.height });
+    const first = await at();
+    let scrambled = false;
+    let reached = false;
+    for (let i = 0; i < 40 && !reached; i++) {
+      await page.waitForTimeout(150);
+      expect(await at()).toEqual(first);
+      if (await page.locator(".cycle-now .glyph").count()) {
+        scrambled = true;
+        // Mid-scramble, the phrase stays inside the headline and on the screen.
+        const spill = await page.evaluate(() => {
+          const now = document.querySelector(".cycle-now")!;
+          const box = document.querySelector(".cycle")!.getBoundingClientRect();
+          const range = document.createRange();
+          range.selectNodeContents(now);
+          const r = range.getBoundingClientRect();
+          return { below: r.bottom > box.bottom + 1, off: r.right > innerWidth || r.left < 0 };
+        });
+        expect(spill).toEqual({ below: false, off: false });
+      }
+      reached = (await now.textContent()) === greeting.phrases[1];
+    }
+    expect(reached, "reached the second phrase").toBe(true);
+    expect(scrambled, "passed through random characters").toBe(true);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName(greeting.label);
+  });
+
+  test("the dots drift behind every section, faintly", async ({ page }) => {
+    await page.goto("/", { waitUntil: "networkidle" });
+    const field = page.locator("canvas.field");
+    await expect(field).toHaveCount(1);
+    await expect(field).toHaveCSS("position", "fixed");
+    await expect(field).toHaveAttribute("aria-hidden", "true");
+    const a = await print(page);
+    await page.waitForTimeout(500);
+    const b = await print(page);
+    expect(a.ink).toBeGreaterThan(30);
+    expect(b.h).not.toBe(a.h);
+    // Still there, and still moving, far down the page.
+    await page.locator("#experience").scrollIntoViewIfNeeded();
+    const c = await print(page);
     await page.waitForTimeout(400);
-  };
+    expect((await print(page)).h).not.toBe(c.h);
+    // Behind the content: the page's sections paint over it.
+    expect(await page.evaluate(() => Number(getComputedStyle(document.querySelector("main")!).zIndex) > Number(getComputedStyle(document.querySelector("canvas.field")!).zIndex))).toBe(true);
+    // Fewer dots on a small screen.
+    const count = Number(await field.getAttribute("data-count"));
+    expect(count).toBeGreaterThan(isPhone(page) ? 20 : 50);
+    if (isPhone(page)) expect(count).toBeLessThan(50);
+  });
 
-  test("the hand-offs carry the tools' own inputs, faintly, and keep clear of the sentence", async ({ page }) => {
+  test("the dots reach for the mouse", async ({ page }) => {
+    test.skip(isPhone(page), "touch screens have no pointer");
     await page.goto("/", { waitUntil: "networkidle" });
-    await expect(page.locator("#vehicle-counter")).toHaveClass(/has-sequence/);
-    for (const [id, input] of [["thread-1", "email posting"], ["thread-2", "posting log"]]) {
-      await throughThread(page, id, 0.85);
-      const canvas = page.locator(`#${id} canvas.source`);
-      await expect(canvas).toHaveAttribute("data-input", input);
-      const line = await page.locator(`#${id} .thread-line`).boundingBox();
-      const centre = { x: line!.x + line!.width / 2, y: line!.y + line!.height / 2 };
-      await expect.poll(async () => (await ink(page, `#${id} canvas.source`)).count, id).toBeGreaterThan(200);
-      expect((await ink(page, `#${id} canvas.source`, centre)).here, `${id}: behind the sentence`).toBe(0);
-      if (!isPhone(page)) {
-        // Even with the pointer on the sentence, the clearer layer under the lens stays out from behind it.
-        await page.mouse.move(centre.x, centre.y);
-        await page.waitForTimeout(150);
-        await expect(page.locator(`#${id} .source-lens`)).toHaveCSS("visibility", "visible");
-        expect((await ink(page, `#${id} .source-lens canvas`, centre)).here, `${id}: under the pointer`).toBe(0);
-        // Just beside the sentence the lens does show the clearer text.
-        const beside = { x: centre.x, y: line!.y - 90 };
-        await page.mouse.move(beside.x, beside.y);
-        await page.waitForTimeout(150);
-        await expect.poll(async () => (await ink(page, `#${id} .source-lens canvas`)).count, `${id}: the lens`).toBeGreaterThan(200);
-      }
+    const field = page.locator("canvas.field");
+    await expect(field).toHaveAttribute("data-reach", "0");
+    for (let i = 0; i < 10; i++) {
+      await page.mouse.move(500 + i * 30, 300 + i * 20);
+      await page.waitForTimeout(30);
     }
+    await expect.poll(async () => Number(await field.getAttribute("data-reach"))).toBeGreaterThan(0);
   });
 
-  test("the source text reaches both edges of the screen, with nothing trimming it", async ({ page }) => {
+  test("Pause motion stops the greeting and the dots, and the page remembers it", async ({ page }) => {
     await page.goto("/", { waitUntil: "networkidle" });
-    await expect(page.locator("#vehicle-counter")).toHaveClass(/has-sequence/);
-    for (const id of ["thread-1", "scam-detection", "thread-2", "vehicle-counter"]) {
-      const reach = await page.locator(`#${id} canvas.source`).evaluate((cv) => {
-        const r = cv.getBoundingClientRect();
-        const clipped: string[] = [];
-        for (let n = cv.parentElement; n && n.tagName !== "MAIN"; n = n.parentElement)
-          if (getComputedStyle(n).overflowX !== "visible") clipped.push(n.className || n.tagName);
-        return { left: r.left, right: r.right, width: document.documentElement.clientWidth, clipped };
-      });
-      expect(reach.clipped, id).toEqual([]);
-      expect(reach.left, id).toBeLessThanOrEqual(0);
-      expect(reach.right, id).toBeGreaterThanOrEqual(reach.width);
-    }
+    const pause = page.getByRole("button", { name: "Pause motion" });
+    await expect(pause).toBeVisible();
+    await pause.click();
+    const play = page.getByRole("button", { name: "Play motion" });
+    await expect(play).toBeVisible();
+    await expect(page.locator(".cycle-now .glyph")).toHaveCount(0);
+    const text = await page.locator(".cycle-now").textContent();
+    const a = await print(page);
+    await page.waitForTimeout(3800);
+    expect(await page.locator(".cycle-now").textContent()).toBe(text);
+    expect((await print(page)).h).toBe(a.h);
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(page.getByRole("button", { name: "Play motion" })).toBeVisible();
+    const b = await print(page);
+    await page.waitForTimeout(500);
+    expect((await print(page)).h).toBe(b.h);
+    await page.getByRole("button", { name: "Play motion" }).click();
+    await page.waitForTimeout(500);
+    expect((await print(page)).h).not.toBe(b.h);
   });
 
-  test("each chapter's stage shows its tool's input until the recording rises", async ({ page }) => {
-    await page.goto("/", { waitUntil: "networkidle" });
-    for (const [id, input] of [["scam-detection", "email"], ["resume-analyzer", "posting"], ["vehicle-counter", "log"]]) {
-      const canvas = page.locator(`#${id} canvas.source`);
-      await into(page, id, 0);
-      await expect(canvas).toHaveAttribute("data-input", input);
-      await expect.poll(async () => Number(await canvas.evaluate((c) => getComputedStyle(c).opacity)), id).toBeGreaterThan(0.8);
-      await expect.poll(async () => (await ink(page, `#${id} canvas.source`)).count, id).toBeGreaterThan(200);
-      await into(page, id, 0.5);
-      expect(Number(await canvas.evaluate((c) => getComputedStyle(c).opacity)), id).toBeLessThan(0.01);
-    }
-  });
-
-  test("the reading sections stay plain", async ({ page }) => {
-    await page.goto("/", { waitUntil: "networkidle" });
-    await expect(page.locator("#vehicle-counter")).toHaveClass(/has-sequence/);
-    await expect(page.locator(".chapter-head canvas, #try canvas, #more canvas, #experience canvas, #about canvas, #contact canvas")).toHaveCount(0);
-  });
-
-  test("the pointer leaves a faint track, which fades away when the pointer rests", async ({ page }) => {
-    test.skip(isPhone(page), "touch screens have no pointer to track");
-    await page.goto("/", { waitUntil: "networkidle" });
-    await throughThread(page, "thread-1", 0.2);
-    const trail = page.locator("canvas.trail");
-    await expect(trail).toHaveCount(1);
-    for (let i = 0; i <= 40; i++) {
-      await page.mouse.move(300 + i * 18, 640 - Math.sin(i / 6) * 120);
-      await page.waitForTimeout(16);
-    }
-    expect((await ink(page, "canvas.trail")).count).toBeGreaterThan(20);
-    await expect(trail).toHaveAttribute("data-active", "true");
-    await page.waitForTimeout(2600);
-    await expect(trail).toHaveAttribute("data-active", "false");
-    expect((await ink(page, "canvas.trail")).count).toBe(0);
-  });
-
-  test("touch screens get no track", async ({ page }) => {
-    test.skip(!isPhone(page), "the phone project");
-    await page.goto("/", { waitUntil: "networkidle" });
-    await expect(page.locator("#vehicle-counter")).toHaveClass(/has-sequence/);
-    await expect(page.locator("canvas.trail")).toHaveCount(0);
-  });
-
-  test("with reduced motion there is neither", async ({ browser }) => {
+  test("with reduced motion, the dots are drawn still and the greeting stays on the name", async ({ browser }) => {
     const ctx = await browser.newContext({ reducedMotion: "reduce" });
     const page = await ctx.newPage();
     await page.goto("/", { waitUntil: "networkidle" });
-    await page.mouse.move(400, 400);
-    await page.mouse.move(600, 500);
-    await expect(page.locator("canvas.trail, canvas.source")).toHaveCount(0);
+    await expect(page.locator("canvas.field")).toHaveCount(1);
+    const a = await print(page);
+    expect(a.ink).toBeGreaterThan(30);
+    await page.waitForTimeout(3800);
+    expect((await print(page)).h).toBe(a.h);
+    await expect(page.locator(".cycle-now")).toHaveText(greeting.phrases[0]);
+    await expect(page.getByRole("button", { name: /motion/ })).toBeHidden();
     await ctx.close();
   });
 });

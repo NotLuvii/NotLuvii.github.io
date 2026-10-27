@@ -19,7 +19,7 @@ export const site = {
   resume: "Luvneet_Bamrah_Resume.pdf",
   url: "https://notluvii.github.io",
   title: "Software that shows its work.",
-  lede: "Three tools I built that explain each answer they give. Scroll to see how.",
+  lede: "I build software that shows its work. Here are three tools that explain each answer they give.",
   description:
     "Luvneet Bamrah, a software engineer in Fredericton, New Brunswick. Three tools that explain each answer they give: a scam detector, a resume analyzer and a vehicle counter.",
   availability: "Open to software engineering roles building web apps and data tools.",
@@ -150,7 +150,16 @@ export const chapters: Chapter[] = [
 ];
 
 /** The thread between chapters: the same signal, new evidence. */
-export { inputs } from "./inputs";
+
+/**
+ * The opening's greeting: the name turns, through random characters, into each phrase in turn and back.
+ * Each phrase is from the resume or the site. Screen readers get the label, which doesn't change.
+ */
+export const greeting = {
+  lead: "Hi, I am",
+  phrases: ["Luvneet.", "a front end developer.", "a problem solver.", "a software engineer."],
+  label: "Hi, I am Luvneet Bamrah: a front end developer, a problem solver and a software engineer.",
+};
 
 export const thread = {
   phrases: ["Dear Customer", "immediately", "paypal-secure", "Click here to restore"],
@@ -281,27 +290,3 @@ export const about = {
   ],
   alsoUsed: ["Java", "Kotlin (Android)", "C#", "C++", "C", "TensorFlow/Keras", "OpenCV"],
 };
-
-/** Words from the three apps' real inputs, scattered across the opening. */
-/**
- * The opening's words, each from one of the three apps' real inputs. They sit in bands above and below
- * the copy (x and y in % of the band) or, on wide screens, beside it (in % of the opening), so the copy
- * never runs into them whatever its size in the visitor's fonts. s scales the size and o is the opacity.
- * Those marked phone stay on small screens.
- */
-export type OpeningWord = { text: string; band: "above" | "below" | "beside"; x: number; y: number; s: number; o: number; phone?: true };
-export const openingWords: OpeningWord[] = [
-  { text: "paypal-secure", band: "above", x: 14, y: 38, s: 1.15, o: 0.28 },
-  { text: "verify", band: "above", x: 32, y: 66, s: 1.2, o: 0.32, phone: true },
-  { text: "immediately", band: "above", x: 60, y: 62, s: 0.85, o: 0.26 },
-  { text: "Dear Customer", band: "above", x: 78, y: 34, s: 1.05, o: 0.34, phone: true },
-  { text: "car", band: "beside", x: 5, y: 40, s: 1.1, o: 0.3 },
-  { text: "truck", band: "beside", x: 6, y: 62, s: 0.85, o: 0.22 },
-  { text: "track", band: "beside", x: 95, y: 36, s: 0.9, o: 0.26 },
-  { text: "bus", band: "beside", x: 94, y: 58, s: 1.2, o: 0.3 },
-  { text: "Docker", band: "below", x: 18, y: 40, s: 1.1, o: 0.26, phone: true },
-  { text: "Kubernetes", band: "below", x: 36, y: 70, s: 0.85, o: 0.22 },
-  { text: "React", band: "below", x: 52, y: 38, s: 0.95, o: 0.24, phone: true },
-  { text: "Python", band: "below", x: 68, y: 68, s: 1, o: 0.28 },
-  { text: "SQL", band: "below", x: 84, y: 44, s: 1.25, o: 0.32, phone: true },
-];

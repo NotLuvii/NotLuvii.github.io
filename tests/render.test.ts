@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chapters, openingWords, roles, site } from "../src/content";
+import { chapters, roles, site } from "../src/content";
 import { esc, renderBody, renderHead } from "../src/render";
 
 const body = renderBody();
@@ -51,14 +51,5 @@ describe("the page as written at build time", () => {
     const head = renderHead();
     expect(head).toContain("<title>Luvneet Bamrah: Software that shows its work</title>");
     expect(head).toContain(esc(site.description));
-  });
-});
-
-describe("the opening's words", () => {
-  it("are all drawn, as decoration a screen reader skips", () => {
-    // Three bands (above, beside and below the copy), each hidden from screen readers.
-    expect(body.match(/<div class="opening-words (above|beside|below)" aria-hidden="true">/g)).toHaveLength(3);
-    expect(body.match(/<span class="word/g)).toHaveLength(openingWords.length);
-    expect(body.match(/<span class="word on-phone"/g)).toHaveLength(openingWords.filter((w) => w.phone).length);
   });
 });

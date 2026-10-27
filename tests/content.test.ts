@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { chapters, more, openingWords, roles, site, thread } from "../src/content";
+import { chapters, more, roles, site, thread } from "../src/content";
 
 const manifest = (name: string) => JSON.parse(readFileSync(`public/sequences/${name}/manifest.json`, "utf8"));
 const chapter = (id: string) => chapters.find((c) => c.id === id)!;
@@ -59,15 +59,6 @@ describe("the content", () => {
 
   it("links each chapter's code to the redesign branch", () => {
     for (const c of chapters) expect(c.links[0].href).toMatch(/^https:\/\/github\.com\/NotLuvii\/[\w-]+\/tree\/redesign-2026$/);
-  });
-
-  it("takes the opening's words from the three apps' real inputs", () => {
-    const sources = [
-      "Dear Customer, Your account has been suspended due to unusual activity. Verify your identity immediately: https://paypal-secure.com/verify-now Click here to restore access.",
-      "Software Developer. We are looking for a developer with experience in Python, JavaScript, React and SQL. Experience with Docker and Kubernetes is a plus. Strong communication and teamwork skills required. You will build REST APIs and work with AWS.",
-      "car bus truck frame track count",
-    ].join(" ").toLowerCase();
-    for (const w of openingWords) expect(sources, w.text).toContain(w.text.toLowerCase());
   });
 
   it("only uses figures that come from the resume or the recordings", () => {
